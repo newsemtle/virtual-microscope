@@ -1,0 +1,293 @@
+html,
+body {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+
+    /* 그리드 레이아웃 */
+    display: grid;
+    grid-template-columns: 4fr 1fr;
+    grid-template-rows: 56px 38px auto 30px;
+    grid-template-areas:
+        'header header'
+        'nav aside'
+        'main article'
+        'main footer'
+}
+
+/* ========= 반응형 미디어 쿼리 ========= */
+/* 화면 너비가 993px 이상일 경우 -> 원래대로 */
+
+@media (min-width: 993px) {
+
+    html,
+    body {
+        min-width: 100vw;
+        /* 가로 폭이 1200px 이하로는 줄지 않음 */
+        min-height: 100vh;
+    }
+}
+
+
+/* 화면 너비가 397 이상 992px 이하일 경우(태블릿) -> 세로 스택 구조로 변경 */
+@media (max-width: 992px) {
+
+    html,
+    body {
+        min-width: 100vw;
+        min-height: 100vh;
+        grid-template-columns: 1fr;
+        grid-template-rows: 56px 40px 1fr 40px auto 30px;
+        grid-template-areas:
+            'header'
+            'nav'
+            'main'
+            'aside'
+            'article'
+            'footer';
+    }
+
+    /* nav와 article도 전체 너비 차지하도록 */
+    nav,
+    aside,
+    article {
+        width: 100%;
+    }
+
+    article {
+        max-height: 200px;
+        overflow-y: auto;
+    }
+}
+
+/* 화면 너비가 396 이하인 경우 (모바일)*/
+@media (max-width: 396px) {
+
+    html,
+    body {
+        min-width: 100vw;
+        min-height: 100vh;
+        grid-template-columns: 1fr;
+        grid-template-rows: 96px 40px 1fr 40px auto 30px;
+        grid-template-areas:
+            'header'
+            'nav'
+            'main'
+            'aside'
+            'article'
+            'footer';
+    }
+
+    /* nav와 article도 전체 너비 차지하도록 */
+    nav,
+    aside,
+    article {
+        width: 100%;
+    }
+
+    article {
+        max-height: 200px;
+        overflow-y: auto;
+    }
+}
+
+/* slide name style */
+.slide-text {
+    font-size: 25px;
+    color: black;
+    font-weight: bold;
+    padding: 0;
+}
+
+
+/* 상단 헤더 */
+header {
+    grid-area: header;
+}
+
+.collapse {
+    z-index: 1050;
+}
+
+nav {
+    grid-area: nav;
+}
+
+/* navbar style */
+.custom-nav {
+    padding: 0 !important;
+    background: #8fa1b9;
+}
+
+/* nav button style */
+.custom-button {
+    border-radius: 0;
+    color: #FFFFFF;
+}
+
+main {
+    grid-area: main;
+    background: rgb(248, 249, 250);
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+}
+
+/* main의 container-fluid에만 영향을 끼치게 함. viewer 양 옆 패딩 제거*/
+main.container-fluid {
+    padding-left: 0;
+    padding-right: 0;
+}
+
+aside {
+    grid-area: aside;
+    background: #4e79b6;
+    color: #FFFFFF;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    font-size: 20px;
+}
+
+article {
+    grid-area: article;
+    background: #E0E0E0; /* article 배경색 */
+    color: #222;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    /* 스크롤바가 aside에 항상 뜨게. 맥에서는 안뜨니 상관없음 */
+}
+footer {
+    grid-area: footer;
+    overflow: hidden;
+    background: rgb(248, 249, 250);
+}
+
+#openseadragon-container {
+    height: 100%;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+/* viewer 클릭 시 검은 테두리 보이는 거 없애기   */
+#openseadragon-container:focus,
+#openseadragon-container *:focus {
+    outline: none !important;
+}
+
+
+
+/* 색상 팔레트 컨테이너: 항상 표시하고 4열 그리드 레이아웃 */
+.color-palette {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr); /* 4개의 열로 구성 */    
+    padding-right: 9px;
+    padding-left: 9px;
+    padding-top: 0px;
+    padding-bottom: 0px;
+}
+/* 색상 옵션(버튼) */
+.color-option {
+    cursor: pointer;
+    list-style: none;
+    padding: 5px;
+    text-align: center;
+}
+/* 색상 원 : 동그란 모양, 기본 스타일 */
+.color-circle {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: 1px solid #ddd;
+    transition: transform 0.2s, border 0.2s;
+}
+/* 마우스 오버 시 선택 효과 */
+.color-circle:hover {
+    transform: scale(1.2);
+    border: 2px solid black;
+}
+/* 개별 색상 스타일 */
+.red { background-color: #ff0000; }
+.blue { background-color: #0000ff; }
+.black { background-color: #000001; }
+.white { background-color: #ffffff; border: 1px solid #ddd; }
+.yellow { background-color: #ffff00; }
+.magenta { background-color: #ff00ff; }
+.green { background-color: #00ff00; }
+.brown { background-color: #8b4513; }
+
+
+#annotation-popup {
+    display: none;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: white;
+    border: 1px solid #ccc;
+    padding: 20px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+    z-index: 1000;
+    width: 500px; 
+    height: 400px; 
+    overflow: auto;
+}
+#annotation-form input[type="text"] {
+    width: 100%; 
+    box-sizing: border-box; /* 패딩과 테두리를 포함하여 크기 계산 */
+}
+
+#annotation-form textarea {
+    width: 100%; 
+    height: 150px; 
+    resize: none; /* 사용자가 크기 조절하지 못하도록 설정 */
+    overflow: auto;
+}
+#overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 999;
+}
+
+
+
+#article-header {
+    height: 65%; /* 상단 65% */
+    background-color: lightgray;
+    display: block;
+    padding: 10px;
+    position: relative;
+    overflow-y: auto;
+    overflow-x: hidden; /* 가로 스크롤 비활성화 */
+}
+
+#article-body {
+    height: 35%; /* 하단 35% */
+    background-color: rgb(189, 189, 189); /* 원하는 색상 */
+    display: block;
+    padding: 10px;
+    overflow-y: auto;
+    overflow-x: hidden; /* 가로 스크롤 비활성화 */
+}
+
+/* 기본 스타일 */
+.annotation-name {
+    color: blue;
+}
+
+/* 마우스 오버 시 스타일 */
+.annotation-description:hover,
+.annotation-name:hover {
+    cursor: pointer; /* 손 모양 커서 */
+    text-decoration: underline; /* 밑줄 추가 */
+}

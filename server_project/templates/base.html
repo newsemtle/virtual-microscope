@@ -1,0 +1,174 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}INJE Virtual Microscope{% endblock %}</title>
+    <link rel="shortcut icon" href="#">
+    <link rel="stylesheet" href="{% static 'bootstrap/css/bootstrap.min.css' %}">
+    <link rel="stylesheet" href="{% static 'bootstrap/icons/font/bootstrap-icons.css' %}">
+    {% block extra_head %}{% endblock %}
+    <style>
+        .collapsing {
+            transition: none;
+            display: none;
+        }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+
+<body class="bg-light">
+    <header>
+        <nav class="navbar navbar-expand-lg navbar-light bg-light">
+            <div class="container-fluid position-relative">
+                <!-- 왼쪽: 로고/이름 -->
+                <a class="navbar-brand" href="{% url 'home' %}">
+                    <img src="{% static 'img/logo.svg' %}" height="30" class="d-inline-block align-top"
+                        alt="인제대학교 의과대학">
+                    Virtual Microscope
+                </a>
+
+                <!-- 중앙: 항상 보이는 slide_name 영역 -->
+                <span class="navbar-text position-absolute top-50 start-50 translate-middle slide-text">
+                    {% block slide_name %}{% endblock slide_name %}
+                </span>
+
+                <!-- 모바일 토글 버튼 -->
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
+                    aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+                <!-- 오른쪽: 접히는 영역 -->
+                <div class="collapse navbar-collapse" id="navbarNav">
+                    <ul class="navbar-nav me-auto">
+                        <!-- Your existing navigation items -->
+                    </ul>
+                    <ul class="navbar-nav">
+                        {% if user.is_admin %}
+                            <li class="nav-item">
+                                <a class="nav-link" href="/admin">
+                                    <i class="bi bi-gear"></i> Admin Site
+                                </a>
+                            </li>
+                        {% endif %}
+                        {% if user.is_authenticated %}
+                            <li class="nav-item">
+                                <a class="nav-link" href="{% url 'accounts:profile' %}">
+                                    <i class="bi bi-person"></i> Profile
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <form method="POST" action="{% url 'accounts:logout' %}" class="d-inline">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-link nav-link">
+                                        <i class="bi bi-box-arrow-right"></i> Logout
+                                    </button>
+                                </form>
+                            </li>
+                        {% else %}
+                            <li class="nav-item">
+                                <a class="nav-link" href="{% url 'accounts:login' %}">
+                                    <i class="bi bi-box-arrow-in-right"></i> Login
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{% url 'accounts:register' %}">
+                                    <i class="bi bi-person-plus"></i> Register
+                                </a>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </div>  
+            </div>
+        </nav>
+    </header>
+
+    <!-- 추가함 -->
+    <nav>
+        {% block nav_content %}{% endblock nav_content %}
+    </nav>
+
+    <main class="container-fluid">
+        {% block content %}{% endblock content %}
+    </main>
+    
+
+    <!-- 추가함 -->
+    <aside>
+        {% block aside_content %}{% endblock aside_content %}
+    </aside>
+    <!-- 추가함 -->
+    <article>
+        {% block article_content %}{% endblock article_content %}
+    </article>
+
+    {% block extra_modal %}{% endblock %}
+    
+    <footer class="text-center">
+        <small>&copy; 2024 SEMTLE, Inje University</small>
+    </footer>
+
+    <script src="{% static 'bootstrap/js/bootstrap.bundle.min.js' %}"></script>
+    <script src="{% static 'admin/js/vendor/jquery/jquery.min.js' %}"></script>
+    <script>
+        const CSRF_TOKEN = '{{ csrf_token }}';
+
+        const tooltipTriggerList = document.querySelectorAll('[data-bs-tooltip="tooltip"]');
+        const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl, {
+            trigger: 'hover',
+            delay: { "show": 500 }
+        }));
+        document.querySelectorAll('.modal').forEach(modal => {
+            modal.setAttribute('data-bs-backdrop', 'static');
+            modal.setAttribute('data-bs-keyboard', 'false');
+
+            modal.addEventListener('submit', () => {
+                modal.querySelectorAll('button').forEach(button => {
+                    button.disabled = true;
+                });
+            });
+        });
+
+        function showFeedback(message, type = "info") {
+            let feedbackContainer = document.getElementById("feedback-container");
+
+            // Create container if it doesn't exist
+            if (!feedbackContainer) {
+                feedbackContainer = document.createElement("div");
+                feedbackContainer.id = "feedback-container";
+                feedbackContainer.className = "position-fixed bottom-0 end-0 m-3 d-flex flex-column align-items-end";
+                feedbackContainer.style.zIndex = "1050";
+                document.body.appendChild(feedbackContainer);
+            }
+
+            // Create alert element
+            const feedbackDiv = document.createElement("div");
+            feedbackDiv.className = `alert alert-${type} p-2 mb-2`;
+            feedbackDiv.innerHTML = message;
+
+            // Add new alert to the top of the stack
+            feedbackContainer.prepend(feedbackDiv);
+
+            // Remove alert after 2 seconds
+            setTimeout(() => {
+                feedbackDiv.remove();
+                if (feedbackContainer.children.length === 0) {
+                    feedbackContainer.remove();
+                }
+            }, 5000);
+        }
+
+        document.addEventListener("DOMContentLoaded", function () {
+            {% for message in messages %}
+            showFeedback("{{ message.message|escapejs }}", "{{ message.level_tag }}");
+            {% endfor %}
+        });
+    </script>
+    {% block extra_js %}{% endblock %}
+</body>
+
+</html>

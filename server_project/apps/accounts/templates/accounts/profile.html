@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title mb-0">Profile Information</h3>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-sm-3">
+                            <strong>Username:</strong>
+                        </div>
+                        <div class="col-sm-9">
+                            {{ user.username }}
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-sm-3">
+                            <strong>First Name:</strong>
+                        </div>
+                        <div class="col-sm-9">
+                            {{ user.first_name|default:"-" }}
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-sm-3">
+                            <strong>Last Name:</strong>
+                        </div>
+                        <div class="col-sm-9">
+                            {{ user.last_name|default:"-" }}
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-sm-3">
+                            <strong>Group:</strong>
+                        </div>
+                        <div class="col-sm-9">
+                            {{ user.groups.all|join:", "|default:"-" }}
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-sm-3">
+                            <strong>Email:</strong>
+                        </div>
+                        <div class="col-sm-9">
+                            {{ user.email|default:"-" }}
+                        </div>
+                    </div>
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'accounts:password_change' %}" class="btn btn-primary">
+                            Change Password
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock content %}

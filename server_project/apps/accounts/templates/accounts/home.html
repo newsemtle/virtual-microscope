@@ -1,0 +1,76 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <div class="row g-4">
+        {% if user.is_authenticated %}
+            <div class="col-md-4">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h5 class="card-title">Welcome, {{ user.username }}</h5>
+                        <dl class="card-text row">
+                            <dt class="col-3">Name:</dt>
+                            <dd class="col-9">{{ user.get_full_name }}</dd>
+                            <dt class="col-3">Last login:</dt>
+                            <dd class="col-9">{{ user.last_login|date:"Y-m-d H:i" }}</dd>
+                        </dl>
+
+                    </div>
+                </div>
+            </div>
+            {% if show_database %}
+                <div class="col-md-4">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <h5 class="card-title">Database</h5>
+                            <p class="card-text">Navigate all uploaded files in folder structure.</p>
+                            <a href="{% url 'database:database' %}" class="btn btn-primary">
+                                <i class="bi bi-folder"></i> View Database
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+            {% if show_lecture_database %}
+                <div class="col-md-4">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <h5 class="card-title">Lecture Database</h5>
+                            <p class="card-text">Navigate all your lectures in folder structure.</p>
+                            <a href="{% url 'lectures:lecture-database' %}" class="btn btn-primary">
+                                <i class="bi bi-folder"></i> View Lecture Database
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+            <div class="col-md-4">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h5 class="card-title">Lectures</h5>
+                        <p class="card-text">View all lectures that you can explore.</p>
+                        <a href="{% url 'lectures:lecture-bulletins' %}" class="btn btn-primary">
+                            <i class="bi bi-journal-text"></i> View Lectures
+                        </a>
+                    </div>
+                </div>
+            </div>
+        {% else %}
+            <div class="col-md-4">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h5 class="card-title">Welcome to Virtual Microscope</h5>
+                        <p class="card-text">Please log in to access all features.</p>
+                        <div class="d-grid gap-2">
+                            <a href="{% url 'accounts:login' %}" class="btn btn-primary">
+                                <i class="bi bi-box-arrow-in-right"></i> Login
+                            </a>
+                            <a href="{% url 'accounts:register' %}" class="btn btn-outline-primary">
+                                <i class="bi bi-person-plus"></i> Register
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+{% endblock content %}

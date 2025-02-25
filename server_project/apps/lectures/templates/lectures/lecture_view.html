@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item">
+                <a href="{% url 'lectures:lecture-bulletins' %}">Lectures</a>
+            </li>
+        </ol>
+    </nav>
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h4 class="mb-0">
+            {{ lecture.name }}
+        </h4>
+        {% if editable %}
+            <div class="btn-group">
+                <a type="button" class="btn btn-primary" href="{% url 'lectures:lecture-edit' lecture_id=lecture.id %}">
+                    <i class="bi bi-pencil"></i> Edit
+                </a>
+            </div>
+        {% endif %}
+    </div>
+    {% if lecture.description %}
+        <div class="mb-3">
+            <p class="text-body">{{ lecture.description }}</p>
+        </div>
+    {% endif %}
+    <!-- Contents -->
+    {% if contents %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead class="table-light">
+                <tr>
+                    <th scope="col">Name</th>
+                    {% if editable %}
+                        <th scope="col">Annotation</th>
+                        <th scope="col">Created</th>
+                        <th scope="col">Updated</th>
+                    {% endif %}
+                </tr>
+                </thead>
+                <tbody>
+                {% for content in contents %}
+                    <tr>
+                        <td>
+                            <img src="{% url 'api:slide-thumbnail' pk=content.slide.id %}"
+                                 height=40 class="me-2" alt="">
+                            <a href="{% url 'slide_viewer:slide-view' slide_id=content.slide.id %}?annotation={{ content.annotation.id }}"
+                               class="text-decoration-none">{{ content.slide.name }}</a>
+                        </td>
+                        {% if editable %}
+                            <td>
+                                {% if content.annotation %}
+                                    {{ content.annotation.name }} - {{ content.annotation.author.username }}
+                                {% endif %}
+                            </td>
+                            <td>{{ content.slide.created_at|date:"Y-m-d H:i" }}</td>
+                            <td>{{ content.slide.updated_at|date:"Y-m-d H:i" }}</td>
+                        {% endif %}
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <div class="alert alert-info" role="alert">
+            <i class="bi bi-info-circle me-2"></i>There's no slide yet.
+        </div>
+    {% endif %}
+{% endblock content %}

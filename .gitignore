@@ -1,0 +1,17 @@
+# Python
+*.pyc
+__pycache__/
+
+# Django
+media/
+db.sqlite3
+migrations/
+secrets.json
+logs/
+
+# IDE
+.idea/
+.vscode/
+
+# Slides
+slides/
