@@ -15,3 +15,6 @@ logs/
 
 # Slides
 slides/
+
+# Miscellaneous
+.DS_Store
