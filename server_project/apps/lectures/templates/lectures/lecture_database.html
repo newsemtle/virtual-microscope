@@ -23,10 +23,12 @@
         </h4>
         <div class="btn-group">
             {% if current_folder %}
-                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#newFolderModal">
+                <button type="button" class="btn btn-primary" data-bs-toggle="modal"
+                        data-bs-target="#folder-create-modal">
                     <i class="bi bi-folder-plus"></i> New Folder
                 </button>
-                <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#newLectureModal">
+                <button type="button" class="btn btn-success" data-bs-toggle="modal"
+                        data-bs-target="#lecture-create-modal">
                     <i class="bi bi-journal-plus"></i> New Lecture
                 </button>
             {% endif %}
@@ -63,26 +65,27 @@
                             {% if item.type == 'folder' %}
                                 <div class="btn-group btn-group-sm">
                                     <button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal"
-                                            data-bs-target="#detailFolderModal" data-bs-tooltip="tooltip"
+                                            data-bs-target="#folder-detail-modal" data-bs-tooltip="tooltip"
                                             title="Details" data-url="{% url 'api:lecture-folder-detail' pk=item.id %}">
                                         <i class="bi bi-info-circle"></i>
                                     </button>
                                     {% if current_folder %}
                                         <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal"
-                                                data-bs-target="#renameFolderModal" data-bs-tooltip="tooltip"
+                                                data-bs-target="#folder-rename-modal" data-bs-tooltip="tooltip"
                                                 title="Rename"
                                                 data-url="{% url 'api:lecture-folder-detail' pk=item.id %}">
                                             <i class="bi bi-pencil"></i>
                                         </button>
                                         <button type="button" class="btn btn-outline-warning" data-bs-toggle="modal"
-                                                data-bs-target="#moveFolderModal" data-bs-tooltip="tooltip" title="Move"
+                                                data-bs-target="#folder-move-modal" data-bs-tooltip="tooltip"
+                                                title="Move"
                                                 data-url="{% url 'api:lecture-folder-detail' pk=item.id %}"
                                                 data-url-tree="{% url 'api:lecture-folder-tree' %}"
                                                 data-item-id="{{ item.id }}">
                                             <i class="bi bi-folder"></i>
                                         </button>
                                         <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal"
-                                                data-bs-target="#deleteFolderModal" data-bs-tooltip="tooltip"
+                                                data-bs-target="#folder-delete-modal" data-bs-tooltip="tooltip"
                                                 title="Delete"
                                                 data-url="{% url 'api:lecture-folder-detail' pk=item.id %}">
                                             <i class="bi bi-trash"></i>
@@ -100,7 +103,7 @@
                                 {% endif %}
                                 <div class="btn-group btn-group-sm">
                                     <button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal"
-                                            data-bs-target="#detailLectureModal" data-bs-tooltip="tooltip"
+                                            data-bs-target="#lecture-detail-modal" data-bs-tooltip="tooltip"
                                             title="Details" data-url="{% url 'api:lecture-detail' pk=item.id %}">
                                         <i class="bi bi-info-circle"></i>
                                     </button>
@@ -111,14 +114,14 @@
                                             <i class="bi bi-pencil"></i>
                                         </a>
                                         <button type="button" class="btn btn-outline-warning" data-bs-toggle="modal"
-                                                data-bs-target="#moveLectureModal" data-bs-tooltip="tooltip"
+                                                data-bs-target="#lecture-move-modal" data-bs-tooltip="tooltip"
                                                 title="Move" data-url="{% url 'api:lecture-detail' pk=item.id %}"
                                                 data-url-tree="{% url 'api:lecture-folder-tree' %}"
                                                 data-item-id="{{ item.id }}">
                                             <i class="bi bi-folder"></i>
                                         </button>
                                         <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal"
-                                                data-bs-target="#deleteLectureModal" data-bs-tooltip="tooltip"
+                                                data-bs-target="#lecture-delete-modal" data-bs-tooltip="tooltip"
                                                 title="Delete" data-url="{% url 'api:lecture-detail' pk=item.id %}">
                                             <i class="bi bi-trash"></i>
                                         </button>
@@ -140,19 +143,19 @@
 
 
 {% block extra_modal %}
-    <!-- New Folder Modal -->
-    <div class="modal fade" id="newFolderModal" tabindex="-1">
-        <div class="modal-dialog">
+    <!-- Folder Create Modal -->
+    <div class="modal fade" id="folder-create-modal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-scrollable">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title">Create New Folder</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
-                <form id="newFolderForm" data-url="{% url 'api:lecture-folder-list' %}">
+                <form id="folder-create-form" data-url="{% url 'api:lecture-folder-list' %}">
                     <div class="modal-body">
                         <input type="hidden" name="parent" value="{{ current_folder.id }}">
-                        <label for="newFolderName" class="form-label">Folder Name</label>
-                        <input type="text" class="form-control" id="newFolderName" name="name" required>
+                        <label for="folder-create-name" class="form-label">Folder Name</label>
+                        <input type="text" class="form-control" id="folder-create-name" name="name" required>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
@@ -162,18 +165,18 @@
             </div>
         </div>
     </div>
-    <!-- Rename Folder Modal -->
-    <div class="modal fade" id="renameFolderModal" tabindex="-1">
-        <div class="modal-dialog">
+    <!-- Folder Rename Modal -->
+    <div class="modal fade" id="folder-rename-modal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-scrollable">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title">Rename Folder</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
-                <form id="renameFolderForm" data-url="">
+                <form id="folder-rename-form" data-url="">
                     <div class="modal-body">
-                        <label for="renameFolderName" class="form-label mt-2">New Name</label>
-                        <input type="text" class="form-control" id="renameFolderName" name="name" required>
+                        <label for="folder-rename-name" class="form-label mt-2">New Name</label>
+                        <input type="text" class="form-control" id="folder-rename-name" name="name" required>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
@@ -183,15 +186,15 @@
             </div>
         </div>
     </div>
-    <!-- Move Folder Modal -->
-    <div class="modal fade" id="moveFolderModal" tabindex="-1">
-        <div class="modal-dialog">
+    <!-- Folder Move Modal -->
+    <div class="modal fade" id="folder-move-modal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-scrollable">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title">Move Folder</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
-                <form id="moveFolderForm" data-url="">
+                <form id="folder-move-form" data-url="">
                     <div class="modal-body">
                         <div class="border p-3 folder-tree-container"
                              style="max-height: 300px; overflow-y: auto;"></div>
@@ -204,15 +207,15 @@
             </div>
         </div>
     </div>
-    <!-- Delete Folder Modal -->
-    <div class="modal fade" id="deleteFolderModal" tabindex="-1">
-        <div class="modal-dialog">
+    <!-- Folder Delete Modal -->
+    <div class="modal fade" id="folder-delete-modal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-scrollable">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title">Delete Folder</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
-                <form id="deleteFolderForm" data-url="">
+                <form id="folder-delete-form" data-url="">
                     <div class="modal-body">
                         <p>Are you sure to delete this folder?</p>
                     </div>
@@ -224,29 +227,16 @@
             </div>
         </div>
     </div>
-    <!-- Detail Folder Modal -->
-    <div class="modal fade" id="detailFolderModal" tabindex="-1">
-        <div class="modal-dialog">
+    <!-- Folder Detail Modal -->
+    <div class="modal fade" id="folder-detail-modal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-scrollable">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title">Folder Details</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <dl class="row">
-                        <dt class="col-3">Name:</dt>
-                        <dd class="col-9" id="detail-folder-name"></dd>
-                        <dt class="col-3">Contents:</dt>
-                        <dd class="col-9" id="detail-folder-contents"></dd>
-                        <dt class="col-3">Author:</dt>
-                        <dd class="col-9" id="detail-folder-author"></dd>
-                        <dt class="col-3">Parent:</dt>
-                        <dd class="col-9" id="detail-folder-parent"></dd>
-                        <dt class="col-3">Created:</dt>
-                        <dd class="col-9" id="detail-folder-created"></dd>
-                        <dt class="col-3">Updated:</dt>
-                        <dd class="col-9" id="detail-folder-updated"></dd>
-                    </dl>
+                    <dl class="row" id="folder-detail-list"></dl>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
@@ -254,21 +244,20 @@
             </div>
         </div>
     </div>
-    <!-- New Lecture Modal -->
-    <div class="modal fade" id="newLectureModal" tabindex="-1" aria-labelledby="newLectureModalLabel"
-         aria-hidden="true">
-        <div class="modal-dialog">
+    <!-- Lecture Create Modal -->
+    <div class="modal fade" id="lecture-create-modal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-scrollable">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="newLectureModalLabel">New Lecture</h5>
+                    <h5 class="modal-title">New Lecture</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <form id="newLectureForm" data-url="{% url 'api:lecture-list' %}">
+                <form id="lecture-create-form" data-url="{% url 'api:lecture-list' %}">
                     <div class="modal-body">
                         <div class="mb-3">
                             <input type="hidden" name="folder" value="{{ current_folder.id }}">
-                            <label for="newFolderName" class="form-label">Folder Name</label>
-                            <input type="text" class="form-control" id="newFolderName" name="name" required>
+                            <label for="lecture-create-name" class="form-label">Lecture Name</label>
+                            <input type="text" class="form-control" id="lecture-create-name" name="name" required>
                         </div>
                     </div>
                     <div class="modal-footer">
@@ -279,15 +268,15 @@
             </div>
         </div>
     </div>
-    <!-- Move Lecture Modal -->
-    <div class="modal fade" id="moveLectureModal" tabindex="-1">
-        <div class="modal-dialog">
+    <!-- Lecture Move Modal -->
+    <div class="modal fade" id="lecture-move-modal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-scrollable">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title">Move Lecture</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
-                <form id="moveLectureForm" data-url="">
+                <form id="lecture-move-form" data-url="">
                     <div class="modal-body">
                         <div class="border p-3 folder-tree-container"
                              style="max-height: 300px; overflow-y: auto;"></div>
@@ -300,16 +289,15 @@
             </div>
         </div>
     </div>
-    <!-- Delete Lecture Modal -->
-    <div class="modal fade" id="deleteLectureModal" tabindex="-1" aria-labelledby="deleteLectureModalLabel"
-         aria-hidden="true">
-        <div class="modal-dialog">
+    <!-- Lecture Delete Modal -->
+    <div class="modal fade" id="lecture-delete-modal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-scrollable">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="deleteLectureModalLabel">Delete Lecture</h5>
+                    <h5 class="modal-title">Delete Lecture</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <form id="deleteLectureForm" data-url="">
+                <form id="lecture-delete-form" data-url="">
                     <div class="modal-body">
                         <p>Are you sure you want to delete this lecture?</p>
                     </div>
@@ -321,34 +309,16 @@
             </div>
         </div>
     </div>
-    <!-- Detail Lecture Modal -->
-    <div class="modal fade" id="detailLectureModal" tabindex="-1" aria-labelledby="detailLectureModalLabel"
-         aria-hidden="true">
+    <!-- Lecture Detail Modal -->
+    <div class="modal fade" id="lecture-detail-modal" tabindex="-1">
         <div class="modal-dialog modal-dialog-scrollable">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="detailLectureModalLabel">Lecture Details</h5>
+                    <h5 class="modal-title">Lecture Details</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <dl class="row" id="lecture-details">
-                        <dt class="col-3">Name:</dt>
-                        <dd class="col-9" id="detail-lecture-name"></dd>
-                        <dt class="col-3">Description:</dt>
-                        <dd class="col-9" id="detail-lecture-description"></dd>
-                        <dt class="col-3">Contents:</dt>
-                        <dd class="col-9" id="detail-lecture-contents"></dd>
-                        <dt class="col-3">Author:</dt>
-                        <dd class="col-9" id="detail-lecture-author"></dd>
-                        <dt class="col-3">Groups:</dt>
-                        <dd class="col-9" id="detail-lecture-groups"></dd>
-                        <dt class="col-3">Activity:</dt>
-                        <dd class="col-9" id="detail-lecture-activity"></dd>
-                        <dt class="col-3">Created:</dt>
-                        <dd class="col-9" id="detail-lecture-created"></dd>
-                        <dt class="col-3">Updated:</dt>
-                        <dd class="col-9" id="detail-lecture-updated"></dd>
-                    </dl>
+                    <dl class="row" id="lecture-detail-list"></dl>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
@@ -360,6 +330,5 @@
 
 
 {% block extra_js %}
-    <script src="{% static 'lectures/lectures.js' %}" type="text/javascript"></script>
     <script src="{% static 'lectures/lecture_database.js' %}" type="text/javascript"></script>
 {% endblock extra_js %}

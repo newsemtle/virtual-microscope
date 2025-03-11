@@ -40,6 +40,7 @@
                         <th scope="col">Created</th>
                         <th scope="col">Updated</th>
                     {% endif %}
+                    <th scope="col" class="text-end">Actions</th>
                 </tr>
                 </thead>
                 <tbody>
@@ -54,12 +55,23 @@
                         {% if editable %}
                             <td>
                                 {% if content.annotation %}
-                                    {{ content.annotation.name }} - {{ content.annotation.author.username }}
+                                    {{ content.annotation.name }} ({{ content.annotation.author.username }})
                                 {% endif %}
                             </td>
                             <td>{{ content.slide.created_at|date:"Y-m-d H:i" }}</td>
                             <td>{{ content.slide.updated_at|date:"Y-m-d H:i" }}</td>
                         {% endif %}
+                        <td class="text-end">
+                            <div class="btn-group btn-group-sm">
+                                {% if editable %}
+                                    <a type="button" class="btn btn-outline-warning"
+                                       href="{% url 'database:database' %}?folder={{ content.slide.folder.id }}"
+                                       data-bs-tooltip="tooltip" title="Open Location">
+                                        <i class="bi bi-folder"></i>
+                                    </a>
+                                {% endif %}
+                            </div>
+                        </td>
                     </tr>
                 {% endfor %}
                 </tbody>

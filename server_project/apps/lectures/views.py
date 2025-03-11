@@ -14,7 +14,7 @@ from apps.lectures.models import Lecture, LectureFolder
 
 
 class LectureBulletinsView(LoginRequiredMixin, PermissionRequiredMixin, ListView):
-    template_name = "lectures/lectures.html"
+    template_name = "lectures/lecture_bulletins.html"
     context_object_name = "lectures"
     permission_required = "lectures.view_lecture"
 

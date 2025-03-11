@@ -10,21 +10,21 @@
             </li>
         </ol>
     </nav>
-    <!-- Header -->
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h4 class="mb-0">
-            Edit Lecture
-        </h4>
-        <div class="btn-group">
-
+    <form id="lecture-form" data-url="{% url 'api:lecture-detail' pk=lecture.id %}">
+        <!-- Header -->
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h4 class="mb-0">
+                Edit Lecture
+            </h4>
+            <button class="btn btn-primary" type="submit">
+                <i class="bi bi-save"></i> Save Changes
+            </button>
         </div>
-    </div>
-    <!-- Contents -->
-    <div class="row">
-        <div class="col-md-7">
-            <form id="lecture-form" data-url="{% url 'api:lecture-detail' pk=lecture.id %}">
-                <div class="card mb-3">
-                    <div class="card-body">
+        <!-- Contents -->
+        <div class="card mb-3">
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
                         <div class="mb-3">
                             <label for="lecture-name" class="form-label">Name</label>
                             <input type="text" class="form-control" id="lecture-name" name="name"
@@ -35,47 +35,46 @@
                             <textarea class="form-control" id="lecture-description" name="description"
                                       rows="2">{{ lecture.description|default:"" }}</textarea>
                         </div>
+                    </div>
+                    <div class="col-md-6">
                         <div class="mb-3">
-                            <label class="form-label">Groups (Select groups to allow access)</label>
+                            <label class="form-label">Groups: select groups to allow access</label>
                             <div class="mb-2">
                                 <label class="col-2 ps-3">Publishers:</label>
                                 {% for publisher in publishers %}
-                                    {% if publisher.profile.type == "1" %}
-                                        <div class="form-check-inline">
-                                            <input class="form-check-input" type="checkbox" name="groups[]"
-                                                   id="group-{{ publisher.id }}" value="{{ publisher.id }}"
-                                                   {% if publisher in lecture.groups.all %}checked{% endif %}>
-                                            <label class="form-check-label"
-                                                   for="group-{{ publisher.id }}">{{ publisher.name }}</label>
-                                        </div>
-                                    {% endif %}
+                                    <div class="form-check-inline">
+                                        <input class="form-check-input" type="checkbox" name="groups[]"
+                                               id="group-{{ publisher.id }}" value="{{ publisher.id }}"
+                                               {% if publisher in lecture.groups.all %}checked{% endif %}>
+                                        <label class="form-check-label"
+                                               for="group-{{ publisher.id }}">{{ publisher.name }}</label>
+                                    </div>
                                 {% endfor %}
                             </div>
                             <div>
                                 <label class="col-2 ps-3">Viewers:</label>
                                 {% for viewer in viewers %}
-                                    {% if viewer.profile.type == "2" %}
-                                        <div class="form-check-inline">
-                                            <input class="form-check-input" type="checkbox" name="groups[]"
-                                                   id="group-{{ viewer.id }}" value="{{ viewer.id }}"
-                                                   {% if viewer in lecture.groups.all %}checked{% endif %}>
-                                            <label class="form-check-label"
-                                                   for="group-{{ viewer.id }}">{{ viewer.name }}</label>
-                                        </div>
-                                    {% endif %}
+                                    <div class="form-check-inline">
+                                        <input class="form-check-input" type="checkbox" name="groups[]"
+                                               id="group-{{ viewer.id }}" value="{{ viewer.id }}"
+                                               {% if viewer in lecture.groups.all %}checked{% endif %}>
+                                        <label class="form-check-label"
+                                               for="group-{{ viewer.id }}">{{ viewer.name }}</label>
+                                    </div>
                                 {% endfor %}
                             </div>
                         </div>
-                        <div class="d-flex justify-content-end">
-                            <button class="btn btn-primary" type="submit">
-                                <i class="bi bi-save"></i> Save Changes
-                            </button>
-                        </div>
                     </div>
                 </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-6">
                 <div class="card mb-3">
+                    <div class="card-header">
+                        <h5 class="card-title">Contents</h5>
+                    </div>
                     <div class="card-body">
-                        <label for="contents-list" class="form-label">Contents</label>
                         <ul class="list-group" id="content-list">
                             {% for content in contents %}
                                 <li class="list-group-item d-flex align-items-center"
@@ -99,7 +98,8 @@
                                                 <option value="">None</option>
                                                 <option value="{{ content.annotation.id }}"
                                                         selected>{{ content.annotation.name }}
-                                                    - {{ content.annotation.author.username }}</option>
+                                                    ({{ content.annotation.author.username }})
+                                                </option>
                                             {% else %}
                                                 <option value="" selected>None</option>
                                             {% endif %}
@@ -113,48 +113,51 @@
                         </ul>
                     </div>
                 </div>
-            </form>
-        </div>
-        <div class="col-md-5">
-            <div class="card mb-3">
-                <div class="card-header">
-                    <h5 class="card-title">Database</h5>
-                </div>
-                <div class="card-body">
-                    {% if items %}
-                        <ul class="list-group" id="database-list">
-                            {% for item in items %}
-                                <li class="list-group-item" data-url="{% url 'api:folder-items' pk=item.id %}"
-                                    data-folder-id="{{ item.id }}" data-folder-name="{{ item.name }}">
+            </div>
+            <div class="col-md-6">
+                <div class="card mb-3">
+                    <div class="card-header">
+                        <h5 class="card-title">Database</h5>
+                    </div>
+                    <div class="card-body">
+                        {% if items %}
+                            <ul class="list-group" id="database-list">
+                                {% for item in items %}
                                     {% if item.type == "folder" %}
-                                        <i class="bi bi-chevron-right me-2" data-bs-toggle="collapse"
-                                           href="#collapse-{{ item.id }}" role="button" data-action="collapse"></i>
-                                        <i class="bi bi-folder text-warning me-2"></i>
-                                        <span>{{ item.name }}</span>
+                                        <li class="list-group-item" data-url="{% url 'api:folder-items' pk=item.id %}"
+                                            data-folder-id="{{ item.id }}">
+                                            <i class="bi bi-chevron-right me-2" data-bs-toggle="collapse"
+                                               href="#collapse-{{ item.id }}" role="button"
+                                               data-action="collapse"></i>
+                                            <i class="bi bi-folder text-warning me-2"></i>
+                                            <span>{{ item.name }}</span>
+                                        </li>
                                     {% else %}
-                                        <img src="{% url 'api:slide-thumbnail' pk=item.id %}"
-                                             height=40 class="me-2" alt="">
-                                        <a href="{% url 'slide_viewer:slide-view' slide_id=item.id %}"
-                                           class="text-decoration-none" target="_blank"
-                                           rel="noopener noreferrer nofollow">{{ item.name }}</a>
+                                        <li class="list-group-item"
+                                            data-annotations-url="{% url 'api:slide-annotations' pk=item.id %}"
+                                            data-slide-id="{{ item.id }}" data-slide-name="{{ item.name }}">
+                                            <img src="{% url 'api:slide-thumbnail' pk=item.id %}"
+                                                 height=40 class="me-2" alt="">
+                                            <a href="{% url 'slide_viewer:slide-view' slide_id=item.id %}"
+                                               class="text-decoration-none" target="_blank"
+                                               rel="noopener noreferrer nofollow">{{ item.name }}</a>
+                                            <button class="btn btn-sm" title="Add" data-action="add">
+                                                <i class="bi bi-plus-lg"></i>
+                                            </button>
+                                        </li>
                                     {% endif %}
-                                    {% if item.type != "folder" %}
-                                        <button class="btn btn-sm ms-auto" title="Add" data-action="add">
-                                            <i class="bi bi-plus-lg"></i>
-                                        </button>
-                                    {% endif %}
-                                </li>
-                            {% endfor %}
-                        </ul>
-                    {% else %}
-                        <div class="alert alert-info" role="alert">
-                            <i class="bi bi-info-circle me-2"></i>There's nothing in database.
-                        </div>
-                    {% endif %}
+                                {% endfor %}
+                            </ul>
+                        {% else %}
+                            <div class="alert alert-info" role="alert">
+                                <i class="bi bi-info-circle me-2"></i>There's nothing in database.
+                            </div>
+                        {% endif %}
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
+    </form>
 {% endblock content %}
 
 

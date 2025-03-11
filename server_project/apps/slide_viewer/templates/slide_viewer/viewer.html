@@ -27,6 +27,8 @@
 <!-- slide_name part in header block -->
 {% block slide_name %}
     {{ slide.name }}
+    <!-- 임시로 현재 annotation 정보 표시 -->
+    {% if annotation %}[{{ annotation.name }}({{ annotation.author }})]{% endif %}
 {% endblock slide_name %}
 
 
@@ -58,9 +60,19 @@
                             <ul class="dropdown-menu" aria-labelledby="btnGroupDrop_file">
                                 <!-- 저장 버튼 -->
                                 <li>
-                                    <button class="dropdown-item" onclick="saveAnnotations()" title="Save">
-                                        <i class="bi bi-floppy"></i> Save
-                                    </button>
+                                    {% if can_edit_annotation %}
+                                        <button class="dropdown-item" id="annotation-update-btn" title="Save"
+                                                data-annotation-id="{{ annotation.id }}"
+                                                data-url="{% url 'api:annotation-detail' pk=annotation.id %}">
+                                            <i class="bi bi-floppy"></i> Save
+                                        </button>
+                                    {% endif %}
+                                    {% if can_create_annotation %}
+                                        <button class="dropdown-item" title="Save As" data-bs-toggle="modal"
+                                                data-bs-target="#annotation-create-modal">
+                                            <i class="bi bi-floppy"></i> Save As..
+                                        </button>
+                                    {% endif %}
                                 </li>
                                 <!-- 업로드 버튼 -->
                                 <li>
@@ -292,6 +304,31 @@
     </div>
 {% endblock article_content %}
 
+{% block extra_modal %}
+    <div class="modal fade" id="annotation-create-modal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Create New Annotation</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="annotation-create-form" data-url="{% url 'api:annotation-list' %}">
+                    <div class="modal-body">
+                        <input type="hidden" name="slide" value="{{ slide.id }}">
+                        <label for="annotation-create-name" class="form-label">Annotation Name</label>
+                        <input type="text" class="form-control" id="annotation-create-name" name="name"
+                               placeholder="Will be auto-generated with current time if empty.">
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Save</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+{% endblock extra_modal %}
+
 
 {% block extra_js %}
 
@@ -325,11 +362,13 @@
 
     <!-- script -->
     <script type="text/javascript">
-        // load annotation
-        let slideDescription = '{{ annotation.description }}';
-        let slideAnnotation = {}
-        {% if annotation.data %}
-            slideAnnotation = {{ annotation.data | safe }};
+        // 현재 연결된 annotation 정보. `undefined` 면 연결된 annotation 이 없다고 보면 됨.
+        let annotation;
+        {% if annotation %}
+            annotation = {
+                description: '{% if annotation.description %}{{ annotation.description }}{% endif %}',
+                data: {{ annotation.data | safe }},
+            };
         {% endif %}
 
         var viewer = OpenSeadragon({

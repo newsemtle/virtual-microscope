@@ -27,7 +27,7 @@ class FolderViewSet(viewsets.ModelViewSet):
         return Folder.objects.viewable(self.request.user)
 
     def perform_create(self, serializer):
-        serializer.save(author=self.request.user)
+        serializer.save()
         logger.info(
             f"Folder '{serializer.instance.name}' created by {self.request.user}"
         )
@@ -122,7 +122,7 @@ class SlideViewSet(viewsets.ModelViewSet):
         return Slide.objects.viewable(self.request.user)
 
     def perform_create(self, serializer):
-        serializer.save(author=self.request.user)
+        serializer.save()
         logger.info(
             f"Slide '{serializer.instance.name}' created by {self.request.user}"
         )
@@ -147,7 +147,7 @@ class SlideViewSet(viewsets.ModelViewSet):
         data.update(
             {
                 "folder_name": str(slide.folder) or "-",
-                "file_name": slide.file.name,
+                "file_name": os.path.basename(slide.file.name),
                 "created_at_formatted": timezone.localtime(slide.created_at).strftime(
                     "%Y-%m-%d %H:%M:%S"
                 ),
@@ -160,14 +160,18 @@ class SlideViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=["get"])
     def annotations(self, request, pk):
-        if not request.user.has_perm("database.view_annotation"):
+        if not request.user.has_perm("slide_viewer.view_annotation"):
             raise PermissionDenied(
                 "You don't have permission to view slide annotations."
             )
 
         slide = self.get_object()
         annotations = Annotation.objects.viewable_by_slide(request.user, slide)
-        return Response(AnnotationSerializer(annotations, many=True).data)
+        return Response(
+            AnnotationSerializer(
+                annotations, many=True, context={"request": request}
+            ).data
+        )
 
     @action(detail=True, methods=["get"])
     def thumbnail(self, request, pk):

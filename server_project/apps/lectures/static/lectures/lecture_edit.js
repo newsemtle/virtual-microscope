@@ -2,28 +2,40 @@ document.addEventListener("DOMContentLoaded", function () {
     const lectureForm = document.getElementById("lecture-form");
     const databaseList = document.getElementById("database-list");
 
+    lectureForm.addEventListener("submit", function (event) {
+        event.preventDefault();
+        submitChanges(this);
+    });
+
     lectureForm.addEventListener("click", function (event) {
+        event.preventDefault();
         const actionElement = event.target.closest("[data-action]");
         if (!actionElement) return;
-
         const action = actionElement.dataset.action;
+
         const listItem = actionElement.closest("li");
 
         if (action === "up" || action === "down") {
             moveContent(listItem, action);
         } else if (action === "remove") {
             removeContent(listItem);
-        } else if (action === "loadAnnotation") {
-            setupSlideAnnotation(actionElement);
         }
     });
 
-    lectureForm.addEventListener("submit", function (event) {
-        event.preventDefault();
-        submitChanges(this);
+    lectureForm.addEventListener("mousedown", function (event) {
+        const actionElement = event.target.closest("[data-action]");
+        if (!actionElement) return;
+        const action = actionElement.dataset.action;
+
+        if (action === "loadAnnotation") {
+            actionElement.disabled = true;
+            loadSlideAnnotations(actionElement);
+            actionElement.disabled = false;
+        }
     });
 
     databaseList.addEventListener("click", function (event) {
+        event.preventDefault();
         const actionElement = event.target.closest("[data-action]");
         if (!actionElement) return;
 
@@ -37,7 +49,6 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     });
 });
-
 
 function moveContent(listItem, direction) {
     if (!listItem) return;
@@ -57,25 +68,10 @@ function removeContent(listItem) {
     listItem.remove();
 }
 
-function setupSlideAnnotation(selectItem) {
-
-    fetch(selectItem.dataset.url, {
-        method: 'GET',
-        headers: {
-            'X-CSRFToken': CSRF_TOKEN,
-        },
-    })
-        .then(response => {
-            console.log(response)
-            if (!response.ok) {
-                return response.json().then(errorData => {
-                    console.error('Error fetching slide annotations:', errorData.details);
-                    throw new Error('Failed to fetch annotations');
-                });
-            }
-            return response.json();
-        })
-        .then(data => {
+function loadSlideAnnotations(selectItem) {
+    fetchData({
+        url: selectItem.dataset.url,
+        onSuccess: (data) => {
             if (!data || data.length === 0) return;
 
             const existingOptions = new Set(Array.from(selectItem.options).map(option => option.value));
@@ -83,56 +79,53 @@ function setupSlideAnnotation(selectItem) {
             Array.from(selectItem.options).forEach(option => {
                 if (!data.some(item => item.id.toString() === option.value) && option.value) {
                     selectItem.removeChild(option);
-                }   
+                }
             });
 
             data.forEach(item => {
                 if (!existingOptions.has(item.id.toString())) {
                     const annotation = document.createElement('option');
                     annotation.value = item.id;
-                    annotation.textContent = `${item.name} - ${item.author}`;
+                    annotation.textContent = `${item.name} (${item.author})`;
                     selectItem.appendChild(annotation);
                 }
             });
-        })
-        .catch(error => {
-            console.error('Error fetching slide annotations:', error.message);
-            showFeedback(error.message, "danger");
-        });
+        },
+        onError: (error) => {
+            showFeedback("Error loading slide annotations: " + error.message, "danger");
+        }
+    })
 }
 
 function collapseFolder(listItem) {
-    const folderId = listItem.dataset.folderId;
-    const contentId = `collapse-${folderId}`;
-    let content = document.getElementById(contentId);
+    const collapseId = `collapse-${listItem.dataset.folderId}`;
+    if (document.getElementById(collapseId)) return;
+
+    const ulChildContainer = document.createElement('div');
+    ulChildContainer.className = 'collapse';
+    ulChildContainer.id = collapseId;
+
     const chevronIcon = listItem.querySelector('[data-action="collapse"]');
+    ulChildContainer.addEventListener('show.bs.collapse', function (event) {
+        event.stopPropagation();
+        chevronIcon.classList.remove('bi-chevron-right');
+        chevronIcon.classList.add('bi-chevron-down');
+    });
+    ulChildContainer.addEventListener('hide.bs.collapse', function (event) {
+        event.stopPropagation();
+        chevronIcon.classList.remove('bi-chevron-down');
+        chevronIcon.classList.add('bi-chevron-right');
+    });
 
-    chevronIcon.classList.toggle('bi-chevron-right');
-    chevronIcon.classList.toggle('bi-chevron-down');
+    const ulChild = document.createElement('ul');
+    ulChild.className = 'list-group mt-2 ms-2';
 
-    if (content) return;
-
-    content = document.createElement('ul');
-    content.className = 'list-group mt-2 ms-2 collapse show';
-    content.id = contentId;
-    listItem.appendChild(content);
-
-    fetch(listItem.dataset.url, {
-        method: 'GET',
-        headers: {
-            'X-CSRFToken': CSRF_TOKEN,
-        },
-    })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Network response was not ok');
-            }
-            return response.json();
-        })
-        .then(data => {
+    fetchData({
+        url: listItem.dataset.url,
+        onSuccess: (data) => {
             const {subfolders, slides} = data;
             if ((!subfolders || subfolders.length === 0) && (!slides || slides.length === 0)) {
-                content.innerHTML = '<li class="list-group-item">(No items)</li>';
+                ulChild.innerHTML = '<li class="list-group-item">(No items)</li>';
             } else {
                 subfolders?.forEach(item => {
                     const listItem = document.createElement('li');
@@ -141,12 +134,12 @@ function collapseFolder(listItem) {
                     listItem.dataset.folderId = item.id;
                     listItem.dataset.folderName = item.name;
 
-                    const chevronIcon = document.createElement('i');
-                    chevronIcon.className = 'bi bi-chevron-right me-2';
-                    chevronIcon.setAttribute('data-bs-toggle', 'collapse');
-                    chevronIcon.setAttribute('href', `#collapse-${item.id}`);
-                    chevronIcon.role = 'button';
-                    chevronIcon.dataset.action = "collapse";
+                    const collapseIcon = document.createElement('i');
+                    collapseIcon.className = 'bi bi-chevron-right me-2';
+                    collapseIcon.setAttribute('data-bs-toggle', 'collapse');
+                    collapseIcon.setAttribute('href', `#collapse-${item.id}`);
+                    collapseIcon.role = 'button';
+                    collapseIcon.dataset.action = "collapse";
 
                     const folderIcon = document.createElement('i');
                     folderIcon.className = 'bi bi-folder text-warning me-2';
@@ -154,17 +147,23 @@ function collapseFolder(listItem) {
                     const text = document.createElement('span');
                     text.textContent = item.name;
 
-                    listItem.append(chevronIcon, folderIcon, text);
-                    content.appendChild(listItem);
+                    listItem.append(collapseIcon, folderIcon, text);
+                    ulChild.appendChild(listItem);
                 });
 
                 slides?.forEach(item => {
                     const listItem = document.createElement('li');
                     listItem.className = 'list-group-item';
-                    listItem.dataset.url = item.url;
                     listItem.dataset.annotationsUrl = item.annotations_url
                     listItem.dataset.slideId = item.id;
                     listItem.dataset.slideName = item.name;
+
+                    const addIcon = document.createElement('i');
+                    addIcon.className = 'bi bi-plus-circle me-2';
+                    addIcon.role = 'button';
+                    addIcon.setAttribute('data-bs-tooltip', 'tooltip')
+                    addIcon.title = 'Add';
+                    addIcon.dataset.action = 'add';
 
                     const img = document.createElement('img');
                     img.src = item.thumbnail;
@@ -179,23 +178,21 @@ function collapseFolder(listItem) {
                     text.target = '_blank';
                     text.rel = 'noopener noreferrer nofollow';
 
-                    const addButton = document.createElement('button');
-                    addButton.className = 'btn btn-sm';
-                    addButton.title = 'Add';
-                    addButton.dataset.action = 'add';
-
-                    const icon = document.createElement('i');
-                    icon.className = 'bi bi-plus-lg';
-
-                    addButton.appendChild(icon);
-                    listItem.append(img, text, addButton);
-                    content.appendChild(listItem);
+                    listItem.append(addIcon, img, text);
+                    ulChild.appendChild(listItem);
                 });
             }
-        })
-        .catch(error => {
-            showFeedback(error.message, "danger");
-        });
+
+            ulChildContainer.appendChild(ulChild);
+            listItem.appendChild(ulChildContainer);
+
+            activateTooltips();
+            $(ulChildContainer).collapse('show');
+        },
+        onError: (error) => {
+            showFeedback("Error loading folder content: " + error.message, "danger");
+        }
+    })
 }
 
 function addContent(listItem) {
@@ -211,7 +208,6 @@ function addContent(listItem) {
 
     const content = document.createElement('li');
     content.className = 'list-group-item d-flex align-items-center';
-    content.dataset.url = listItem.dataset.url;
     content.dataset.slideId = slideId;
 
     const slideInput = document.createElement('input');
@@ -307,27 +303,15 @@ function submitChanges(formItem) {
         });
     }
 
-    fetch(formItem.dataset.url, {
+    fetchData({
+        url: formItem.dataset.url,
         method: 'PATCH',
-        headers: {
-            'X-CSRFToken': CSRF_TOKEN,
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(data)
-    })
-        .then(response => {
-            if (!response.ok) {
-                return response.json().then(errorData => {
-                    console.error("Error updating lecture:", errorData.details);
-                    throw new Error(errorData.details);
-                });
-            }
-            return response.json();
-        })
-        .then(responseData => {
+        data: JSON.stringify(data),
+        onSuccess: (responseData) => {
             showFeedback(`Lecture '${responseData.name}' updated successfully!`, "success");
-        })
-        .catch(error => {
-            showFeedback(error.message, "danger");
-        });
+        },
+        onError: (error) => {
+            showFeedback("Error updating lecture: " + error.message, "danger");
+        }
+    })
 }

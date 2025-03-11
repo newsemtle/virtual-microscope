@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h4 class="mb-0">
+            Lectures
+        </h4>
+    </div>
+    <!-- Contents -->
+    {% if lectures %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead class="table-light">
+                <tr>
+                    <th scope="col">Name</th>
+                    <th scope="col">Slides</th>
+                    <th scope="col">Created</th>
+                    <th scope="col">Updated</th>
+                    <th scope="col" class="text-end">Actions</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for lecture in lectures %}
+                    <tr>
+                        <td>
+                            <a href="{% url 'lectures:lecture-view' lecture_id=lecture.id %}"
+                               class="text-decoration-none">{{ lecture.name }}</a>
+                        </td>
+                        <td>{{ lecture.get_slides.count }} slides</td>
+                        <td>{{ lecture.created_at|date:"Y-m-d H:i" }}</td>
+                        <td class="updated-at">{{ lecture.updated_at|date:"Y-m-d H:i" }}</td>
+                        <td class="text-end">
+                                <div class="btn-group btn-group-sm">
+                            {% if lecture.is_editable %}
+                                    <a type="button" class="btn btn-outline-warning"
+                                       href="{% url 'lectures:lecture-database' %}?folder={{ lecture.folder.id }}"
+                                       data-bs-tooltip="tooltip" title="Open Location">
+                                        <i class="bi bi-folder"></i>
+                                    </a>
+                            {% endif %}
+                                </div>
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <div class="alert alert-info" role="alert">
+            <i class="bi bi-info-circle me-2"></i>There's no lecture yet.
+        </div>
+    {% endif %}
+{% endblock content %}

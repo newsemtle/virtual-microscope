@@ -45,6 +45,13 @@ DEBUG = True
 
 ALLOWED_HOSTS = []
 
+if not os.path.exists(os.path.join(BASE_DIR, "logs")):
+    try:
+        os.makedirs(os.path.join(BASE_DIR, "logs"))
+    except OSError:
+        print("Error creating logs directory")
+        sys.exit(1)
+
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,

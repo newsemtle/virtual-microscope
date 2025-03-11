@@ -1,312 +1,250 @@
-function handleModalShow(modalId, formId) {
-    document.getElementById(modalId).addEventListener("show.bs.modal", function (event) {
-        let button = event.relatedTarget;
-        document.getElementById(formId).dataset.url = button.dataset.url;
-    });
-}
-
-handleModalShow("renameFolderModal", "renameFolderForm");
-handleModalShow("deleteFolderModal", "deleteFolderForm");
-handleModalShow("editSlideModal", "editSlideForm");
-handleModalShow("deleteSlideModal", "deleteSlideForm");
-
-document.getElementById("renameFolderModal").addEventListener("show.bs.modal", function (event) {
+document.getElementById("folder-rename-modal").addEventListener("show.bs.modal", function (event) {
     let button = event.relatedTarget;
 
-    fetch(button.dataset.url, {
-        method: 'GET',
-        headers: {
-            'X-CSRFToken': CSRF_TOKEN,
+    fetchData({
+        url: button.dataset.url,
+        onSuccess: (data) => {
+            document.getElementById("folder-rename-name").value = data.name;
         },
-    })
-        .then(response => {
-            if (!response.ok) {
-                return response.json().then(errorData => {
-                    console.error('Error fetching slide infos:', errorData.details);
-                    throw new Error('Failed to fetch slide infos');
-                });
-            }
-            return response.json();
-        })
-        .then(data => {
-            document.getElementById("renameFolderName").value = data.name;
-        })
-        .catch(error => {
-            console.error('Error fetching slide infos:', error);
-        });
-});
-
-document.getElementById("detailFolderModal").addEventListener("show.bs.modal", function (event) {
-    let button = event.relatedTarget;
-
-    fetch(button.dataset.url, {
-        method: 'GET',
-        headers: {
-            'X-CSRFToken': CSRF_TOKEN,
-        },
-    })
-        .then(response => {
-            if (!response.ok) {
-                return response.json().then(errorData => {
-                    console.error('Error fetching folder details:', errorData.details);
-                    throw new Error('Failed to fetch folder details');
-                });
-            }
-            return response.json();
-        })
-        .then(data => {
-            document.getElementById('detail-folder-name').textContent = data.name || '-';
-            document.getElementById('detail-folder-contents').textContent = `${data.subfolders_count || 0} subfolders, ${data.lectures_count || 0} lectures`;
-            document.getElementById('detail-folder-author').textContent = data.author || '-';
-            document.getElementById('detail-folder-parent').textContent = data.parent_path || '-';
-            document.getElementById('detail-folder-created').textContent = data.created_at_formatted || '-';
-            document.getElementById('detail-folder-updated').textContent = data.updated_at_formatted || '-';
-        })
-        .catch(error => {
-            console.error('Error fetching folder details:', error);
-        });
-});
-
-document.getElementById("editSlideModal").addEventListener("show.bs.modal", function (event) {
-    let button = event.relatedTarget;
-
-    fetch(button.dataset.url, {
-        method: 'GET',
-        headers: {
-            'X-CSRFToken': CSRF_TOKEN,
-        },
-    })
-        .then(response => {
-            if (!response.ok) {
-                return response.json().then(errorData => {
-                    console.error('Error fetching slide infos:', errorData.details);
-                    throw new Error('Failed to fetch slide infos');
-                });
-            }
-            return response.json();
-        })
-        .then(data => {
-            document.getElementById("editSlideName").value = data.name;
-            document.getElementById("editSlideInformation").value = data.information;
-            document.getElementById("editSlideVisibility").value = data.is_public;
-        })
-        .catch(error => {
-            console.error('Error fetching slide infos:', error);
-        });
-});
-
-document.getElementById("detailSlideModal").addEventListener("show.bs.modal", function (event) {
-    let button = event.relatedTarget;
-
-    fetch(button.dataset.url, {
-        method: 'GET',
-        headers: {
-            'X-CSRFToken': CSRF_TOKEN,
-        },
-    })
-        .then(response => {
-            if (!response.ok) {
-                return response.json().then(errorData => {
-                    console.error('Error fetching folder details:', errorData.details);
-                    throw new Error('Failed to fetch folder details');
-                });
-            }
-            return response.json();
-        })
-        .then(data => {
-            document.getElementById('detail-slide-name').textContent = data.name;
-            document.getElementById('detail-slide-information').textContent = data.information || "-";
-            document.getElementById('detail-slide-author').textContent = data.author || "-";
-            document.getElementById('detail-slide-folder').textContent = data.folder_name;
-            const metadata = document.getElementById('detail-slide-metadata')
-            const metadataContents = document.createElement('dl');
-            metadataContents.classList.add('row');
-            for (const [key, value] of Object.entries(data.metadata)) {
-                const dt = document.createElement('dt');
-                dt.classList.add('col-sm-3');
-                dt.textContent = key;
-                const dd = document.createElement('dd');
-                dd.classList.add('col-sm-9');
-                dd.textContent = value;
-                metadataContents.appendChild(dt);
-                metadataContents.appendChild(dd);
-            }
-            metadata.innerHTML = '';
-            metadata.appendChild(metadataContents);
-            document.getElementById('detail-slide-associated-image').src = data.associated_image;
-            document.getElementById('detail-slide-file').textContent = data.file_name;
-            document.getElementById('detail-slide-visibility').textContent = data.is_public ? 'Public' : 'Private';
-            document.getElementById('detail-slide-created').textContent = data.created_at_formatted;
-            document.getElementById('detail-slide-updated').textContent = data.updated_at_formatted;
-        })
-        .catch(error => {
-            console.error('Error fetching folder details:', error);
-        });
-});
-
-function handleMoveModalShow(modalId, formId, itemType) {
-    document.getElementById(modalId).addEventListener("show.bs.modal", function (event) {
-        let button = event.relatedTarget;
-        document.getElementById(formId).dataset.url = button.dataset.url;
-
-        fetch(button.dataset.urlTree, {
-            method: 'GET',
-            headers: {
-                'X-CSRFToken': CSRF_TOKEN,
-            },
-        })
-            .then(response => {
-                if (!response.ok) {
-                    return response.json().then(errorData => {
-                        console.error('Error fetching folder tree:', errorData.details);
-                        throw new Error('Failed to fetch folder tree');
-                    });
-                }
-                return response.json();
-            })
-            .then(data => {
-                const treeContainer = this.querySelector('.folder-tree-container');
-                treeContainer.innerHTML = '';
-                if (data.length === 0) {
-                    const alert = document.createElement('div');
-                    alert.classList.add('alert', 'alert-warning', 'mt-3');
-                    alert.role = 'alert';
-                    alert.textContent = 'No folders available.';
-                    treeContainer.appendChild(alert);
-                    return;
-                }
-                if (itemType === "folder" && !data[0].id) {
-                    treeContainer.appendChild(createTree(data[0].subfolders, button.dataset.itemId, itemType));
-                } else {
-                    treeContainer.appendChild(createTree(data, button.dataset.itemId, itemType));
-                }
-            })
-            .catch(error => {
-                console.error('Error fetching folder tree:', error);
-            });
-    });
-}
-
-function createTree(data, itemId, type) {
-    if (!["folder", "slide"].includes(type)) return;
-
-    const ul = document.createElement('ul');
-    ul.classList.add('list-unstyled');
-
-    data.forEach(item => {
-        let selectable = type === "folder" ? item.id.toString() !== itemId : true;
-        let showChildren = item.subfolders?.length > 0 && selectable;
-
-        const li = document.createElement('li');
-        li.classList.add('mb-2');
-
-        const div = document.createElement('div');
-        div.classList.add('form-check', 'mb-2');
-
-        const input = document.createElement('input');
-        input.classList.add('form-check-input');
-        input.type = 'radio';
-        input.id = `folder-${item.id}`;
-        input.name = type === "folder" ? "parent" : "folder";
-        input.value = item.id;
-        input.required = true;
-        input.disabled = !selectable;
-
-        const icon = document.createElement('i');
-        icon.classList.add('bi', 'bi-chevron-right', 'me-2', 'text-muted');
-        icon.addEventListener('click', () => {
-            if (!showChildren) return;
-            icon.classList.toggle('bi-chevron-right');
-            icon.classList.toggle('bi-chevron-down');
-        });
-
-        const label = document.createElement('label');
-        label.classList.add('form-check-label');
-        label.htmlFor = input.id;
-        label.innerHTML = `<i class="bi bi-folder text-warning me-2"></i> ${item.name}`;
-
-        let ulChild = document.createElement('ul');
-        if (showChildren) {
-            icon.classList.remove('text-muted');
-            icon.dataset.bsToggle = 'collapse';
-            icon.setAttribute('href', '#collapse-' + item.id);
-            icon.role = 'button';
-
-            ulChild = createTree(item.subfolders, itemId, type);
-            ulChild.classList.add('list-unstyled', 'ms-4', 'collapse');
-            ulChild.id = 'collapse-' + item.id;
+        onError: (error) => {
+            showFeedback('Error fetching folder infos: ' + error.message, 'danger');
         }
-
-        div.append(input, icon, label);
-        li.append(div, ulChild);
-        ul.appendChild(li);
     });
+});
 
-    return ul;
-}
+document.getElementById("image-edit-modal").addEventListener("show.bs.modal", function (event) {
+    let button = event.relatedTarget;
 
-handleMoveModalShow("moveFolderModal", "moveFolderForm", "folder");
-handleMoveModalShow("moveSlideModal", "moveSlideForm", "slide");
+    fetchData({
+        url: button.dataset.url,
+        onSuccess: (data) => {
+            document.getElementById("image-edit-name").value = data.name;
+            document.getElementById("image-edit-information").value = data.information;
+            document.getElementById("image-edit-visibility").value = data.is_public;
+        },
+        onError: (error) => {
+            showFeedback('Error fetching image infos: ' + error.message, 'danger');
+            alert('Failed to fetch image infos. Please try again.');
+            location.reload();
+        }
+    });
+});
 
-function submitForm(form, method) {
+document.getElementById("folder-detail-modal").addEventListener("show.bs.modal", function (event) {
+    let button = event.relatedTarget;
+    const listElement = document.getElementById('folder-detail-list');
+
+    fetchData({
+        url: button.dataset.url,
+        onSuccess: (data) => {
+            listElement.innerHTML = '';
+            const details = {
+                "Name": data.name || '-',
+                "Contents": `${data.subfolders_count || 0} subfolders, ${data.lectures_count || 0} lectures`,
+                "Author": data.author || '-',
+                "Parent": data.parent_path || '-',
+                "Created": data.created_at_formatted || '-',
+                "Updated": data.updated_at_formatted || '-'
+            }
+            createDetailList(listElement, details);
+        },
+        onError: (error) => {
+            showFeedback('Error fetching folder details: ' + error.message, 'danger');
+        }
+    });
+});
+
+document.getElementById("image-detail-modal").addEventListener("show.bs.modal", function (event) {
+    let button = event.relatedTarget;
+    const listElement = document.getElementById('image-detail-list');
+
+    fetchData({
+        url: button.dataset.url,
+        onSuccess: (data) => {
+            listElement.innerHTML = '';
+            const details = {
+                "Name": data.name || '-',
+                "Information": data.information || '-',
+                "Author": data.author || '-',
+                "Folder": data.folder_name || '-',
+                "Metadata": (() => {
+                    const dl = document.createElement('dl');
+                    dl.className = 'row';
+                    createDetailList(dl, data.metadata)
+                    return dl.outerHTML;
+                })(),
+                "Associated Image": `<img src="${data.associated_image || ''}" class="img-fluid" alt="">`,
+                "File": data.file_name || '-',
+                "Visibility": data.is_public ? 'Public' : 'Private',
+                "Created": data.created_at_formatted || '-',
+                "Updated": data.updated_at_formatted || '-'
+            }
+            createDetailList(listElement, details);
+        },
+        onError: (error) => {
+            showFeedback('Error fetching image details: ' + error.message, 'danger');
+        }
+    });
+});
+
+handleModalShow("folder-rename-modal", "folder-rename-form");
+handleModalShow("folder-delete-modal", "folder-delete-form");
+handleModalShow("image-edit-modal", "image-edit-form");
+handleModalShow("image-delete-modal", "image-delete-form");
+
+handleMoveModalShow("folder-move-modal", "folder-move-form", "folder");
+handleMoveModalShow("image-move-modal", "image-move-form", "file");
+
+document.getElementById('annotation-rename-modal').addEventListener('show.bs.modal', function (event) {
+    let button = event.relatedTarget;
+
+    fetchData({
+        url: button.dataset.url,
+        onSuccess: (data) => {
+            document.getElementById("annotation-rename-name").value = data.name;
+        },
+        onError: (error) => {
+            showFeedback('Error fetching annotation infos: ' + error.message, 'danger');
+        }
+    });
+})
+
+document.getElementById('annotation-manage-modal').addEventListener('show.bs.modal', function (event) {
+    let button = event.relatedTarget;
+    const listElement = document.getElementById('annotation-list');
+
+    fetchData({
+        url: button.dataset.url,
+        onSuccess: (data) => {
+            listElement.innerHTML = '';
+            if (data.length === 0) {
+                const alert = document.createElement('div');
+                alert.classList.add('alert', 'alert-warning', 'mt-3');
+                alert.role = 'alert';
+                alert.textContent = 'No annotations yet.';
+                listElement.appendChild(alert);
+                return;
+            }
+            data.forEach(annotation => {
+                const listItem = document.createElement('li');
+                listItem.className = 'list-group-item d-flex justify-content-between align-items-center';
+
+                const listItemName = document.createElement('div');
+                listItemName.className = 'd-flex align-items-center';
+
+                const listItemIcon = document.createElement('i');
+                listItemIcon.className = 'bi bi-file-earmark-text me-2';
+
+                const listItemText = document.createElement('span');
+                listItemText.textContent = `${annotation.name} (${annotation.author})`;
+
+                listItemName.append(listItemIcon, listItemText);
+                listItem.appendChild(listItemName);
+
+                const listItemActions = document.createElement('div');
+                listItemActions.className = 'btn-group btn-group-sm';
+
+                const listItemViewButton = document.createElement('a');
+                listItemViewButton.className = 'btn btn-outline-success';
+                listItemViewButton.href = annotation.viewer_url;
+                listItemViewButton.target = '_blank';
+                listItemViewButton.rel = 'noopener noreferrer nofollow';
+                listItemViewButton.innerHTML = '<i class="bi bi-eye"></i>';
+
+                listItemActions.appendChild(listItemViewButton);
+
+                if (annotation.editable) {
+                    const listItemEditButton = document.createElement('button');
+                    listItemEditButton.className = 'btn btn-outline-primary';
+                    listItemEditButton.setAttribute('data-bs-toggle', 'modal');
+                    listItemEditButton.setAttribute('data-bs-target', '#annotation-rename-modal');
+                    listItemEditButton.dataset.url = annotation.url;
+                    listItemEditButton.innerHTML = '<i class="bi bi-pencil"></i>';
+                    listItemEditButton.addEventListener('click', function () {
+                        document.getElementById('annotation-rename-form').dataset.url = annotation.url;
+                    });
+
+                    const listItemDeleteButton = document.createElement('button');
+                    listItemDeleteButton.className = 'btn btn-outline-danger';
+                    listItemDeleteButton.setAttribute('data-bs-toggle', 'modal');
+                    listItemDeleteButton.setAttribute('data-bs-target', '#annotation-delete-modal');
+                    listItemEditButton.dataset.url = annotation.url;
+                    listItemDeleteButton.innerHTML = '<i class="bi bi-trash"></i>';
+                    listItemDeleteButton.addEventListener('click', function () {
+                        document.getElementById('annotation-delete-form').dataset.url = annotation.url;
+                    });
+
+                    listItemActions.append(listItemEditButton, listItemDeleteButton);
+                }
+
+                listItem.appendChild(listItemActions);
+                listElement.appendChild(listItem);
+            });
+        },
+        onError: (error) => {
+            showFeedback('Error fetching annotations: ' + error.message, 'danger');
+        }
+    });
+});
+
+function submitAnnotationModalForm(form, method) {
     const contents = form.querySelector('[data-type="contents"]');
     const loading = form.querySelector('[data-type="loading"]');
 
     contents?.classList.add('d-none');
     loading?.classList.remove('d-none');
 
-    fetch(form.dataset.url, {
+    fetchData({
+        url: form.dataset.url,
         method: method,
-        headers: {
-            "X-CSRFToken": CSRF_TOKEN,
+        data: new FormData(form),
+        onSuccess: (data) => {
+            $(form).closest('.modal').modal('hide');
         },
-        body: new FormData(form),
-    })
-        .then(response => {
-            if (!response.ok) {
-                return response.json().then(errorData => {
-                    console.error(`Error (${method}):`, errorData.details);
-                    throw new Error(`Failed to ${method.toLowerCase()} item`);
-                });
-            }
-            location.reload();
-        })
-        .catch(error => {
-            console.error(`Error (${method}):`, error.message);
-            alert("Failed to submit the form. Please try again.");
-            location.reload();
-        });
+        onError: (error) => {
+            showFeedback(error.message, 'danger');
+            $(form).closest('.modal').modal('hide');
+        }
+    });
 }
 
-document.getElementById("newFolderForm").addEventListener("submit", function (event) {
+document.getElementById("folder-create-form").addEventListener("submit", function (event) {
     event.preventDefault();
-    submitForm(this, "POST");
+    submitModalForm(this, "POST");
 });
-document.getElementById("renameFolderForm").addEventListener("submit", function (event) {
+document.getElementById("folder-rename-form").addEventListener("submit", function (event) {
     event.preventDefault();
-    submitForm(this, "PATCH");
+    submitModalForm(this, "PATCH");
 });
-document.getElementById("moveFolderForm").addEventListener("submit", function (event) {
+document.getElementById("folder-move-form").addEventListener("submit", function (event) {
     event.preventDefault();
-    submitForm(this, "PATCH");
+    submitModalForm(this, "PATCH");
 });
-document.getElementById("deleteFolderForm").addEventListener("submit", function (event) {
+document.getElementById("folder-delete-form").addEventListener("submit", function (event) {
     event.preventDefault();
-    submitForm(this, "DELETE");
+    submitModalForm(this, "DELETE");
 });
-document.getElementById("newSlideForm").addEventListener("submit", function (event) {
+document.getElementById("image-upload-form").addEventListener("submit", function (event) {
     event.preventDefault();
-    submitForm(this, "POST");
+    submitModalForm(this, "POST");
 });
-document.getElementById("editSlideForm").addEventListener("submit", function (event) {
+document.getElementById("image-edit-form").addEventListener("submit", function (event) {
     event.preventDefault();
-    submitForm(this, "PATCH");
+    submitModalForm(this, "PATCH");
 });
-document.getElementById("moveSlideForm").addEventListener("submit", function (event) {
+document.getElementById("image-move-form").addEventListener("submit", function (event) {
     event.preventDefault();
-    submitForm(this, "PATCH");
+    submitModalForm(this, "PATCH");
 });
-document.getElementById("deleteSlideForm").addEventListener("submit", function (event) {
+document.getElementById("image-delete-form").addEventListener("submit", function (event) {
     event.preventDefault();
-    submitForm(this, "DELETE");
+    submitModalForm(this, "DELETE");
+});
+document.getElementById("annotation-rename-form").addEventListener("submit", function (event) {
+    event.preventDefault();
+    submitAnnotationModalForm(this, "PATCH");
+});
+document.getElementById("annotation-delete-form").addEventListener("submit", function (event) {
+    event.preventDefault();
+    submitAnnotationModalForm(this, "DELETE");
 });
