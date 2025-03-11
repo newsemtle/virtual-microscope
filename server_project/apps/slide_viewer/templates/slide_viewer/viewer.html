@@ -75,7 +75,7 @@
                                 </li>
                                 <!-- 정보 버튼 -->
                                 <li>
-                                    <button class="dropdown-item" title="Slide-Information">
+                                    <button class="dropdown-item" title="Slide-Information" onclick="openinfoPopup()">
                                         <i class="bi bi-info-circle"></i> Information
                                     </button>
                                 </li>
@@ -299,7 +299,7 @@
     <!-- slide metadata 불러오기 -->
     <div id="overlay"></div>
 
-    <!-- 팝업 폼 -->
+    <!-- 팝업(Annotation) 폼 -->
     <div id="annotation-popup">
         <h3>Annotation Details</h3>
         <form id="annotation-form">
@@ -312,6 +312,14 @@
         </form>
     </div>
 
+    <!-- 팝업(Information) -->
+    <div id="information-popup" style="display: none;">
+        <h3>Information</h3>
+        <div id="information-box">
+            {{ slide.information }} <!-- 정보 내용 표시 -->
+        </div>
+        <button type="button" onclick="closeinfoPopup()">Close</button>
+    </div>
 
 
     {{ slide.metadata|json_script:"slide-metadata" }}
@@ -778,6 +786,20 @@
                 this.title = "Hide Annotation";
             }
         });
+
+        
+        //Information popup 추가
+        // info팝업을 열기 위한 함수
+        function openinfoPopup() {
+            document.getElementById('overlay').style.display = 'block';
+            document.getElementById("information-popup").style.display = "block";
+        }
+
+        // info팝업 닫기
+        function closeinfoPopup() {
+            document.getElementById('overlay').style.display = 'none';
+            document.getElementById("information-popup").style.display = "none";
+        }
 
 
         // CSRF 토큰 가져오는 함수 (Django CSRF 보호)
