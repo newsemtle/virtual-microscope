@@ -438,6 +438,15 @@
 
         }
 
+        // 최대 zoom level 설정
+        viewer.addHandler("open", function () {
+            // 100배에 필요한 zoom factor를 미리 구해본 뒤
+            const zoomFactorAt100x = calculateZoomFactor(100);
+        
+            // 그 값을 maxZoomLevel에 설정
+            viewer.viewport.maxZoomLevel = zoomFactorAt100x;
+        });
+
         //현재 zoom을 추적, 버튼 업데이트 함수
         function trackZoomAndUpdateButton() {
             const scaleButton = document.getElementById('btnGroupDrop_scale'); // Scale 버튼 선택
