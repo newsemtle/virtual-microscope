@@ -1,13 +1,18 @@
 {% extends "base.html" %}
 {% load static %}
 
+
+{% block extra_css %}
+  <link rel="stylesheet" href="{% static 'common_static/breadcrumb.css' %}">
+{% endblock %}
+
+
 {% block content %}
-    <!-- Header -->
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h4 class="mb-0">
-            Lectures
-        </h4>
-    </div>
+    <!-- Breadcrumb -->
+    <nav class = "breadcrumbs">
+        <a href="{% url 'home' %}" class="breadcrumbs__item">Home</a>
+        <a href="" class="breadcrumbs__item is-active">Lectures</a> 
+    </nav>
     <!-- Contents -->
     {% if lectures %}
         <div class="table-responsive">
