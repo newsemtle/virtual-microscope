@@ -1,13 +1,18 @@
 {% extends "base.html" %}
 {% load static %}
 
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'common_static/breadcrumb.css' %}">
+{% endblock %}
+
+
 {% block content %}
-    <!-- Header -->
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h4 class="mb-0">
-            Lectures
-        </h4>
-    </div>
+    <!-- Breadcrumb -->
+    <nav class="breadcrumbs">
+        <a href="{% url 'home' %}" class="breadcrumbs__item">Home</a>
+        <a href="" class="breadcrumbs__item is-active">Lectures</a>
+    </nav>
     <!-- Contents -->
     {% if lectures %}
         <div class="table-responsive">
@@ -32,15 +37,15 @@
                         <td>{{ lecture.created_at|date:"Y-m-d H:i" }}</td>
                         <td class="updated-at">{{ lecture.updated_at|date:"Y-m-d H:i" }}</td>
                         <td class="text-end">
-                                <div class="btn-group btn-group-sm">
-                            {% if lecture.is_editable %}
+                            <div class="btn-group btn-group-sm">
+                                {% if lecture.is_editable %}
                                     <a type="button" class="btn btn-outline-warning"
                                        href="{% url 'lectures:lecture-database' %}?folder={{ lecture.folder.id }}"
                                        data-bs-tooltip="tooltip" title="Open Location">
                                         <i class="bi bi-folder"></i>
                                     </a>
-                            {% endif %}
-                                </div>
+                                {% endif %}
+                            </div>
                         </td>
                     </tr>
                 {% endfor %}

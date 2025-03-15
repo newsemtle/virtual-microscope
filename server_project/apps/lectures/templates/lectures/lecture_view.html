@@ -1,85 +1,110 @@
 {% extends "base.html" %}
 {% load static %}
 
+{% block extra_head %}
+<style>
+    .card-hover {
+        transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+      }
+      .card-hover:hover {
+        box-shadow: 0 5px 15px #8fa1b9;
+      }
+</style>
+{% endblock %}
+{% block extra_css %}
+  <link rel="stylesheet" href="{% static 'common_static/breadcrumb.css' %}">
+{% endblock %}
+
+
 {% block content %}
     <!-- Breadcrumb -->
-    <nav aria-label="breadcrumb">
-        <ol class="breadcrumb">
-            <li class="breadcrumb-item">
-                <a href="{% url 'lectures:lecture-bulletins' %}">Lectures</a>
-            </li>
-        </ol>
+    <nav class = "breadcrumbs">
+        <a href="{% url 'home' %}" class="breadcrumbs__item">Home</a>
+        <a href="{% url 'lectures:lecture-bulletins' %}" class="breadcrumbs__item">Lectures</a>
+        <a href="" class="breadcrumbs__item is-active">Lecture Slides</a>
     </nav>
     <!-- Header -->
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h4 class="mb-0">
-            {{ lecture.name }}
-        </h4>
-        {% if editable %}
-            <div class="btn-group">
-                <a type="button" class="btn btn-primary" href="{% url 'lectures:lecture-edit' lecture_id=lecture.id %}">
+    <div class="d-flex justify-content-center">
+        <div class="card rounded-0 my-3" style="width: 1000px;">
+            <!-- 카드 헤더 -->
+            <div class="card-header d-flex justify-content-between align-items-center" style="background-color:#edf1f5;">
+                <h4 class="m-0">{{ lecture.name }}</h4>
+                <!-- Edit 버튼 -->
+                {% if editable %}
+                <a type="button" class="btn btn-primary btn-sm" href="{% url 'lectures:lecture-edit' lecture_id=lecture.id %}">
                     <i class="bi bi-pencil"></i> Edit
                 </a>
+                {% endif %}
             </div>
-        {% endif %}
-    </div>
-    {% if lecture.description %}
-        <div class="mb-3">
-            <p class="text-body">{{ lecture.description }}</p>
+            <!-- 카드 본문 -->
+            <div class="card-body">
+                <!-- Description -->
+                {% if lecture.description %}
+                <p class="card-text">{{ lecture.description }}</p>
+                {% endif %}
+                {% if not contents %}
+                <p>슬라이드가 없습니다.</p>
+                {% endif %}
+            </div>
         </div>
-    {% endif %}
+    </div>
     <!-- Contents -->
     {% if contents %}
-        <div class="table-responsive">
-            <table class="table table-hover">
-                <thead class="table-light">
-                <tr>
-                    <th scope="col">Name</th>
-                    {% if editable %}
-                        <th scope="col">Annotation</th>
-                        <th scope="col">Created</th>
-                        <th scope="col">Updated</th>
-                    {% endif %}
-                    <th scope="col" class="text-end">Actions</th>
-                </tr>
-                </thead>
-                <tbody>
-                {% for content in contents %}
-                    <tr>
-                        <td>
-                            <img src="{% url 'api:slide-thumbnail' pk=content.slide.id %}"
-                                 height=40 class="me-2" alt="">
-                            <a href="{% url 'slide_viewer:slide-view' slide_id=content.slide.id %}?annotation={{ content.annotation.id }}"
-                               class="text-decoration-none">{{ content.slide.name }}</a>
-                        </td>
+    {% for content in contents %}
+    <div class="d-flex justify-content-center">
+        <!-- 카드의 너비와 높이를 고정 -->
+        {% if content.annotation %}
+        <!-- Annotation 유무에 따라 url 달리 하기 -->
+        <a href="{% url 'slide_viewer:slide-view' slide_id=content.slide.id %}?annotation={{ content.annotation.id }}" class="text-decoration-none d-block">
+        {% else %}
+        <a href="{% url 'slide_viewer:slide-view' slide_id=content.slide.id %}" class="text-decoration-none d-block">
+        {% endif %}
+            <!-- 카드의 너비와 높이를 고정 -->
+            <div class="card border-0 rounded-0 mb-0 card-hover" style="height: 150px; width: 1000px; {% if forloop.counter|divisibleby:"2" %}background-color: #edf1f5;{% endif %}">
+                <!-- 내부를 flex container로 만들어 세 영역으로 분할 -->
+                <div class="d-flex h-100">
+                    <!-- 제일 왼쪽 : 번호 표시 -->
+                    <div class="d-flex align-items-center justify-content-center p-1" style="flex: 1 1 2%;">
+                        <h6> {{ forloop.counter }} </h6>
+                    </div>
+                    <!-- 왼쪽 영역: 이미지  -->
+                    <div class="d-flex align-items-center justify-content-center p-1" style="flex: 1 1 15%;">
+                        <img src="{% url 'api:slide-thumbnail' pk=content.slide.id %}" alt="Slide Thumbnail"
+                            style="max-width: 100%; max-height: 100%; object-fit: contain;">
+                    </div>
+                    <!-- 중앙 영역: 슬라이드 이름 -->
+                    <div class="d-flex flex-column p-1" style="flex: 1 1 43%; overflow: hidden;">
+                        <div class="flex-fill" style="height: 50%;">
+                            <h5 class="mb-0" style="white-space: normal; text-overflow: ellipsis;">
+                                {{ content.slide.name }}
+                            </h5>
+                        </div>
+                        <div class="flex-fill" style="height: 50%;">
+                            <p class="mb-0" style="white-space: normal; text-overflow: ellipsis;">
+                                정보 : {{ content.slide.information }}
+                            </p>
+                        </div>
+                    </div>
+                    <!-- 오른쪽 영역: Annotation, Created, Updated -->
+                    <div class="d-flex flex-column p-1" style="flex: 1 1 20%;">
                         {% if editable %}
-                            <td>
-                                {% if content.annotation %}
-                                    {{ content.annotation.name }} ({{ content.annotation.author.username }})
-                                {% endif %}
-                            </td>
-                            <td>{{ content.slide.created_at|date:"Y-m-d H:i" }}</td>
-                            <td>{{ content.slide.updated_at|date:"Y-m-d H:i" }}</td>
+                        {% if content.annotation %}
+                        <p class="mb-1">{{ content.annotation.name }} ({{ content.annotation.author.username }})</p>
                         {% endif %}
-                        <td class="text-end">
-                            <div class="btn-group btn-group-sm">
-                                {% if editable %}
-                                    <a type="button" class="btn btn-outline-warning"
-                                       href="{% url 'database:database' %}?folder={{ content.slide.folder.id }}"
-                                       data-bs-tooltip="tooltip" title="Open Location">
-                                        <i class="bi bi-folder"></i>
-                                    </a>
-                                {% endif %}
-                            </div>
-                        </td>
-                    </tr>
-                {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    {% else %}
-        <div class="alert alert-info" role="alert">
-            <i class="bi bi-info-circle me-2"></i>There's no slide yet.
-        </div>
+                        {% endif %}
+                    </div>
+                    <div class="d-flex flex-column p-1" style="flex: 1 1 20%;">
+                        <h6> 대상 </h6>
+                        {% for group in lecture.groups.all %}
+                          {{ group.name }}{% if not forloop.last %}, {% endif %}
+                        {% empty %}
+                          No groups.
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </a>
+    </div>
+    {% endfor %}
     {% endif %}
 {% endblock content %}
