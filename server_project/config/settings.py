@@ -43,7 +43,7 @@ SECRET_KEY = get_secret("SECRET_KEY")
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ["*"]
 
 if not os.path.exists(os.path.join(BASE_DIR, "logs")):
     try:
@@ -225,9 +225,9 @@ REST_FRAMEWORK = {
     ],
 }
 if not DEBUG:
-    REST_FRAMEWORK["DEFAULT_RENDERER_CLASSES"].remove(
-        "rest_framework.renderers.BrowsableAPIRenderer"
-    )
+    REST_FRAMEWORK["DEFAULT_RENDERER_CLASSES"] = [
+        "rest_framework.renderers.JSONRenderer",
+    ]
 
 # Bootstrap Messages
 
