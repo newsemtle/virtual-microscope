@@ -1,13 +1,23 @@
 document.addEventListener('DOMContentLoaded', () => {
     activateTooltips();
+
+    // localStorage에 저장된 feedback 표시
+    let feedbackData = JSON.parse(localStorage.getItem("feedbackData"));
+    if (feedbackData && feedbackData.length > 0) {
+        feedbackData.forEach(feedback => {
+            showFeedback(feedback.text, feedback.type);
+        });
+
+        localStorage.removeItem("feedbackData");
+    }
 });
 
-function activateTooltips() {
-    const tooltipTriggerList = document.querySelectorAll('[data-bs-tooltip="tooltip"]');
-    const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => {
-        new bootstrap.Tooltip(tooltipTriggerEl, {trigger: 'hover', delay: {"show": 500}});
-    });
-}
+window.addEventListener("focus", () => {
+    if (localStorage.getItem("refreshPage") === "true") {
+        localStorage.removeItem("refreshPage");
+        location.reload();
+    }
+});
 
 // 모달 초기화
 document.querySelectorAll('.modal').forEach(modalElement => {
@@ -34,6 +44,13 @@ document.querySelectorAll('.modal').forEach(modalElement => {
     });
 });
 
+function activateTooltips() {
+    const tooltipTriggerList = document.querySelectorAll('[data-bs-tooltip="tooltip"]');
+    const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => {
+        new bootstrap.Tooltip(tooltipTriggerEl, {trigger: 'hover', delay: {"show": 500}});
+    });
+}
+
 /**
  * 메시지를 화면에 표시합니다.
  *
@@ -52,16 +69,16 @@ function showFeedback(message, type = "info") {
     if (!feedbackContainer) {
         feedbackContainer = document.createElement("div");
         feedbackContainer.id = "feedback-container";
-        feedbackContainer.className = "position-fixed bottom-0 end-0 m-3 d-flex flex-column align-items-end";
-        feedbackContainer.style.zIndex = "1050";
+        feedbackContainer.className = "position-fixed top-0 start-50 translate-middle-x mt-3 d-flex flex-column align-items-center";
+        feedbackContainer.style.zIndex = "1100";
         document.body.appendChild(feedbackContainer);
     }
 
     const feedbackDiv = document.createElement("div");
     feedbackDiv.className = `alert alert-${type} p-2 mb-2`;
-    feedbackDiv.innerHTML = message;
+    feedbackDiv.textContent = message;
 
-    feedbackContainer.prepend(feedbackDiv);
+    feedbackContainer.appendChild(feedbackDiv);
 
     setTimeout(() => {
         feedbackDiv.remove();
@@ -69,6 +86,25 @@ function showFeedback(message, type = "info") {
             feedbackContainer.remove();
         }
     }, 5000);
+}
+
+/**
+ * localStorage에 피드백을 저장합니다.
+ * 페이지 새로고침 시 localStorage에 저장된 피드백이 표시됩니다.
+ *
+ * @param {String} message - 화면에 표시할 메시지.
+ * @param {String} type - 피드백의 종류. "info", "success", "warning", "danger" 중 하나. 기본값은 "info".
+ *
+ * @example
+ * sendFeedback("This is an info message", "info");
+ * sendFeedback("This is a success message", "success");
+ * sendFeedback("This is a warning message", "warning");
+ * sendFeedback("This is a danger message", "danger");
+ */
+function sendFeedback(message, type = "info") {
+    let feedbackData = JSON.parse(localStorage.getItem("feedbackData")) || [];
+    feedbackData.push({text: message, type: type});
+    localStorage.setItem("feedbackData", JSON.stringify(feedbackData));
 }
 
 /**

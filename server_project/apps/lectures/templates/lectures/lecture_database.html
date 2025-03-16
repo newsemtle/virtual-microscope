@@ -110,7 +110,8 @@
                                     {% if item.is_editable %}
                                         <a type="button" class="btn btn-outline-primary"
                                            href="{% url 'lectures:lecture-edit' lecture_id=item.id %}"
-                                           data-bs-tooltip="tooltip" title="Edit">
+                                           data-bs-tooltip="tooltip" title="Edit" target="_blank"
+                                           rel="noopener noreferrer nofollow">
                                             <i class="bi bi-pencil"></i>
                                         </a>
                                         <button type="button" class="btn btn-outline-warning" data-bs-toggle="modal"

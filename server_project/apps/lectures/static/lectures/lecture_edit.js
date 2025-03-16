@@ -309,8 +309,10 @@ function submitChanges(formItem) {
         url: formItem.dataset.url,
         method: 'PATCH',
         data: data,
-        onSuccess: (responseData) => {
-            showFeedback(`Lecture '${responseData.name}' updated successfully!`, "success");
+        onSuccess: (data) => {
+            sendFeedback(`Lecture '${data.name}' updated successfully!`, "success")
+            localStorage.setItem("refreshPage", "true");
+            window.close();
         },
         onError: (error) => {
             showFeedback("Error updating lecture: " + error.message, "danger");
