@@ -3,8 +3,8 @@
 
 
 {% block extra_css %}
-  <link rel="stylesheet" href="{% static 'common_static/breadcrumb.css' %}">
-  <link rel="stylesheet" href="{% static "lectures/lecture.css" %}">
+    <link rel="stylesheet" href="{% static 'common_static/breadcrumb.css' %}">
+    <link rel="stylesheet" href="{% static 'lectures/lecture_bulletins.css' %}">
 {% endblock %}
 
 
@@ -35,7 +35,7 @@
                     <div class="d-flex align-items-center justify-content-center p-2 flex-item-icon" style="width: 5%;">
                         <i class="bi bi-journal-text fs-3 text-warning"></i>
                     </div>
-                    <!-- 2영역: 렉쳐 이름, 렉쳐 설명, 대상 / flex-item-name / 55% -->
+                    <!-- 2영역: 렉쳐 이름, 렉쳐 설명, 대상 / flex-item-name / 65% -->
                     <div class="d-flex flex-column p-2 flex-item-name" style="width: 55%; overflow: hidden;">
                         <div class="flex-fill">
                             <h3 class="mb-0 name-truncate">
@@ -58,17 +58,17 @@
                     <!-- 4영역 : Details, Edit, open lovation / flex-item-edit / 10% -->
                     <div class="d-flex  align-items-center justify-content-center flex-column p-2 flex-item-edit" style="width: 10%;">
                         <div class="btn-group-vertical btn-group-sm">
-                            <button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal"
+                            {% comment %} <button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal"
                                 data-bs-target="#detailLectureModal" data-bs-tooltip="tooltip" title="Details"
                                 data-url="{% url 'api:lecture-detail' pk=lecture.id %}">
                                 Details
-                            </button>
+                            </button> {% endcomment %}
                             {% if lecture.is_editable %}
-                            <a type="button" class="btn btn-outline-primary"
+                            {% comment %} <a type="button" class="btn btn-outline-primary"
                                 href="{% url 'lectures:lecture-edit' lecture_id=lecture.id %}" data-bs-tooltip="tooltip"
                                 title="Edit">
                                 Edit
-                            </a>
+                            </a> {% endcomment %}
                             <a type="button" class="btn btn-outline-warning"
                                 href="{% url 'lectures:lecture-database' %}?folder={{ lecture.folder.id }}"
                                 data-bs-tooltip="tooltip" title="Open Location">
@@ -78,7 +78,7 @@
                         </div>
                     </div>
                     <!-- 5영역: visibility 설정 / flex-item-visibility / 10% -->
-                    <div class="d-flex align-items-center justify-content-center flex-column p-2 flex-item-visibility" style="width: 10%;">
+                    {% comment %} <div class="d-flex align-items-center justify-content-center flex-column p-2 flex-item-visibility" style="width: 10%;">
                         {% if lecture.is_editable %}
                         <button type="button" class="btn btn-sm btn-outline-primary toggle-activity-btn"
                             data-bs-tooltip="tooltip" title="Toggle Activity"
@@ -87,7 +87,7 @@
                             {% if lecture.is_active %}On{% else %}Off{% endif %}
                         </button>
                         {% endif %}
-                    </div>
+                    </div> {% endcomment %}
                 </div>
         </div>
     </div>
@@ -98,47 +98,3 @@
         </div> {% endcomment %}
     {% endif %}
 {% endblock content %}
-
-
-{% block extra_modal %}
-    <!-- Detail Lecture Modal -->
-    <div class="modal fade" id="detailLectureModal" tabindex="-1" aria-labelledby="detailLectureModalLabel"
-         aria-hidden="true">
-        <div class="modal-dialog modal-dialog-scrollable">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="detailLectureModalLabel">Lecture Details</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <dl class="row" id="lecture-details">
-                        <dt class="col-3">Name:</dt>
-                        <dd class="col-9" id="detail-lecture-name"></dd>
-                        <dt class="col-3">Description:</dt>
-                        <dd class="col-9" id="detail-lecture-description"></dd>
-                        <dt class="col-3">Contents:</dt>
-                        <dd class="col-9" id="detail-lecture-contents"></dd>
-                        <dt class="col-3">Author:</dt>
-                        <dd class="col-9" id="detail-lecture-author"></dd>
-                        <dt class="col-3">Groups:</dt>
-                        <dd class="col-9" id="detail-lecture-groups"></dd>
-                        <dt class="col-3">Activity:</dt>
-                        <dd class="col-9" id="detail-lecture-activity"></dd>
-                        <dt class="col-3">Created:</dt>
-                        <dd class="col-9" id="detail-lecture-created"></dd>
-                        <dt class="col-3">Updated:</dt>
-                        <dd class="col-9" id="detail-lecture-updated"></dd>
-                    </dl>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                </div>
-            </div>
-        </div>
-    </div>
-{% endblock extra_modal %}
-
-
-{% block extra_js %}
-    <script src="{% static 'lectures/lectures.js' %}" type="text/javascript"></script>
-{% endblock extra_js %}

@@ -25,11 +25,12 @@
             {% if editable %}
                 {% if current_folder %}
                     <button type="button" class="btn btn-primary" data-bs-toggle="modal"
-                            data-bs-target="#newFolderModal">
+                            data-bs-target="#folder-create-modal">
                         <i class="bi bi-folder-plus"></i> New Folder
                     </button>
                 {% endif %}
-                <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#newSlideModal">
+                <button type="button" class="btn btn-success" data-bs-toggle="modal"
+                        data-bs-target="#image-upload-modal">
                     <i class="bi bi-upload"></i> New Slide
                 </button>
             {% endif %}
@@ -71,18 +72,18 @@
                             <div class="btn-group btn-group-sm">
                                 {% if item.type == 'folder' %}
                                     <button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal"
-                                            data-bs-target="#detailFolderModal" data-bs-tooltip="tooltip"
+                                            data-bs-target="#folder-detail-modal" data-bs-tooltip="tooltip"
                                             title="Details" data-url="{% url 'api:folder-detail' pk=item.id %}">
                                         <i class="bi bi-info-circle"></i>
                                     </button>
                                     {% if editable and current_folder %}
                                         <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal"
-                                                data-bs-target="#renameFolderModal" data-bs-tooltip="tooltip"
+                                                data-bs-target="#folder-rename-modal" data-bs-tooltip="tooltip"
                                                 title="Rename" data-url="{% url 'api:folder-detail' pk=item.id %}">
                                             <i class="bi bi-pencil"></i>
                                         </button>
                                         <button type="button" class="btn btn-outline-warning"
-                                                data-bs-toggle="modal" data-bs-target="#moveFolderModal"
+                                                data-bs-toggle="modal" data-bs-target="#folder-move-modal"
                                                 data-bs-tooltip="tooltip" title="Move"
                                                 data-url="{% url 'api:folder-detail' pk=item.id %}"
                                                 data-url-tree="{% url 'api:folder-tree' %}"
@@ -90,28 +91,36 @@
                                             <i class="bi bi-folder"></i>
                                         </button>
                                         <button type="button" class="btn btn-outline-danger"
-                                                data-bs-toggle="modal" data-bs-target="#deleteFolderModal"
+                                                data-bs-toggle="modal" data-bs-target="#folder-delete-modal"
                                                 data-bs-tooltip="tooltip" title="Delete"
                                                 data-url="{% url 'api:folder-detail' pk=item.id %}">
                                             <i class="bi bi-trash"></i>
                                         </button>
                                     {% endif %}
                                 {% else %}
+                                    {% if editable %}
+                                        <button type="button" class="btn btn-outline-success"
+                                                data-bs-toggle="modal" data-bs-target="#annotation-manage-modal"
+                                                data-bs-tooltip="tooltip" title="Annotations"
+                                                data-url="{% url 'api:slide-annotations' pk=item.id %}">
+                                            <i class="bi bi-pen"></i>
+                                        </button>
+                                    {% endif %}
                                     <button type="button" class="btn btn-outline-secondary"
-                                            data-bs-toggle="modal" data-bs-target="#detailSlideModal"
+                                            data-bs-toggle="modal" data-bs-target="#image-detail-modal"
                                             data-bs-tooltip="tooltip" title="Details"
                                             data-url="{% url 'api:slide-detail' pk=item.id %}">
                                         <i class="bi bi-info-circle"></i>
                                     </button>
                                     {% if editable %}
                                         <button type="button" class="btn btn-outline-primary"
-                                                data-bs-toggle="modal" data-bs-target="#editSlideModal"
+                                                data-bs-toggle="modal" data-bs-target="#image-edit-modal"
                                                 data-bs-tooltip="tooltip" title="Edit"
                                                 data-url="{% url 'api:slide-detail' pk=item.id %}">
                                             <i class="bi bi-pencil"></i>
                                         </button>
                                         <button type="button" class="btn btn-outline-warning"
-                                                data-bs-toggle="modal" data-bs-target="#moveSlideModal"
+                                                data-bs-toggle="modal" data-bs-target="#image-move-modal"
                                                 data-bs-tooltip="tooltip" title="Move"
                                                 data-url="{% url 'api:slide-detail' pk=item.id %}"
                                                 data-url-tree="{% url 'api:folder-tree' %}"
@@ -119,7 +128,7 @@
                                             <i class="bi bi-folder"></i>
                                         </button>
                                         <button type="button" class="btn btn-outline-danger"
-                                                data-bs-toggle="modal" data-bs-target="#deleteSlideModal"
+                                                data-bs-toggle="modal" data-bs-target="#image-delete-modal"
                                                 data-bs-tooltip="tooltip" title="Delete"
                                                 data-url="{% url 'api:slide-detail' pk=item.id %}">
                                             <i class="bi bi-trash"></i>
@@ -142,19 +151,19 @@
 
 
 {% block extra_modal %}
-    <!-- New Folder Modal -->
-    <div class="modal fade" id="newFolderModal" tabindex="-1">
-        <div class="modal-dialog">
+    <!-- Folder Create Modal -->
+    <div class="modal fade" id="folder-create-modal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-scrollable">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title">Create New Folder</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
-                <form id="newFolderForm" data-url="{% url 'api:folder-list' %}">
+                <form id="folder-create-form" data-url="{% url 'api:folder-list' %}">
                     <div class="modal-body">
                         <input type="hidden" name="parent" value="{{ current_folder.id }}">
-                        <label for="newFolderName" class="form-label">Folder Name</label>
-                        <input type="text" class="form-control" id="newFolderName" name="name" required>
+                        <label for="folder-create-name" class="form-label">Folder Name</label>
+                        <input type="text" class="form-control" id="folder-create-name" name="name" required>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
@@ -164,18 +173,18 @@
             </div>
         </div>
     </div>
-    <!-- Rename Folder Modal -->
-    <div class="modal fade" id="renameFolderModal" tabindex="-1">
-        <div class="modal-dialog">
+    <!-- Folder Rename Modal -->
+    <div class="modal fade" id="folder-rename-modal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-scrollable">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title">Rename Folder</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
-                <form id="renameFolderForm" data-url="">
+                <form id="folder-rename-form" data-url="">
                     <div class="modal-body">
-                        <label for="renameFolderName" class="form-label mt-2">Folder Name</label>
-                        <input type="text" class="form-control" id="renameFolderName" name="name" required>
+                        <label for="folder-rename-name" class="form-label mt-2">Folder Name</label>
+                        <input type="text" class="form-control" id="folder-rename-name" name="name" required>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
@@ -185,15 +194,15 @@
             </div>
         </div>
     </div>
-    <!-- Move Folder Modal -->
-    <div class="modal fade" id="moveFolderModal" tabindex="-1">
-        <div class="modal-dialog">
+    <!-- Folder Move Modal -->
+    <div class="modal fade" id="folder-move-modal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-scrollable">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title">Move Folder</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
-                <form id="moveFolderForm" data-url="">
+                <form id="folder-move-form" data-url="">
                     <div class="modal-body">
                         <div class="border p-3 folder-tree-container"
                              style="max-height: 300px; overflow-y: auto;"></div>
@@ -206,15 +215,15 @@
             </div>
         </div>
     </div>
-    <!-- Delete Folder Modal -->
-    <div class="modal fade" id="deleteFolderModal" tabindex="-1">
-        <div class="modal-dialog">
+    <!-- Folder Delete Modal -->
+    <div class="modal fade" id="folder-delete-modal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-scrollable">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title">Delete Folder</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
-                <form id="deleteFolderForm" data-url="">
+                <form id="folder-delete-form" data-url="">
                     <div class="modal-body">
                         <p>Are you sure to delete this folder?</p>
                     </div>
@@ -226,29 +235,16 @@
             </div>
         </div>
     </div>
-    <!-- Detail Folder Modal -->
-    <div class="modal fade" id="detailFolderModal" tabindex="-1">
-        <div class="modal-dialog">
+    <!-- Folder Detail Modal -->
+    <div class="modal fade" id="folder-detail-modal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-scrollable">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title">Folder Details</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <dl class="row">
-                        <dt class="col-3">Name:</dt>
-                        <dd class="col-9" id="detail-folder-name"></dd>
-                        <dt class="col-3">Contents:</dt>
-                        <dd class="col-9" id="detail-folder-contents"></dd>
-                        <dt class="col-3">Author:</dt>
-                        <dd class="col-9" id="detail-folder-author"></dd>
-                        <dt class="col-3">Parent:</dt>
-                        <dd class="col-9" id="detail-folder-parent"></dd>
-                        <dt class="col-3">Created:</dt>
-                        <dd class="col-9" id="detail-folder-created"></dd>
-                        <dt class="col-3">Updated:</dt>
-                        <dd class="col-9" id="detail-folder-updated"></dd>
-                    </dl>
+                    <dl class="row" id="folder-detail-list"></dl>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
@@ -256,30 +252,29 @@
             </div>
         </div>
     </div>
-    <!-- New Slide Modal -->
-    <div class="modal fade" id="newSlideModal" tabindex="-1">
-        <div class="modal-dialog">
+    <!-- Image Upload Modal -->
+    <div class="modal fade" id="image-upload-modal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-scrollable">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">New Slide</h5>
+                    <h5 class="modal-title">New Image</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
-                <form id="newSlideForm" data-url="{% url 'api:slide-list' %}">
-                    {% csrf_token %}
+                <form id="image-upload-form" data-url="{% url 'api:slide-list' %}">
                     <div class="modal-body">
                         <div data-type="contents">
                             <input type="hidden" name="folder" value="{{ current_folder.id }}">
-                            <label for="newSlideName" class="form-label mt-2">Slide Name</label>
-                            <input type="text" class="form-control" id="newSlideName" name="name" required
+                            <label for="image-upload-name" class="form-label mt-2">Image Name</label>
+                            <input type="text" class="form-control" id="image-upload-name" name="name"
                                    placeholder="Same with filename when left blank.">
-                            <label for="newSlideInformation" class="form-label mt-2">Slide Information</label>
-                            <input type="text" class="form-control" id="newSlideInformation"
+                            <label for="image-upload-information" class="form-label mt-2">Image Information</label>
+                            <input type="text" class="form-control" id="image-upload-information"
                                    name="information">
-                            <label for="newSlideFile" class="form-label mt-2">Select Slide</label>
-                            <input type="file" class="form-control" id="newSlideFile" name="file" accept=".ndpi"
+                            <label for="image-upload-file" class="form-label mt-2">Select Image</label>
+                            <input type="file" class="form-control" id="image-upload-file" name="file" accept=".ndpi"
                                    required>
-                            <label for="newSlideVisibility" class="form-label mt-2">Visibility</label>
-                            <select class="form-select" id="newSlideVisibility" name="is_public" required>
+                            <label for="image-upload-visibility" class="form-label mt-2">Visibility</label>
+                            <select class="form-select" id="image-upload-visibility" name="is_public" required>
                                 <option value="" selected>(Select)</option>
                                 <option value="false">Private</option>
                                 <option value="true">Public</option>
@@ -287,7 +282,7 @@
                         </div>
                         <div class="text-center mt-3 d-none" data-type="loading">
                             <div class="spinner-border text-primary" role="status">
-                                <span class="visually-hidden">Uploading Slide...</span>
+                                <span class="visually-hidden">Uploading Image...</span>
                             </div>
                         </div>
                     </div>
@@ -299,43 +294,43 @@
             </div>
         </div>
     </div>
-    <!-- Edit Slide Modal -->
-    <div class="modal fade" id="editSlideModal" tabindex="-1">
-        <div class="modal-dialog">
+    <!-- Image Edit Modal -->
+    <div class="modal fade" id="image-edit-modal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-scrollable">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Edit Slide</h5>
+                    <h5 class="modal-title">Edit Image</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
-                <form id="editSlideForm" data-url="">
+                <form id="image-edit-form" data-url="">
                     <div class="modal-body">
-                        <label for="editSlideName" class="form-label mt-2">Slide Name</label>
-                        <input type="text" class="form-control" id="editSlideName" name="name" required>
-                        <label for="editSlideInformation" class="form-label mt-2">Slide Information</label>
-                        <input type="text" class="form-control" id="editSlideInformation" name="information">
-                        <label for="editSlideVisibility" class="form-label mt-2">Visibility</label>
-                        <select class="form-select" id="editSlideVisibility" name="is_public" required>
+                        <label for="image-edit-name" class="form-label mt-2">Image Name</label>
+                        <input type="text" class="form-control" id="image-edit-name" name="name" required>
+                        <label for="image-edit-information" class="form-label mt-2">Image Information</label>
+                        <input type="text" class="form-control" id="image-edit-information" name="information">
+                        <label for="image-edit-visibility" class="form-label mt-2">Visibility</label>
+                        <select class="form-select" id="image-edit-visibility" name="is_public" required>
                             <option value="false">Private</option>
                             <option value="true">Public</option>
                         </select>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                        <button type="submit" class="btn btn-primary">Upload</button>
+                        <button type="submit" class="btn btn-primary">Edit</button>
                     </div>
                 </form>
             </div>
         </div>
     </div>
-    <!-- Move Slide Modal -->
-    <div class="modal fade" id="moveSlideModal" tabindex="-1">
-        <div class="modal-dialog">
+    <!-- Image Move Modal -->
+    <div class="modal fade" id="image-move-modal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-scrollable">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Move Slide</h5>
+                    <h5 class="modal-title">Move Image</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
-                <form id="moveSlideForm" data-url="">
+                <form id="image-move-form" data-url="">
                     <div class="modal-body">
                         <div class="border p-3 folder-tree-container"
                              style="max-height: 300px; overflow-y: auto;"></div>
@@ -348,17 +343,17 @@
             </div>
         </div>
     </div>
-    <!-- Delete Slide Modal -->
-    <div class="modal fade" id="deleteSlideModal" tabindex="-1">
-        <div class="modal-dialog">
+    <!-- Image Delete Modal -->
+    <div class="modal fade" id="image-delete-modal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-scrollable">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Delete Slide</h5>
+                    <h5 class="modal-title">Delete Image</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
-                <form id="deleteSlideForm" data-url="">
+                <form id="image-delete-form" data-url="">
                     <div class="modal-body">
-                        <p>Are you sure to delete this folder?</p>
+                        <p>Are you sure to delete this image?</p>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
@@ -368,43 +363,78 @@
             </div>
         </div>
     </div>
-    <!-- Detail Slide Modal -->
-    <div class="modal fade" id="detailSlideModal" tabindex="-1">
-        <div class="modal-dialog">
+    <!-- Image Detail Modal -->
+    <div class="modal fade" id="image-detail-modal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-scrollable">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Slide Details</h5>
+                    <h5 class="modal-title">Image Details</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <dl class="row">
-                        <dt class="col-3">Name:</dt>
-                        <dd class="col-9" id="detail-slide-name"></dd>
-                        <dt class="col-3">Information:</dt>
-                        <dd class="col-9" id="detail-slide-information"></dd>
-                        <dt class="col-3">Author:</dt>
-                        <dd class="col-9" id="detail-slide-author"></dd>
-                        <dt class="col-3">Folder:</dt>
-                        <dd class="col-9" id="detail-slide-folder"></dd>
-                        <dt class="col-3">Metadata:</dt>
-                        <dd class="col-9" id="detail-slide-metadata"></dd>
-                        <dt class="col-3">Associated Image:</dt>
-                        <dd class="col-9">
-                            <img src="" class="img-fluid" id="detail-slide-associated-image" alt="">
-                        </dd>
-                        <dt class="col-3">File:</dt>
-                        <dd class="col-9" id="detail-slide-file"></dd>
-                        <dt class="col-3">Visibility:</dt>
-                        <dd class="col-9" id="detail-slide-visibility"></dd>
-                        <dt class="col-3">Created:</dt>
-                        <dd class="col-9" id="detail-slide-created"></dd>
-                        <dt class="col-3">Updated:</dt>
-                        <dd class="col-9" id="detail-slide-updated"></dd>
-                    </dl>
+                    <dl class="row" id="image-detail-list"></dl>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                 </div>
+            </div>
+        </div>
+    </div>
+    <!-- Annotation Manage Modal -->
+    <div class="modal fade" id="annotation-manage-modal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Annotations</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <ul class="list-group" id="annotation-list"></ul>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Rename Annotation Modal -->
+    <div class="modal fade" id="annotation-rename-modal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Rename Annotation</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="annotation-rename-form" data-url="">
+                    <div class="modal-body">
+                        <label for="annotation-rename-name" class="form-label mt-2">Annotation Name</label>
+                        <input type="text" class="form-control" id="annotation-rename-name" name="name" required>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Rename</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <!-- Delete Annotation Modal -->
+    <div class="modal fade" id="annotation-delete-modal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Delete Annotation</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="annotation-delete-form" data-url="">
+                    <div class="modal-body">
+                        <p>Are you sure to delete this annotation?</p>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Delete</button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>

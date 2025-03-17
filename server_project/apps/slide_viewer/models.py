@@ -59,7 +59,7 @@ class Annotation(models.Model):
         ordering = ("created_at",)
 
     def __str__(self):
-        return f"{self.name} - {self.author} - {self.slide}"
+        return f"{self.name} ({self.author}) | {self.slide}"
 
     def user_can_edit(self, user):
         if user.is_admin():

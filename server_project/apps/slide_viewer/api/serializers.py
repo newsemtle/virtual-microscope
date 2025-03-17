@@ -1,10 +1,17 @@
+import datetime
+
+from django.urls import reverse
 from rest_framework import serializers
 
 from ..models import Annotation
 
 
 class AnnotationSerializer(serializers.ModelSerializer):
+    name = serializers.CharField(required=False, allow_blank=True)
     author = serializers.CharField(source="author.username", default=None)
+    url = serializers.SerializerMethodField()
+    viewer_url = serializers.SerializerMethodField()
+    editable = serializers.SerializerMethodField()
 
     class Meta:
         model = Annotation
@@ -17,6 +24,9 @@ class AnnotationSerializer(serializers.ModelSerializer):
             "author",
             "created_at",
             "updated_at",
+            "url",
+            "viewer_url",
+            "editable",
         ]
         read_only_fields = ["author"]
 
@@ -32,3 +42,21 @@ class AnnotationSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(errors)
 
         return super().validate(attrs)
+
+    def create(self, validated_data):
+        if not validated_data.get("name"):
+            validated_data["name"] = datetime.datetime.now().strftime(
+                "%Y-%m-%d %H:%M:%S"
+            )
+
+        validated_data["author"] = self.context["request"].user
+        return super().create(validated_data)
+
+    def get_url(self, obj):
+        return reverse("api:annotation-detail", kwargs={"pk": obj.pk})
+
+    def get_viewer_url(self, obj):
+        return reverse("slide_viewer:slide-view", kwargs={"slide_id": obj.slide.pk}) + f"?annotation={obj.pk}"
+
+    def get_editable(self, obj):
+        return obj.user_can_edit(self.context["request"].user)

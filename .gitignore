@@ -4,10 +4,10 @@ __pycache__/
 
 # Django
 media/
-db.sqlite3
 migrations/
-secrets.json
+db.sqlite3
 logs/
+secrets.json
 
 # IDE
 .idea/
@@ -16,5 +16,5 @@ logs/
 # Slides
 slides/
 
-# Miscellaneous
+# Mac Environment
 .DS_Store

@@ -1,3 +1,5 @@
+import os
+
 from django.urls import reverse
 from rest_framework import serializers
 
@@ -34,11 +36,16 @@ class FolderSerializer(serializers.ModelSerializer):
 
         return super().validate(attrs)
 
+    def create(self, validated_data):
+        validated_data["author"] = self.context["request"].user
+        return super().create(validated_data)
+
     def get_url(self, obj):
-        return reverse("api:folder-detail", kwargs={"pk": obj.pk})
+        return reverse("api:folder-items", kwargs={"pk": obj.pk})
 
 
 class SlideSerializer(serializers.ModelSerializer):
+    name = serializers.CharField(required=False, allow_blank=True)
     author = serializers.CharField(source="author.username", default=None)
     thumbnail = serializers.SerializerMethodField()
     associated_image = serializers.SerializerMethodField()
@@ -69,6 +76,11 @@ class SlideSerializer(serializers.ModelSerializer):
         read_only_fields = ["author", "image_root", "metadata"]
 
     def validate(self, attrs):
+        if not attrs.get("name"):
+            attrs["name"] = os.path.splitext(os.path.basename(attrs.get("file").name))[
+                0
+            ]
+
         user = self.context["request"].user
         errors = {}
 
@@ -81,17 +93,21 @@ class SlideSerializer(serializers.ModelSerializer):
 
         return super().validate(attrs)
 
+    def create(self, validated_data):
+        validated_data["author"] = self.context["request"].user
+        return super().create(validated_data)
 
     def get_thumbnail(self, obj):
         return reverse("api:slide-thumbnail", kwargs={"pk": obj.pk})
 
     def get_associated_image(self, obj):
         return reverse("api:slide-associated-image", kwargs={"pk": obj.pk})
+
     def get_url(self, obj):
         return reverse("api:slide-detail", kwargs={"pk": obj.pk})
 
     def get_view_url(self, obj):
         return reverse("slide_viewer:slide-view", kwargs={"slide_id": obj.pk})
-    
+
     def get_annotations_url(self, obj):
         return reverse("api:slide-annotations", kwargs={"pk": obj.pk})

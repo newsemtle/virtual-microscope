@@ -31,6 +31,10 @@ class LectureFolderSerializer(serializers.ModelSerializer):
 
         return super().validate(attrs)
 
+    def create(self, validated_data):
+        validated_data["author"] = self.context["request"].user
+        return super().create(validated_data)
+
 
 class LectureContentSerializer(serializers.ModelSerializer):
     class Meta:
@@ -85,6 +89,7 @@ class LectureSerializer(serializers.ModelSerializer):
         return super().validate(attrs)
 
     def create(self, validated_data):
+        validated_data["author"] = self.context["request"].user
         contents_data = validated_data.pop("contents", [])
 
         lecture = super().create(validated_data)

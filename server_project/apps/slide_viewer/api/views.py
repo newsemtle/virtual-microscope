@@ -20,7 +20,7 @@ class AnnotationViewSet(viewsets.ModelViewSet):
         return Annotation.objects.viewable(self.request.user)
 
     def perform_create(self, serializer):
-        serializer.save(author=self.request.user)
+        serializer.save()
         logger.info(
             f"Annotation '{serializer.instance.name}' created by {self.request.user}"
         )
@@ -29,7 +29,7 @@ class AnnotationViewSet(viewsets.ModelViewSet):
         annotation = self.get_object()
         self._check_edit_permissions(annotation)
 
-        annotation = serializer.save()
+        serializer.save()
         logger.info(f"Annotation '{annotation.name}' updated by {self.request.user}")
 
     def perform_destroy(self, instance):
@@ -45,12 +45,12 @@ class AnnotationViewSet(viewsets.ModelViewSet):
         data.update(
             {
                 "slide_name": str(annotation.slide) or "-",
-                "created_at_formatted": timezone.localtime(annotation.created_at).strftime(
-                    "%Y-%m-%d %H:%M:%S"
-                ),
-                "updated_at_formatted": timezone.localtime(annotation.updated_at).strftime(
-                    "%Y-%m-%d %H:%M:%S"
-                ),
+                "created_at_formatted": timezone.localtime(
+                    annotation.created_at
+                ).strftime("%Y-%m-%d %H:%M:%S"),
+                "updated_at_formatted": timezone.localtime(
+                    annotation.updated_at
+                ).strftime("%Y-%m-%d %H:%M:%S"),
             }
         )
         return Response(data)
