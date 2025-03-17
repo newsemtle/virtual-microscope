@@ -13,7 +13,7 @@
     <nav class = "breadcrumbs">
         <a href="{% url 'home' %}" class="breadcrumbs__item">Home</a>
         <a href="{% url 'lectures:lecture-bulletins' %}" class="breadcrumbs__item">Lectures</a>
-        <a href="" class="breadcrumbs__item is-active">Lecture Slides</a>
+        <a href="" class="breadcrumbs__item is-active">{{ lecture.name }}</a>
     </nav>
     <!-- Header -->
     <div class="d-flex justify-content-center">
