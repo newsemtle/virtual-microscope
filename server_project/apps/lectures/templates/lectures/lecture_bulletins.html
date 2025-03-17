@@ -46,11 +46,12 @@
                             <h6 class="mb-0 information-truncate" style="color: rgba(68, 66, 66, 0.38);">
                                 {{ lecture.description }}
                             </h6>
-                            <h6 class="mb-0 information-truncate"> 대상 : {% for group in lecture.groups.all %}{{ group.name }}{% if not forloop.last%}, {% endif %}{% empty %}No groups.{% endfor %}</h6>
+                            <h6 class="mb-0 information-truncate"> <i class="bi bi-people-fill"></i> {% for group in lecture.groups.all %}{{ group.name }}{% if not forloop.last%}, {% endif %}{% empty %}No groups.{% endfor %}</h6>
                         </div>
                     </div>
                     <!-- 3영역: Slides number, created, updated / flex-item-right / 20% -->
                     <div class="d-flex flex-column p-2 flex-item-right" style="width: 20%;">
+                        <p class="mb-0" style="font-size: 15px"><i class="bi bi-person-fill-up"></i> {{ lecture.author }}
                         <p class="mb-0" style="font-size: 15px">{{ lecture.get_slides.count }} slides</p>
                         <p class="mb-0" style="font-size: 15px">created: {{ lecture.created_at|date:"Y-m-d H:i" }}</p>
                         <p class="mb-0" style="font-size: 15px">updated: {{ lecture.updated_at|date:"Y-m-d H:i" }}</p>
