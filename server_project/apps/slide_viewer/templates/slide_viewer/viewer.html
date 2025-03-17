@@ -613,6 +613,37 @@
 
         const slideId = {{ slide.id }};
         //console.log(anno.listDrawingTools());
+        
+        
+        // URL에서 annotation 파라미터 읽기
+        const urlParams = new URLSearchParams(window.location.search);
+        const annotationId = urlParams.get('annotation'); // 예: "3"
+
+        // API에서 주석 목록을 불러오기
+        const annotationsUrl = `/api/database/slides/${slideId}/annotations/?format=json`;
+        fetch(annotationsUrl)
+        .then(response => response.json())
+        .then(annotations => {
+            // API에서 반환된 배열에서 id가 annotationId와 일치하는 객체를 찾습니다.
+            const targetAnnotation = annotations.find(item => String(item.id) === annotationId);
+            
+            if (targetAnnotation) {
+            // targetAnnotation.data가 배열인 경우, 각 annotation 데이터를 Annotorious에 추가합니다.
+            if (Array.isArray(targetAnnotation.data) && targetAnnotation.data.length > 0) {
+                targetAnnotation.data.forEach(annot => {
+                // annot는 실제로 Annotorious가 이해할 수 있는 형식이어야 합니다.
+                anno.addAnnotation(annot);
+                });
+            } else {
+                console.error("찾은 주석 객체에 표시할 data가 없습니다.");
+            }
+            } else {
+            console.error("해당 annotation id를 가진 주석을 찾을 수 없습니다.");
+            }
+        })
+        .catch(error => {
+            console.error('주석 데이터를 불러오는 중 오류가 발생했습니다:', error);
+        });
 
         // 그리기 모드 변경 핸들러
         function setDrawingTool(tool) {
@@ -627,8 +658,6 @@
             anno.setDrawingEnabled(false);
             viewer.setMouseNavEnabled(true);
             annotation["motivation"] = selectedColor;
-            count++;
-            annotation["@context"] = count;
 
 
             openPopup(annotation)
