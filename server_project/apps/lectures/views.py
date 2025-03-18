@@ -26,7 +26,7 @@ class LectureBulletinsView(LoginRequiredMixin, PermissionRequiredMixin, ListView
             lectures |= Lecture.objects.editable(self.request.user).filter(
                 is_active=True
             )
-        return sorted(lectures, key=lambda x: x.updated_at, reverse=True)
+        return lectures.distinct().order_by("-updated_at")
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -49,6 +49,13 @@ class LectureDatabaseView(
         return get_object_or_404(LectureFolder, id=folder_id)
 
     def test_func(self):
+        if not self.request.user.is_admin() and not self.get_folder():
+            folder = self.request.user.base_lecture_folder
+            return redirect(
+                reverse_lazy("lectures:lecture-database")
+                + f"?folder={folder.id or None}"
+            )
+
         if self.request.user.is_admin():
             return True
 
@@ -57,15 +64,6 @@ class LectureDatabaseView(
             return current.user_can_edit(self.request.user)
 
         return self.request.user.base_lecture_folder
-
-    def dispatch(self, request, *args, **kwargs):
-        if not self.request.user.is_admin() and not self.get_folder():
-            folder = self.request.user.base_lecture_folder
-            return redirect(
-                reverse_lazy("lectures:lecture-database")
-                + f"?folder={folder.id or None}"
-            )
-        return super().dispatch(request, *args, **kwargs)
 
     def get_queryset(self):
         current = self.get_folder()

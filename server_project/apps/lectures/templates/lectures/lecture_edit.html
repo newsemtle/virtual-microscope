@@ -136,14 +136,13 @@
                                         <li class="list-group-item"
                                             data-annotations-url="{% url 'api:slide-annotations' pk=item.id %}"
                                             data-slide-id="{{ item.id }}" data-slide-name="{{ item.name }}">
+                                            <i class="bi bi-plus-circle me-2" role="button" data-bs-tooltip="tooltip"
+                                               title="Add" data-action="add"></i>
                                             <img src="{% url 'api:slide-thumbnail' pk=item.id %}"
                                                  height=40 class="me-2" alt="">
                                             <a href="{% url 'slide_viewer:slide-view' slide_id=item.id %}"
                                                class="text-decoration-none" target="_blank"
                                                rel="noopener noreferrer nofollow">{{ item.name }}</a>
-                                            <button class="btn btn-sm" title="Add" data-action="add">
-                                                <i class="bi bi-plus-lg"></i>
-                                            </button>
                                         </li>
                                     {% endif %}
                                 {% endfor %}

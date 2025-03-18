@@ -4,29 +4,29 @@ from django.db import models
 
 class LectureFolderManager(models.Manager):
     def base_folders(self):
-        return self.filter(parent__isnull=True).distinct()
+        return self.filter(parent__isnull=True)
 
     def editable_base_folders(self, user):
         if user.is_admin():
-            return self.base_folders().distinct()
-        return self.base_folders().filter(user=user).distinct()
+            return self.base_folders()
+        return self.base_folders().filter(user=user)
 
     def editable(self, user):
         if user.is_admin():
-            return self.all().distinct()
+            return self.all()
         folders = self.editable_base_folders(user)
         for folder in self.editable_base_folders(user):
             folders |= self.descendents(folder)
-        return folders.distinct()
+        return folders
 
     def viewable(self, user):
-        return self.editable(user).distinct()
+        return self.editable(user)
 
     def descendents(self, folder):
         folders = folder.subfolders.all()
         for subfolder in folder.subfolders.all():
             folders |= self.descendents(subfolder)
-        return folders.distinct()
+        return folders
 
 
 class LectureFolder(models.Model):
@@ -107,40 +107,40 @@ class LectureFolder(models.Model):
 class LectureManager(models.Manager):
     def root_lectures(self):
         """Get lectures that aren't in any folder"""
-        return self.filter(parent__isnull=True).distinct()
+        return self.filter(parent__isnull=True)
 
     def editable(self, user):
         if user.is_admin():
             return self.all().distinct()
-        return self.filter(author=user).distinct()
+        return self.filter(author=user)
 
     def viewable(self, user, include_editable=True):
         if user.is_admin():
-            return self.all().distinct()
+            return self.all()
         viewable = self.filter(groups__in=user.groups.all(), is_active=True)
         if include_editable:
             viewable |= self.editable(user)
-        return viewable.distinct()
+        return viewable
 
     def editable_by_folder(self, user, folder):
         if not folder:
             if user.is_admin():
-                return self.filter(folder__isnull=True).distinct()
+                return self.filter(folder__isnull=True)
             else:
-                return self.editable(user).filter(folder__isnull=True).distinct()
+                return self.editable(user).filter(folder__isnull=True)
         if user.is_admin():
-            return self.filter(folder=folder).distinct()
-        return self.editable(user).filter(folder=folder).distinct()
+            return self.filter(folder=folder)
+        return self.editable(user).filter(folder=folder)
 
     def viewable_by_folder(self, user, folder, include_editable=True):
         if not folder:
             if user.is_admin():
-                return self.filter(folder__isnull=True).distinct()
+                return self.filter(folder__isnull=True)
             else:
-                return self.viewable(user, include_editable).filter(folder__isnull=True).distinct()
+                return self.viewable(user, include_editable).filter(folder__isnull=True)
         if user.is_admin():
-            return self.filter(folder=folder).distinct()
-        return self.viewable(user, include_editable).filter(folder=folder).distinct()
+            return self.filter(folder=folder)
+        return self.viewable(user, include_editable).filter(folder=folder)
 
 
 class Lecture(models.Model):

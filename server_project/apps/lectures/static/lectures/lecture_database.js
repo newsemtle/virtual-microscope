@@ -69,7 +69,7 @@ document.getElementById("lecture-detail-modal").addEventListener("show.bs.modal"
                 "Name": data.name || '-',
                 "Description": data.description || '-',
                 "Author": data.author || '-',
-                "Groups": data.group_names || '-',
+                "Groups": data.group_names.map(group => `<span class="badge text-bg-light border border-dark">${group}</span>`).join(' ') || '-',
                 "Contents": `${data.slides_count} slides`,
                 "Visibility": data.is_active ? 'Active' : 'Inactive',
                 "Created": data.created_at_formatted || '-',

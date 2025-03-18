@@ -170,6 +170,10 @@ class User(AbstractBaseUser, PermissionsMixin):
     REQUIRED_FIELDS = ("first_name", "last_name")
 
     def save(self, *args, **kwargs):
+        old_instance = None
+        if self.pk:
+            old_instance = User.objects.get(pk=self.pk)
+
         super().save(*args, **kwargs)
 
         if (
@@ -178,10 +182,21 @@ class User(AbstractBaseUser, PermissionsMixin):
                 profile__type=GroupProfile.TypeChoices.PUBLISHER
             ).exists()
         ):
-            self.base_lecture_folder = LectureFolder.objects.create(
+            base_lecture_folder = LectureFolder.objects.create(
                 name=self.username.title()
             )
-            self.save(update_fields=["base_lecture_folder"])
+            User.objects.filter(pk=self.pk).update(
+                base_lecture_folder=base_lecture_folder
+            )
+            self.base_lecture_folder = base_lecture_folder
+        elif old_instance and old_instance.username != self.username:
+            self.base_lecture_folder.name = self.username.title()
+            self.base_lecture_folder.save()
+
+    def delete(self, *args, **kwargs):
+        if self.base_lecture_folder:
+            self.base_lecture_folder.delete()
+        super().delete(*args, **kwargs)
 
     def clean(self):
         super().clean()

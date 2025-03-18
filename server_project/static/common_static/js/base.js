@@ -19,7 +19,6 @@ window.addEventListener("focus", () => {
     }
 });
 
-// 모달 초기화
 document.querySelectorAll('.modal').forEach(modalElement => {
     const modal = new bootstrap.Modal(modalElement);
 
