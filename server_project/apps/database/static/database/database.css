@@ -1,0 +1,36 @@
+.card-hover {
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+  .card-hover:hover {
+    box-shadow: 0 5px 15px #8fa1b9;
+}
+
+@media (min-width: 1025px) {
+    .name-truncate {
+        width: 100%;
+        font-size: 1.3rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+}
+
+
+@media (max-width: 1024px) {
+    .flex-item-right,
+    .flex-item-edit,
+    .flex-item-visibility {
+        display: none !important;
+      }
+    
+    .flex-item-icon { flex: 1; }
+    .flex-item-name { flex: 9; }
+
+    .name-truncate {
+        width: 100%;
+        font-size: 1rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+}
