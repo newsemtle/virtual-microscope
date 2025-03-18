@@ -18,11 +18,13 @@
         width: 100%;
         word-break: break-word;
         font-size: 1rem;
+        line-height: 1.2;
         text-overflow: ellipsis;
         display: -webkit-box;
         -webkit-line-clamp: 3;
         -webkit-box-orient: vertical;
         overflow: hidden;
+        min-height: calc(1.5em * 2);
     }
 
     .annotation-truncate{
@@ -57,10 +59,12 @@
         width: 100%;
         word-break: break-word;
         font-size: 0.7rem;
+        line-height: 1.2;
         text-overflow: ellipsis;
         display: -webkit-box;
         -webkit-line-clamp: 3;
         -webkit-box-orient: vertical;
         overflow: hidden;
+        min-height: calc(1.5em * 2);
     }
 }
