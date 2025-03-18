@@ -15,7 +15,7 @@
         <a href="" class="breadcrumbs__item is-active">Lectures</a> 
     </nav>
     <!-- Header -->
-    <div class="d-flex justify-content-center">
+    <div class="d-flex justify-content-center"> 
         <div class="card rounded-0 my-3" style="width: 1024px;">
             <!-- 카드 헤더 -->
             <div class="card-header d-flex justify-content-between align-items-center" style="background-color:#edf1f5;">
@@ -46,18 +46,20 @@
                             <h6 class="mb-0 information-truncate" style="color: rgba(68, 66, 66, 0.38);">
                                 {{ lecture.description }}
                             </h6>
-                            <h6 class="mb-0 information-truncate"> <i class="bi bi-people-fill"></i> {% for group in lecture.groups.all %}{{ group.name }}{% if not forloop.last%}, {% endif %}{% empty %}No groups.{% endfor %}</h6>
+                            <h6 class="mb-0 group-truncate"> <i class="bi bi-people-fill"></i> {% for group in lecture.groups.all %}{{ group.name }}{% if not forloop.last%}, {% endif %}{% empty %}No groups.{% endfor %}</h6>
                         </div>
                     </div>
                     <!-- 3영역: Slides number, created, updated / flex-item-right / 20% -->
                     <div class="d-flex flex-column p-2 flex-item-right" style="width: 20%;">
-                        <p class="mb-0" style="font-size: 15px"><i class="bi bi-person-fill-up"></i> {{ lecture.author }}
+                        <p class="mb-0" style="font-size: 15px"><i class="bi bi-person-fill-up fs-5"></i> {{ lecture.author }}
                         <p class="mb-0" style="font-size: 15px">{{ lecture.get_slides.count }} slides</p>
+                        {% if lecture.is_editable %}
                         <p class="mb-0" style="font-size: 15px">created: {{ lecture.created_at|date:"Y-m-d H:i" }}</p>
                         <p class="mb-0" style="font-size: 15px">updated: {{ lecture.updated_at|date:"Y-m-d H:i" }}</p>
+                        {% endif %}
                     </div>
                     <!-- 4영역 : Details, Edit, open lovation / flex-item-edit / 10% -->
-                    <div class="d-flex  align-items-center justify-content-center flex-column p-2 flex-item-edit" style="width: 10%;">
+                    <div class="d-flex  align-items-center justify-content-center flex-column p-2 flex-item-edit" style="width: 13%;">
                         <div class="btn-group-vertical btn-group-sm">
                             {% comment %} <button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal"
                                 data-bs-target="#detailLectureModal" data-bs-tooltip="tooltip" title="Details"
@@ -73,12 +75,12 @@
                             <a type="button" class="btn btn-outline-warning"
                                 href="{% url 'lectures:lecture-database' %}?folder={{ lecture.folder.id }}"
                                 data-bs-tooltip="tooltip" title="Open Location">
-                                Location
+                                DB에서 열기
                             </a>
                             {% endif %}
                         </div>
                     </div>
-                    <!-- 5영역: visibility 설정 / flex-item-visibility / 10% -->
+                    <!-- 5영역: visibility 설정 / flex-item-visibility / 7% -->
                     {% comment %} <div class="d-flex align-items-center justify-content-center flex-column p-2 flex-item-visibility" style="width: 10%;">
                         {% if lecture.is_editable %}
                         <button type="button" class="btn btn-sm btn-outline-primary toggle-activity-btn"
