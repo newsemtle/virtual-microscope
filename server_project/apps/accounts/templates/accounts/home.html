@@ -21,10 +21,13 @@
             <div class="row gx-5 justify-content-center">
                 <div class="col-lg-6">
                     <div class="text-center my-5">
-                        <h1 class="display-5 fw-bolder text-white mb-2">Welcome, {{ user.username }}</h1>
+                        <h1 class="display-5 fw-bolder text-white mb-2">
+                            <!-- 이름 영어 한글 구분해서 할지 그냥 할지 정해야 함-->
+                            Welcome, {{ user.last_name }}{{ user.first_name }}
+                        </h1>
                         <div class="d-grid grid gap-3 d-sm-flex justify-content-sm-center">
                             <div class="d-grid gap-3 d-sm-flex justify-content-sm-center">
-                                <h4 class="fs-6 fw-normal text-white mb-2">Name: {{ user.get_full_name }}</h4>
+                                <h4 class="fs-6 fw-normal text-white mb-2">Name: {{ user.username }}</h4>
                                 <h4 class="fs-6 fw-normal text-white mb-2">Last login: {{ user.last_login|date:"Y-m-d H:i" }}</h4>
                             </div>
                         </div>
@@ -41,10 +44,10 @@
                 <div class="col-lg-4 mb-5 mb-lg-0">
                     <div class="feature bg-primary bg-gradient text-white rounded-3 mb-3"><i class="bi bi-folder"></i>
                     </div>
-                    <h2 class="h4 fw-bolder">Database</h2>
+                    <h2 class="h4 fw-bolder">DB/Slide</h2>
                     <p>Navigate all uploaded files in folder structure</p>
                     <a class="text-decoration-none" href="{% url 'database:database' %}">
-                        View Database
+                        View DB/Slide
                         <i class="bi bi-arrow-right"></i>
                     </a>
                 </div>
@@ -53,10 +56,10 @@
                 <div class="col-lg-4 mb-5 mb-lg-0">
                     <div class="feature bg-primary bg-gradient text-white rounded-3 mb-3"><i class="bi bi-folder"></i>
                     </div>
-                    <h2 class="h4 fw-bolder">Lecture Database</h2>
+                    <h2 class="h4 fw-bolder">DB/lecture</h2>
                     <p>Navigate all your lectures in folder structure.</p>
                     <a class="text-decoration-none" href="{% url 'lectures:lecture-database' %}">
-                        View Lecture Database
+                        View DB/lecture
                         <i class="bi bi-arrow-right"></i>
                     </a>
                 </div>
