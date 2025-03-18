@@ -1,143 +1,191 @@
 {% extends "base.html" %}
 {% load static %}
 
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'common_static/breadcrumb.css' %}">
+    <link rel="stylesheet" href="{% static 'lectures/lecture_database.css' %}">
+{% endblock %}
+
+
 {% block content %}
     <!-- Breadcrumb -->
-    <nav aria-label="breadcrumb">
-        <ol class="breadcrumb">
-            {% for crumb in breadcrumbs %}
-                <li class="breadcrumb-item">
-                    <a href="{% url 'lectures:lecture-database' %}?folder={{ crumb.id }}">{{ crumb.name }}</a>
-                </li>
-            {% endfor %}
-        </ol>
+    <nav class="breadcrumbs" aria-label="breadcrumb">
+        <a href="{% url 'home' %}" class="breadcrumbs__item">Home</a>
+        {% for crumb in breadcrumbs %}
+        {% if forloop.last %}
+            <!-- 마지막 항목은 is-active 클래스 추가 -->
+            <a href="{% url 'lectures:lecture-database' %}?folder={{ crumb.id }}"
+               class="breadcrumbs__item is-active">
+                {{ crumb.name }}
+            </a>
+        {% else %}
+            <!-- 마지막이 아닐 때는 기본 클래스만 적용 -->
+            <a href="{% url 'lectures:lecture-database' %}?folder={{ crumb.id }}"
+               class="breadcrumbs__item">
+                {{ crumb.name }}
+            </a>
+        {% endif %}
+        {% endfor %}
     </nav>
     <!-- Header -->
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h4 class="mb-0">
-            {% if current_folder and current_folder != user.base_lecture_folder %}
-                {{ current_folder.name }}
-            {% else %}
-                Lecture Database
-            {% endif %}
-        </h4>
-        <div class="btn-group">
-            {% if current_folder %}
-                <button type="button" class="btn btn-primary" data-bs-toggle="modal"
-                        data-bs-target="#folder-create-modal">
-                    <i class="bi bi-folder-plus"></i> New Folder
-                </button>
-                <button type="button" class="btn btn-success" data-bs-toggle="modal"
-                        data-bs-target="#lecture-create-modal">
-                    <i class="bi bi-journal-plus"></i> New Lecture
-                </button>
-            {% endif %}
+    <div class="d-flex justify-content-center">
+        <div class="card rounded-0 my-3" style="width: 1024px;">
+            <!-- 카드 헤더 -->
+            <div class="card-header d-flex justify-content-between align-items-center" style="background-color:#edf1f5;">
+                <h4 class="m-0">
+                    {% if current_folder and current_folder != user.base_lecture_folder %}
+                        {{ current_folder.name }}
+                    {% else %}
+                        DB/Lecture
+                    {% endif %}
+                </h4>
+                <div class="btn-group">
+                    {% if current_folder %}
+                        <button type="button" class="btn btn-warning btn-sm" data-bs-toggle="modal"
+                                data-bs-target="#folder-create-modal">
+                            <i class="bi bi-folder-plus"></i> New Folder
+                        </button>
+                        <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal"
+                                data-bs-target="#lecture-create-modal">
+                            <i class="bi bi-journal-plus"></i> New Lecture
+                        </button>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>  
+    <!-- Contents -->
+    <!-- 이전 폴더로 가는 칸 -->
+    {% if current_folder %}
+    <div class="d-flex justify-content-center">
+        <div class="card border-0 rounded-0 mb-0 card-hover" style="height : 100%; max-height: 150px; width : 100%; max-width: 1024px;">
+            <div class="d-flex w-100 h-100" style=" width: 100%;">
+                <!-- 1영역 아이콘 /flex-item-icon / 5% -->
+                <div class="d-flex align-items-center justify-content-center p-2 flex-item-icon" style="width: 5%;">
+                    <i class="bi bi-folder-symlink fs-3 text-warning"></i>
+                </div>
+                <!-- 2영역 이름 /flex-item-name / 90% -->
+                <div class="d-flex justify-content-center flex-column p-2 flex-item-name" style="width: 90%; overflow: hidden;">
+                    <h3 class="mb-0" style="font-size: 2rem">
+                        <a href="{% url 'lectures:lecture-database' %}?folder={{ current_folder.parent.id }}" style="text-decoration: none; color: inherit;">
+                            ..
+                        </a>
+                    </h3>
+                </div>
+            </div>
         </div>
     </div>
-    <!-- Contents -->
+    {% endif %}
+    <!-- 폴더, 강의 content -->
     {% if items %}
-        <div class="table-responsive">
-            <table class="table table-hover">
-                <thead class="table-light">
-                <tr>
-                    <th scope="col">Name</th>
-                    <th scope="col">Created</th>
-                    <th scope="col">Updated</th>
-                    <th scope="col" class="text-end">Actions</th>
-                </tr>
-                </thead>
-                <tbody>
-                {% for item in items %}
-                    <tr>
-                        <td>
-                            {% if item.type == "folder" %}
-                                <i class="bi bi-folder text-warning me-2"></i>
-                                <a href="{% url 'lectures:lecture-database' %}?folder={{ item.id }}"
-                                   class="text-decoration-none">{{ item.name }}</a>
-                            {% else %}
-                                <a href="{% url 'lectures:lecture-view' lecture_id=item.id %}"
-                                   class="text-decoration-none">{{ item.name }}</a>
-                            {% endif %}
-                        </td>
-                        <td>{{ item.created_at|date:"Y-m-d H:i" }}</td>
-                        <td class="updated-at">{{ item.updated_at|date:"Y-m-d H:i" }}</td>
-                        <td class="text-end">
-                            {% if item.type == 'folder' %}
-                                <div class="btn-group btn-group-sm">
-                                    <button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal"
-                                            data-bs-target="#folder-detail-modal" data-bs-tooltip="tooltip"
-                                            title="Details" data-url="{% url 'api:lecture-folder-detail' pk=item.id %}">
-                                        <i class="bi bi-info-circle"></i>
-                                    </button>
-                                    {% if current_folder %}
-                                        <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal"
-                                                data-bs-target="#folder-rename-modal" data-bs-tooltip="tooltip"
-                                                title="Rename"
-                                                data-url="{% url 'api:lecture-folder-detail' pk=item.id %}">
-                                            <i class="bi bi-pencil"></i>
-                                        </button>
-                                        <button type="button" class="btn btn-outline-warning" data-bs-toggle="modal"
-                                                data-bs-target="#folder-move-modal" data-bs-tooltip="tooltip"
-                                                title="Move"
-                                                data-url="{% url 'api:lecture-folder-detail' pk=item.id %}"
-                                                data-url-tree="{% url 'api:lecture-folder-tree' %}"
-                                                data-item-id="{{ item.id }}">
-                                            <i class="bi bi-folder"></i>
-                                        </button>
-                                        <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal"
-                                                data-bs-target="#folder-delete-modal" data-bs-tooltip="tooltip"
-                                                title="Delete"
-                                                data-url="{% url 'api:lecture-folder-detail' pk=item.id %}">
-                                            <i class="bi bi-trash"></i>
-                                        </button>
-                                        </div>
-                                    {% endif %}
-                            {% else %}
-                                {% if item.is_editable %}
-                                    <button type="button" class="btn btn-sm btn-outline-primary toggle-activity-btn"
-                                            data-bs-tooltip="tooltip" title="Toggle Activity"
-                                            data-url="{% url 'api:lecture-toggle-activity' pk=item.id %}">
-                                        <i class="bi bi-toggle-{% if item.is_active %}on{% else %}off{% endif %}"></i>
-                                        {% if item.is_active %}On{% else %}Off{% endif %}
-                                    </button>
-                                {% endif %}
-                                <div class="btn-group btn-group-sm">
-                                    <button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal"
-                                            data-bs-target="#lecture-detail-modal" data-bs-tooltip="tooltip"
-                                            title="Details" data-url="{% url 'api:lecture-detail' pk=item.id %}">
-                                        <i class="bi bi-info-circle"></i>
-                                    </button>
-                                    {% if item.is_editable %}
-                                        <a type="button" class="btn btn-outline-primary"
-                                           href="{% url 'lectures:lecture-edit' lecture_id=item.id %}"
-                                           data-bs-tooltip="tooltip" title="Edit">
-                                            <i class="bi bi-pencil"></i>
-                                        </a>
-                                        <button type="button" class="btn btn-outline-warning" data-bs-toggle="modal"
-                                                data-bs-target="#lecture-move-modal" data-bs-tooltip="tooltip"
-                                                title="Move" data-url="{% url 'api:lecture-detail' pk=item.id %}"
-                                                data-url-tree="{% url 'api:lecture-folder-tree' %}"
-                                                data-item-id="{{ item.id }}">
-                                            <i class="bi bi-folder"></i>
-                                        </button>
-                                        <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal"
-                                                data-bs-target="#lecture-delete-modal" data-bs-tooltip="tooltip"
-                                                title="Delete" data-url="{% url 'api:lecture-detail' pk=item.id %}">
-                                            <i class="bi bi-trash"></i>
-                                        </button>
-                                    {% endif %}
-                                </div>
-                            {% endif %}
-                        </td>
-                    </tr>
-                {% endfor %}
-                </tbody>
-            </table>
+    {% for item in items %}
+    <div class="d-flex justify-content-center">
+        <div class="card border-0 rounded-0 mb-0 card-hover"
+            style="height : 100%; max-height: 150px; width : 100%; max-width: 1024px; {% if not forloop.counter|divisibleby:"2"%}background-color: #edf1f5;{% endif %}">
+            <!-- lecture url-->
+            <div class="d-flex w-100 h-100" style=" width: 100%;">
+                <!-- 1영역 아이콘 /flex-item-icon / 5% -->
+                <div class="d-flex align-items-center justify-content-center p-2 flex-item-icon" style="width: 5%;">
+                    {% if item.type == "folder" %}
+                    <i class="bi bi-folder fs-3 text-warning"></i>
+                    {% else %}
+                    <i class="bi bi-journal-text fs-3 text-primary"></i>
+                    {% endif %}
+                </div>
+                <!-- 2영역 이름 /flex-item-name / 55% -->
+                <div class="d-flex justify-content-center flex-column p-2 flex-item-name" style="width: 55%; overflow: hidden;">
+                    {% if item.type == "folder" %}
+                    <h3 class="mb-0 name-truncate">
+                        <a href="{% url 'lectures:lecture-database' %}?folder={{ item.id }}" style="text-decoration: none; color: inherit;">{{ item.name }}</a>
+                    </h3>
+                    {% else %}
+                    <h3 class="mb-0 name-truncate">
+                        <a href="{% url 'lectures:lecture-view' lecture_id=item.id %}" style="text-decoration: none; color: inherit;">{{ item.name }}</a>
+                    </h3>
+                    {% endif %}
+                </div>
+                <!-- 3영역 날짜 /flex-item-right / 20% -->
+                <div class="d-flex flex-column p-2 flex-item-right" style="width: 20%;">
+                    <p class="mb-0" style="font-size: 15px"><i class="bi bi-person-fill-up fs-5"></i> {{ item.author }}</p>
+                    <p class="mb-0" style="font-size: 15px">created: {{ item.created_at|date:"Y-m-d H:i" }}</p>
+                    <p class="mb-0" style="font-size: 15px">updated: {{ item.updated_at|date:"Y-m-d H:i" }}</p>
+                </div>
+                <!-- 4영역 Edit 버튼 /flex-item-edit / 10%-->
+                <div class="d-flex  align-items-center justify-content-center flex-column p-2 flex-item-edit" style="width: 10%;">
+                    {% if item.type == 'folder' %}
+                    <div class="btn-group-vertical btn-group-sm">
+                        <!-- detail 버튼 -->
+                        <button type="button" class="btn btn-outline-dark btn-sm rounded-0" data-bs-toggle="modal"
+                            data-bs-target="#folder-detail-modal" data-bs-tooltip="tooltip" title="Details"
+                            data-url="{% url 'api:lecture-folder-detail' pk=item.id %}">
+                            Details
+                        </button>
+                        {% if current_folder %}
+                        <button type="button" class="btn btn-outline-dark btn-sm rounded-0" data-bs-toggle="modal"
+                            data-bs-target="#folder-rename-modal" data-bs-tooltip="tooltip" title="Rename"
+                            data-url="{% url 'api:lecture-folder-detail' pk=item.id %}">
+                            Rename
+                        </button>
+                        <button type="button" class="btn btn-outline-dark btn-sm rounded-0" data-bs-toggle="modal"
+                            data-bs-target="#folder-move-modal" data-bs-tooltip="tooltip" title="Move"
+                            data-url="{% url 'api:lecture-folder-detail' pk=item.id %}"
+                            data-url-tree="{% url 'api:lecture-folder-tree' %}" data-item-id="{{ item.id }}">
+                            Move
+                        </button>
+                        <button type="button" class="btn btn-outline-dark btn-sm rounded-0" data-bs-toggle="modal"
+                            data-bs-target="#folder-delete-modal" data-bs-tooltip="tooltip" title="Delete"
+                            data-url="{% url 'api:lecture-folder-detail' pk=item.id %}">
+                            Delete
+                        </button>
+                        {% endif %}
+                    </div>
+                    {% else %}
+                    <div class="btn-group-vertical btn-group-sm">
+                        <!-- detail 버튼 -->
+                        <button type="button" class="btn btn-outline-dark btn-sm rounded-0" data-bs-toggle="modal"
+                            data-bs-target="#lecture-detail-modal" data-bs-tooltip="tooltip" title="Details"
+                            data-url="{% url 'api:lecture-detail' pk=item.id %}">
+                            Details
+                        </button>
+                        {% if item.is_editable %}
+                        <!-- edit 버튼 -->
+                        <a type="button" class="btn btn-outline-dark btn-sm rounded-0"
+                            href="{% url 'lectures:lecture-edit' lecture_id=item.id %}" data-bs-tooltip="tooltip"
+                            title="Edit">
+                            Edit
+                        </a>
+                        <!-- move 버튼 -->
+                        <button type="button" class="btn btn-outline-dark btn-sm rounded-0" data-bs-toggle="modal"
+                            data-bs-target="#lecture-move-modal" data-bs-tooltip="tooltip" title="Move"
+                            data-url="{% url 'api:lecture-detail' pk=item.id %}"
+                            data-url-tree="{% url 'api:lecture-folder-tree' %}" data-item-id="{{ item.id }}">
+                            Move
+                        </button>
+                        <!-- delete 버튼 -->
+                        <button type="button" class="btn btn-outline-dark btn-sm rounded-0" data-bs-toggle="modal"
+                            data-bs-target="#lecture-delete-modal" data-bs-tooltip="tooltip" title="Delete"
+                            data-url="{% url 'api:lecture-detail' pk=item.id %}">
+                            Delete
+                        </button>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                </div>
+                <!-- 5영역 visibility /flex-item-visibility / 10% -->
+                <div class="d-flex align-items-center justify-content-center flex-column p-2 flex-item-visibility" style="width: 10%;">
+                    {% if item.is_editable %}
+                    <button type="button" class="btn btn-sm btn-outline-primary toggle-activity-btn"
+                        data-bs-tooltip="tooltip" title="Toggle Activity"
+                        data-url="{% url 'api:lecture-toggle-activity' pk=item.id %}">
+                        <i class="bi bi-toggle-{% if item.is_active %}on{% else %}off{% endif %}"></i>
+                        {% if item.is_active %}On{% else %}Off{% endif %}
+                    </button>
+                    {% endif %}
+                </div>
+            </div>
         </div>
-    {% else %}
-        <div class="alert alert-info" role="alert">
-            <i class="bi bi-info-circle me-2"></i>There's no lecture yet.
-        </div>
+    </div>
+    {% endfor %}
     {% endif %}
 {% endblock content %}
 
