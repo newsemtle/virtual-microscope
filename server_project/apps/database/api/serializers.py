@@ -76,11 +76,6 @@ class SlideSerializer(serializers.ModelSerializer):
         read_only_fields = ["author", "image_root", "metadata"]
 
     def validate(self, attrs):
-        if not attrs.get("name"):
-            attrs["name"] = os.path.splitext(os.path.basename(attrs.get("file").name))[
-                0
-            ]
-
         user = self.context["request"].user
         errors = {}
 
@@ -94,6 +89,11 @@ class SlideSerializer(serializers.ModelSerializer):
         return super().validate(attrs)
 
     def create(self, validated_data):
+        if not validated_data.get("name"):
+            validated_data["name"] = os.path.splitext(
+                os.path.basename(validated_data.get("file").name)
+            )[0]
+
         validated_data["author"] = self.context["request"].user
         return super().create(validated_data)
 

@@ -1,6 +1,9 @@
 import os
 import shutil
 
+from asgiref.sync import async_to_sync
+from celery import shared_task
+from channels.layers import get_channel_layer
 from django.conf import settings
 from django.db import models
 from openslide import OpenSlide
@@ -189,6 +192,10 @@ class Slide(models.Model):
         default=False,
         help_text="Whether the slide is public or not.",
     )
+    processed = models.BooleanField(
+        default=False,
+        help_text="Whether the slide is completely processed or not.",
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -218,16 +225,12 @@ class Slide(models.Model):
 
     def save(self, *args, **kwargs):
         try:
-            need_slide_processing = True
             if self.pk:
                 old_instance = Slide.objects.get(pk=self.pk)
                 if old_instance.file != self.file:
-                    # delete old slide file
+                    self.processed = False
                     old_instance.file.delete()
-                    # delete old image directory
                     self._delete_directory(old_instance.get_image_directory())
-                else:
-                    need_slide_processing = False
 
             super().save(*args, **kwargs)
 
@@ -236,8 +239,8 @@ class Slide(models.Model):
                 Slide.objects.filter(pk=self.pk).update(image_root=image_root)
                 self.image_root = image_root
 
-            if need_slide_processing:
-                self.process_slide()
+            if not self.processed:
+                process_slide_task.delay(self.pk)
 
             self.update_lectures()
 
@@ -255,8 +258,8 @@ class Slide(models.Model):
     def process_slide(self):
         try:
             with OpenSlide(self.file.path) as slide:
-                self._generate_images(slide)
-                self._save_metadata(slide)
+                self._initialize_slide(slide)
+                self._generate_tiles(slide)
         except Exception as e:
             raise Exception(f"Failed to process slide: {str(e)}")
 
@@ -322,7 +325,7 @@ class Slide(models.Model):
                     and status["associated_image_exists"]
                 ):
                     self._delete_directory(image_directory)
-                    self._generate_images(slide)
+                    self._generate_tiles(slide)
 
                 if not status["metadata_valid"]:
                     self._save_metadata(slide)
@@ -379,10 +382,49 @@ class Slide(models.Model):
             settings.MEDIA_ROOT, self.image_root, "associated_image.png"
         )
 
-    def _generate_images(self, slide: OpenSlide):
+    def _initialize_slide(self, slide: OpenSlide):
+        try:
+            # Setup directory
+            image_directory = self.get_image_directory()
+            os.makedirs(image_directory, exist_ok=True)
+
+            # Save thumbnail
+            thumbnail_size = (256, 256)
+            thumbnail = slide.get_thumbnail(thumbnail_size)
+            thumbnail.resize(thumbnail_size).save(self.get_thumbnail_path())
+
+            # Save associated image
+            slide.associated_images.get("macro").save(self.get_associated_image_path())
+
+            # Save metadata
+            full_metadata = slide.properties
+            metadata = {
+                "mpp-x": float(full_metadata.get("openslide.mpp-x")),
+                "mpp-y": float(full_metadata.get("openslide.mpp-y")),
+                "sourceLens": int(full_metadata.get("hamamatsu.SourceLens")),
+                "created": full_metadata.get("hamamatsu.Created"),
+            }
+            Slide.objects.filter(pk=self.pk).update(metadata=metadata)
+            self.metadata = metadata
+
+            channel_layer = get_channel_layer()
+            async_to_sync(channel_layer.group_send)(
+                f"slide_{self.pk}",
+                {
+                    "type": "slide.initialized",
+                    "status": "Initializing slide",
+                },
+            )
+
+        except Exception as e:
+            raise Exception(f"Failed to setup slide: {str(e)}")
+
+    def _generate_tiles(self, slide: OpenSlide):
         """Generate related images for the slide"""
 
         tile_format = "jpeg"  # jpeg or png
+
+        channel_layer = get_channel_layer()
 
         try:
             # Setup directory
@@ -395,6 +437,19 @@ class Slide(models.Model):
             dzi = deepzoom.get_dzi(tile_format)
             with open(self.get_dzi_path(), "w") as f:
                 f.write(dzi)
+            async_to_sync(channel_layer.group_send)(
+                f"slide_{self.pk}",
+                {
+                    "type": "progress.update",
+                    "progress": 5,
+                    "status": "Creating DZI file",
+                },
+            )
+
+            # Get total number of tiles
+            total_tiles = sum(cols * rows for cols, rows in deepzoom.level_tiles)
+            processed_tiles = 0
+            batch_size = 10
 
             # Generate tiles
             for level in range(deepzoom.level_count):
@@ -410,30 +465,37 @@ class Slide(models.Model):
                         tile = deepzoom.get_tile(level, (col, row))
                         tile.save(tile_path)
 
-            # Save thumbnail and associated image
-            thumbnail_size = (256, 256)
-            thumbnail = slide.get_thumbnail(thumbnail_size)
-            thumbnail.resize(thumbnail_size).save(self.get_thumbnail_path())
-            slide.associated_images.get("macro").save(self.get_associated_image_path())
+                        processed_tiles += 1
+                        if processed_tiles % batch_size == 0:
+                            progress = 5 + int((processed_tiles / total_tiles) * 90)
+                            async_to_sync(channel_layer.group_send)(
+                                f"slide_{self.pk}",
+                                {
+                                    "type": "progress.update",
+                                    "progress": progress,
+                                    "status": f"Processing tiles ({processed_tiles}/{total_tiles})",
+                                },
+                            )
+
+            async_to_sync(channel_layer.group_send)(
+                f"slide_{self.pk}",
+                {
+                    "type": "progress.update",
+                    "progress": 100,
+                    "status": "Tile generation complete",
+                },
+            )
 
         except Exception as e:
+            async_to_sync(channel_layer.group_send)(
+                f"slide_{self.pk}",
+                {
+                    "type": "progress.update",
+                    "progress": -1,
+                    "status": f"Error: {str(e)}",
+                },
+            )
             raise Exception(f"Failed to generate images: {str(e)}")
-
-    def _save_metadata(self, slide):
-        """Extract and save metadata from the slide"""
-
-        try:
-            full_metadata = slide.properties
-            metadata = {
-                "mpp-x": float(full_metadata.get("openslide.mpp-x")),
-                "mpp-y": float(full_metadata.get("openslide.mpp-y")),
-                "sourceLens": int(full_metadata.get("hamamatsu.SourceLens")),
-                "created": full_metadata.get("hamamatsu.Created"),
-            }
-            Slide.objects.filter(pk=self.pk).update(metadata=metadata)
-            self.metadata = metadata  # Update instance attribute
-        except Exception as e:
-            raise Exception(f"Failed to save metadata: {str(e)}")
 
     def _verify_tiles(self, deepzoom):
         """Verify all expected tiles exist"""
@@ -496,3 +558,11 @@ class Tag(models.Model):
 
     def __str__(self):
         return self.name
+
+
+@shared_task
+def process_slide_task(slide_id):
+    slide = Slide.objects.get(pk=slide_id)
+    slide.process_slide()
+    slide.processed = True
+    slide.save(update_fields=["processed"])

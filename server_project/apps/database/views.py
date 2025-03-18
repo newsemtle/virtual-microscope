@@ -30,7 +30,7 @@ class DatabaseView(LoginRequiredMixin, PermissionRequiredMixin, ListView):
             folder.type = "folder"
 
         for slide in slides:
-            slide.type = "slide"
+            slide.type = "image/slide"
 
         items = list(subfolders) + list(slides)
         return sorted(items, key=lambda x: (x.type, x.name.lower()))

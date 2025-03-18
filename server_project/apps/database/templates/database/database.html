@@ -52,7 +52,7 @@
                 </thead>
                 <tbody>
                 {% for item in items %}
-                    <tr>
+                    <tr {% if item.type != 'folder' %}class="slide" data-slide-id="{{ item.id }}"{% endif %}>
                         <td>
                             {% if item.type == 'folder' %}
                                 <i class="bi bi-folder text-warning me-2"></i>
@@ -69,6 +69,9 @@
                         <td>{{ item.updated_at|date:"Y-m-d H:i" }}</td>
                         <td>{{ item.author|title }}</td>
                         <td class="text-end">
+                            {% if item.type != 'folder' and not item.processed %}
+                                <progress style="width: 100px" id="slide-{{ item.id }}-progress" max="100"></progress>
+                            {% endif %}
                             <div class="btn-group btn-group-sm">
                                 {% if item.type == 'folder' %}
                                     <button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal"
