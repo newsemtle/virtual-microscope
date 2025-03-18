@@ -67,4 +67,13 @@ class Annotation(models.Model):
         return self.author == user
 
     def user_can_view(self, user):
-        return self.user_can_edit(user) or self.slide.user_can_view(user)
+        if user.is_admin():
+            return True
+        elif user.is_publisher():
+            return self.user_can_edit(user) or self.slide.user_can_view(user)
+        elif user.is_viewer():
+            for content in self.slide.lecture_contents.all():
+                if content.user_can_view(user):
+                    return True
+            return False
+        return False

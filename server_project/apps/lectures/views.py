@@ -4,7 +4,7 @@ from django.contrib.auth.mixins import (
     PermissionRequiredMixin,
 )
 from django.contrib.auth.models import Group
-from django.shortcuts import redirect, get_object_or_404
+from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse_lazy
 from django.views.generic import ListView
 
@@ -49,21 +49,27 @@ class LectureDatabaseView(
         return get_object_or_404(LectureFolder, id=folder_id)
 
     def test_func(self):
-        if not self.request.user.is_admin() and not self.get_folder():
-            folder = self.request.user.base_lecture_folder
-            return redirect(
-                reverse_lazy("lectures:lecture-database")
-                + f"?folder={folder.id or None}"
-            )
+        user = self.request.user
 
-        if self.request.user.is_admin():
+        if user.is_admin():
             return True
 
         current = self.get_folder()
         if current:
-            return current.user_can_edit(self.request.user)
+            return current.user_can_edit(user)
 
-        return self.request.user.base_lecture_folder
+        return False
+
+    def handle_no_permission(self):
+        user = self.request.user
+
+        if not user.is_authenticated:
+            return super().handle_no_permission()
+
+        folder = user.base_lecture_folder
+        return redirect(
+            reverse_lazy("lectures:lecture-database") + f"?folder={folder.id or None}"
+        )
 
     def get_queryset(self):
         current = self.get_folder()

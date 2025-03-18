@@ -183,6 +183,14 @@ class Lecture(models.Model):
     def __str__(self):
         return self.name
 
+    def save(self, *args, **kwargs):
+        if self.pk:
+            old_instance = Lecture.objects.get(pk=self.pk)
+            if old_instance.author != self.author:
+                self.update_lecture_contents()
+
+        super().save(*args, **kwargs)
+
     def user_can_edit(self, user):
         if user.is_admin():
             return True
@@ -202,17 +210,21 @@ class Lecture(models.Model):
     def get_slides(self):
         return self.contents.values_list("slide", flat=True)
 
+    def update_lecture_contents(self):
+        for lecture_content in self.contents.all():
+            lecture_content.update()
+
 
 class LectureContent(models.Model):
     id = models.AutoField(primary_key=True)
+    order = models.PositiveSmallIntegerField(help_text="Order inside the lecture")
+    created_at = models.DateTimeField(auto_now_add=True)
+
     lecture = models.ForeignKey(
         "lectures.Lecture",
         on_delete=models.CASCADE,
         related_name="contents",
-        blank=True,
-        null=True,
     )
-    order = models.PositiveSmallIntegerField(help_text="Order inside the lecture")
     slide = models.ForeignKey(
         "database.Slide",
         on_delete=models.CASCADE,
@@ -227,7 +239,6 @@ class LectureContent(models.Model):
         blank=True,
         null=True,
     )
-    created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         unique_together = ("lecture", "order")
@@ -239,10 +250,19 @@ class LectureContent(models.Model):
     def save(self, *args, **kwargs):
         if not self.slide.user_can_view(self.lecture.author):
             raise ValueError("Slide must be viewable by the lecture author")
+
         if self.annotation:
             if (
                 self.annotation.slide != self.slide
                 or not self.annotation.user_can_view(self.lecture.author)
             ):
                 self.annotation = None
+
         super().save(*args, **kwargs)
+
+    def user_can_view(self, user):
+        return self.lecture.user_can_view(user)
+
+    def update(self):
+        if not self.slide.user_can_view(self.lecture.author):
+            self.delete()

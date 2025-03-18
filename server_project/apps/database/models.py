@@ -71,7 +71,7 @@ class Folder(models.Model):
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
         for slide in self.get_all_slides():
-            slide.update_lectures()
+            slide.update_lecture_contents()
 
     def delete(self, *args, **kwargs):
         if not self.is_empty():
@@ -231,6 +231,11 @@ class Slide(models.Model):
                     self.processed = False
                     old_instance.file.delete()
                     self._delete_directory(old_instance.get_image_directory())
+                if (
+                    old_instance.folder != self.folder
+                    or old_instance.is_public != self.is_public
+                ):
+                    self.update_lecture_contents()
 
             super().save(*args, **kwargs)
 
@@ -242,8 +247,6 @@ class Slide(models.Model):
             if not self.processed:
                 process_slide_task.delay(self.pk)
 
-            self.update_lectures()
-
         except Exception as e:
             raise Exception(f"Failed to save slide: {str(e)}")
 
@@ -251,7 +254,9 @@ class Slide(models.Model):
         try:
             self.file.delete(False)
             self._delete_directory(self.get_image_directory())
+
             super().delete(*args, **kwargs)
+
         except Exception as e:
             raise Exception(f"Failed to delete slide: {str(e)}")
 
@@ -337,10 +342,9 @@ class Slide(models.Model):
                 f"Failed to repair slide {self.name} (id={self.id}): {str(e)}"
             )
 
-    def update_lectures(self):
+    def update_lecture_contents(self):
         for lecture_content in self.lecture_contents.all():
-            if not self.user_can_view(lecture_content.lecture.author):
-                lecture_content.delete()
+            lecture_content.update()
 
     def get_group(self):
         """Get the group of this slide"""
@@ -358,7 +362,16 @@ class Slide(models.Model):
 
     def user_can_view(self, user):
         """Check if the user can view the slide"""
-        return self.is_public or self.user_can_edit(user)
+        if user.is_admin():
+            return True
+        elif user.is_publisher():
+            return self.user_can_edit(user) or self.is_public
+        elif user.is_viewer():
+            for content in self.lecture_contents.all():
+                if content.user_can_view(user):
+                    return True
+            return False
+        return False
 
     def get_image_directory(self):
         """Get the path to the image directory"""

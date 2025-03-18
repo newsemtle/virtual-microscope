@@ -13,12 +13,9 @@ class HomeView(TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         if self.request.user.is_authenticated:
-            context["show_database"] = self.request.user.has_perm(
-                "database.view_folder"
-            )
-            context["show_lecture_database"] = self.request.user.has_perm(
-                "lectures.view_lecture"
-            )
+            if self.request.user.is_admin() or self.request.user.is_publisher():
+                context["show_database"] = True
+                context["show_lecture_database"] = True
         else:
             context["show_database"] = False
             context["show_lecture_database"] = False

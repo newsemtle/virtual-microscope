@@ -176,12 +176,7 @@ class User(AbstractBaseUser, PermissionsMixin):
 
         super().save(*args, **kwargs)
 
-        if (
-            not self.base_lecture_folder
-            and self.groups.filter(
-                profile__type=GroupProfile.TypeChoices.PUBLISHER
-            ).exists()
-        ):
+        if self.is_publisher() and not self.base_lecture_folder:
             base_lecture_folder = LectureFolder.objects.create(
                 name=self.username.title()
             )
@@ -207,3 +202,13 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     def is_admin(self):
         return self.is_staff
+
+    def is_publisher(self):
+        return self.groups.filter(
+            profile__type=GroupProfile.TypeChoices.PUBLISHER
+        ).exists()
+
+    def is_viewer(self):
+        return self.groups.filter(
+            profile__type=GroupProfile.TypeChoices.VIEWER
+        ).exists()
