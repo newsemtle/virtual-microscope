@@ -1,151 +1,196 @@
 {% extends "base.html" %}
 {% load static %}
 
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'common_static/breadcrumb.css' %}">
+    <link rel="stylesheet" href="{% static 'database/database.css' %}">
+{% endblock %}
+
+
 {% block content %}
     <!-- Breadcrumb -->
-    <nav aria-label="breadcrumb">
-        <ol class="breadcrumb">
-            {% for crumb in breadcrumbs %}
-                <li class="breadcrumb-item">
-                    <a href="{% url 'database:database' %}?folder={{ crumb.id }}">{{ crumb.name }}</a>
-                </li>
-            {% endfor %}
-        </ol>
+    <nav class="breadcrumbs" aria-label="breadcrumb">
+        <a href="{% url 'home' %}" class="breadcrumbs__item">Home</a>
+        {% for crumb in breadcrumbs %}
+        {% if forloop.last %}
+            <!-- 마지막 항목은 is-active 클래스 추가 -->
+            <a href="{% url 'database:database' %}?folder={{ crumb.id }}"
+               class="breadcrumbs__item is-active">
+                {{ crumb.name }}
+            </a>
+        {% else %}
+            <!-- 마지막이 아닐 때는 기본 클래스만 적용 -->
+            <a href="{% url 'database:database' %}?folder={{ crumb.id }}"
+               class="breadcrumbs__item">
+                {{ crumb.name }}
+            </a>
+        {% endif %}
+        {% endfor %}
     </nav>
     <!-- Header -->
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h4 class="mb-0">
-            {% if current_folder %}
-                {{ current_folder.name }}
-            {% else %}
-                Database
-            {% endif %}
-        </h4>
-        <div class="btn-group">
-            {% if editable %}
-                {% if current_folder %}
-                    <button type="button" class="btn btn-primary" data-bs-toggle="modal"
-                            data-bs-target="#folder-create-modal">
-                        <i class="bi bi-folder-plus"></i> New Folder
-                    </button>
-                {% endif %}
-                <button type="button" class="btn btn-success" data-bs-toggle="modal"
-                        data-bs-target="#image-upload-modal">
-                    <i class="bi bi-upload"></i> New Slide
-                </button>
-            {% endif %}
+    <div class="d-flex justify-content-center">
+        <div class="card rounded-0 my-3" style="width: 1024px;">
+            <!-- 카드 헤더 -->
+            <div class="card-header d-flex justify-content-between align-items-center" style="background-color:#edf1f5;">
+                <h4 class="m-0">
+                    {% if current_folder %}
+                        {{ current_folder.name }}
+                    {% else %}
+                        DB/Slide
+                    {% endif %}
+                </h4>
+                <div class="btn-group">
+                    {% if editable %}
+                        {% if current_folder %}
+                            <button type="button" class="btn btn-warning" data-bs-toggle="modal"
+                                    data-bs-target="#folder-create-modal">
+                                <i class="bi bi-folder-plus"></i> New Folder
+                            </button>
+                        {% endif %}
+                        <button type="button" class="btn btn-success" data-bs-toggle="modal"
+                                data-bs-target="#image-upload-modal">
+                            <i class="bi bi-upload"></i> New Slide
+                        </button>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>  
+    <!-- Contents -->
+     <!-- 이전 폴더로 가는 칸 -->
+    {% if current_folder %}
+    <div class="d-flex justify-content-center">
+        <div class="card border-0 rounded-0 mb-0 card-hover" style="height : 100%; max-height: 150px; width : 100%; max-width: 1024px;">
+            <div class="d-flex w-100 h-100" style=" width: 100%;">
+                <!-- 1영역 아이콘 /flex-item-icon / 5% -->
+                <div class="d-flex align-items-center justify-content-center p-2 flex-item-icon" style="width: 5%;">
+                    <i class="bi bi-folder-symlink fs-3 text-warning"></i>
+                </div>
+                <!-- 2영역 이름 /flex-item-name / 90% -->
+                <div class="d-flex justify-content-center flex-column p-2 flex-item-name" style="width: 90%; overflow: hidden;">
+                    <h3 class="mb-0" style="font-size: 2rem">
+                        <a href="{% url 'database:database' %}?folder={{ current_folder.parent.id }}" style="text-decoration: none; color: inherit;">
+                            ..
+                        </a>
+                    </h3>
+                </div>
+            </div>
         </div>
     </div>
-    <!-- Contents -->
+    {% endif %}
+    <!-- 폴더, 슬라이드 content-->
     {% if items %}
-        <div class="table-responsive">
-            <table class="table table-hover">
-                <thead class="table-light">
-                <tr>
-                    <th scope="col">Name</th>
-                    <th scope="col">Type</th>
-                    <th scope="col">Created</th>
-                    <th scope="col">Updated</th>
-                    <th scope="col">Author</th>
-                    <th scope="col" class="text-end">Actions</th>
-                </tr>
-                </thead>
-                <tbody>
-                {% for item in items %}
-                    <tr>
-                        <td>
-                            {% if item.type == 'folder' %}
-                                <i class="bi bi-folder text-warning me-2"></i>
-                                <a href="{% url 'database:database' %}?folder={{ item.id }}"
-                                   class="text-decoration-none">{{ item.name }}</a>
-                            {% else %}
-                                <img src="{% url 'api:slide-thumbnail' pk=item.id %}" height=25 alt="">
-                                <a href="{% url 'slide_viewer:slide-view' slide_id=item.id %}"
-                                   class="text-decoration-none">{{ item.name }}</a>
-                            {% endif %}
-                        </td>
-                        <td>{{ item.type|title }}</td>
-                        <td>{{ item.created_at|date:"Y-m-d H:i" }}</td>
-                        <td>{{ item.updated_at|date:"Y-m-d H:i" }}</td>
-                        <td>{{ item.author|title }}</td>
-                        <td class="text-end">
-                            <div class="btn-group btn-group-sm">
-                                {% if item.type == 'folder' %}
-                                    <button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal"
-                                            data-bs-target="#folder-detail-modal" data-bs-tooltip="tooltip"
-                                            title="Details" data-url="{% url 'api:folder-detail' pk=item.id %}">
-                                        <i class="bi bi-info-circle"></i>
-                                    </button>
-                                    {% if editable and current_folder %}
-                                        <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal"
-                                                data-bs-target="#folder-rename-modal" data-bs-tooltip="tooltip"
-                                                title="Rename" data-url="{% url 'api:folder-detail' pk=item.id %}">
-                                            <i class="bi bi-pencil"></i>
-                                        </button>
-                                        <button type="button" class="btn btn-outline-warning"
-                                                data-bs-toggle="modal" data-bs-target="#folder-move-modal"
-                                                data-bs-tooltip="tooltip" title="Move"
-                                                data-url="{% url 'api:folder-detail' pk=item.id %}"
-                                                data-url-tree="{% url 'api:folder-tree' %}"
-                                                data-item-id="{{ item.id }}">
-                                            <i class="bi bi-folder"></i>
-                                        </button>
-                                        <button type="button" class="btn btn-outline-danger"
-                                                data-bs-toggle="modal" data-bs-target="#folder-delete-modal"
-                                                data-bs-tooltip="tooltip" title="Delete"
-                                                data-url="{% url 'api:folder-detail' pk=item.id %}">
-                                            <i class="bi bi-trash"></i>
-                                        </button>
-                                    {% endif %}
-                                {% else %}
-                                    {% if editable %}
-                                        <button type="button" class="btn btn-outline-success"
-                                                data-bs-toggle="modal" data-bs-target="#annotation-manage-modal"
-                                                data-bs-tooltip="tooltip" title="Annotations"
-                                                data-url="{% url 'api:slide-annotations' pk=item.id %}">
-                                            <i class="bi bi-pen"></i>
-                                        </button>
-                                    {% endif %}
-                                    <button type="button" class="btn btn-outline-secondary"
-                                            data-bs-toggle="modal" data-bs-target="#image-detail-modal"
-                                            data-bs-tooltip="tooltip" title="Details"
-                                            data-url="{% url 'api:slide-detail' pk=item.id %}">
-                                        <i class="bi bi-info-circle"></i>
-                                    </button>
-                                    {% if editable %}
-                                        <button type="button" class="btn btn-outline-primary"
-                                                data-bs-toggle="modal" data-bs-target="#image-edit-modal"
-                                                data-bs-tooltip="tooltip" title="Edit"
-                                                data-url="{% url 'api:slide-detail' pk=item.id %}">
-                                            <i class="bi bi-pencil"></i>
-                                        </button>
-                                        <button type="button" class="btn btn-outline-warning"
-                                                data-bs-toggle="modal" data-bs-target="#image-move-modal"
-                                                data-bs-tooltip="tooltip" title="Move"
-                                                data-url="{% url 'api:slide-detail' pk=item.id %}"
-                                                data-url-tree="{% url 'api:folder-tree' %}"
-                                                data-item-id="{{ item.id }}">
-                                            <i class="bi bi-folder"></i>
-                                        </button>
-                                        <button type="button" class="btn btn-outline-danger"
-                                                data-bs-toggle="modal" data-bs-target="#image-delete-modal"
-                                                data-bs-tooltip="tooltip" title="Delete"
-                                                data-url="{% url 'api:slide-detail' pk=item.id %}">
-                                            <i class="bi bi-trash"></i>
-                                        </button>
-                                    {% endif %}
-                                {% endif %}
-                            </div>
-                        </td>
-                    </tr>
-                {% endfor %}
-                </tbody>
-            </table>
+    {% for item in items %}
+    <div class="d-flex justify-content-center">
+        <div class="card border-0 rounded-0 mb-0 card-hover"
+            style="height : 100%; max-height: 150px; width : 100%; max-width: 1024px; {% if not forloop.counter|divisibleby:"2"%}background-color: #edf1f5;{% endif %}">
+            <!-- lecture url-->
+            <div class="d-flex w-100 h-100" style=" width: 100%;">
+                <!-- 1영역 아이콘 /flex-item-icon / 5% -->
+                <div class="d-flex align-items-center justify-content-center p-2 flex-item-icon" style="width: 5%;">
+                    <!-- folder 아이콘 -->
+                    {% if item.type == "folder" %}
+                    <i class="bi bi-folder fs-3 text-warning"></i>
+                    {% else %}
+                    <!-- 슬라이드 썸네일 -->
+                    <img src="{% url 'api:slide-thumbnail' pk=item.id %}" height=25 alt="">
+                    {% endif %}
+                </div>
+                <!-- 2영역 이름 /flex-item-name / 55% -->
+                <div class="d-flex justify-content-center flex-column p-2 flex-item-name" style="width: 55%; overflow: hidden;">
+                    {% if item.type == "folder" %}
+                    <h3 class="mb-0 name-truncate">
+                        <a href="{% url 'database:database' %}?folder={{ item.id }}" style="text-decoration: none; color: inherit;">{{ item.name }}</a>
+                    </h3>
+                    {% else %}
+                    <h3 class="mb-0 name-truncate">
+                        <a href="{% url 'slide_viewer:slide-view' slide_id=item.id %}" style="text-decoration: none; color: inherit;">{{ item.name }}</a>
+                    </h3>
+                    {% endif %}
+                </div>
+                <!-- 3영역 작성자, 날짜 /flex-item-right / 20% -->
+                <div class="d-flex flex-column p-2 flex-item-right" style="width: 20%;">
+                    <p class="mb-0" style="font-size: 15px"><i class="bi bi-person-fill-up fs-5"></i> {{ item.author|title }}</p>
+                    <p class="mb-0" style="font-size: 15px">created: {{ item.created_at|date:"Y-m-d H:i" }}</p>
+                    <p class="mb-0" style="font-size: 15px">updated: {{ item.updated_at|date:"Y-m-d H:i" }}</p>
+                </div>
+                <!-- 4영역 Edit 버튼 /flex-item-edit / 10%-->
+                <div class="d-flex  align-items-center justify-content-center flex-column p-2 flex-item-edit" style="width: 10%;">
+                    {% if item.type == 'folder' %}
+                    <!-- 폴더일 때 -->
+                    <div class="btn-group-vertical btn-group-sm">
+                        <!-- detail 버튼 -->
+                        <button type="button" class="btn btn-outline-dark btn-sm rounded-0" data-bs-toggle="modal"
+                            data-bs-target="#folder-detail-modal" data-bs-tooltip="tooltip" title="Details"
+                            data-url="{% url 'api:folder-detail' pk=item.id %}">
+                            Details
+                        </button>
+                        {% if editable and current_folder %}
+                            <button type="button" class="btn btn-outline-dark btn-sm rounded-0" data-bs-toggle="modal"
+                                data-bs-target="#folder-rename-modal" data-bs-tooltip="tooltip" title="Rename"
+                                data-url="{% url 'api:folder-detail' pk=item.id %}">
+                                Rename
+                            </button>
+                            <button type="button" class="btn btn-outline-dark btn-sm rounded-0" data-bs-toggle="modal"
+                                data-bs-target="#folder-move-modal" data-bs-tooltip="tooltip" title="Move"
+                                data-url="{% url 'api:folder-detail' pk=item.id %}"
+                                data-url-tree="{% url 'api:folder-tree' %}" data-item-id="{{ item.id }}">
+                                Move
+                            </button>
+                            <button type="button" class="btn btn-outline-dark btn-sm rounded-0" data-bs-toggle="modal"
+                                data-bs-target="#folder-delete-modal" data-bs-tooltip="tooltip" title="Delete"
+                                data-url="{% url 'api:folder-detail' pk=item.id %}">
+                                Delete
+                            </button>
+                        {% endif %}
+                    </div>
+                    {% else %}
+                    <!-- 슬라이드일 때 -->
+                    <div class="btn-group-vertical btn-group-sm">
+                        <!-- detail 버튼 -->
+                        <button type="button" class="btn btn-outline-dark btn-sm rounded-0" data-bs-toggle="modal"
+                            data-bs-target="#image-detail-modal" data-bs-tooltip="tooltip" title="Details"
+                            data-url="{% url 'api:slide-detail' pk=item.id %}">
+                            Details
+                        </button>
+                        {% if editable %}
+                        <!-- edit 버튼 -->
+                        <button type="button" class="btn btn-outline-dark btn-sm rounded-0" data-bs-toggle="modal"
+                            data-bs-target="#image-edit-modal" data-bs-tooltip="tooltip" title="Edit"
+                            data-url="{% url 'api:slide-detail' pk=item.id %}">
+                            Details
+                        </button>
+                        <!-- move 버튼 -->
+                        <button type="button" class="btn btn-outline-dark btn-sm rounded-0" data-bs-toggle="modal"
+                            data-bs-target="#image-move-modal" data-bs-tooltip="tooltip" title="Move"
+                            data-url="{% url 'api:slide-detail' pk=item.id %}"
+                            data-url-tree="{% url 'api:folder-tree' %}" data-item-id="{{ item.id }}">
+                            Move
+                        </button>
+                        <!-- delete 버튼 -->
+                        <button type="button" class="btn btn-outline-dark btn-sm rounded-0" data-bs-toggle="modal"
+                            data-bs-target="#image-delete-modal" data-bs-tooltip="tooltip" title="Delete"
+                            data-url="{% url 'api:slide-detail' pk=item.id %}">
+                            Delete
+                        </button>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                </div>
+                <!-- 5영역 visibility /flex-item-visibility / 10% -->
+                <div class="d-flex align-items-center justify-content-center flex-column p-2 flex-item-visibility" style="width: 10%;">
+                    {% if editable %}
+                    <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal"
+                        data-bs-target="#annotation-manage-modal" data-bs-tooltip="tooltip" title="Annotations"
+                        data-url="{% url 'api:slide-annotations' pk=item.id %}">
+                        Annotation
+                    </button>
+                    {% endif %}
+                </div>
+            </div>
         </div>
-    {% else %}
-        <div class="alert alert-info" role="alert">
-            <i class="bi bi-info-circle me-2"></i>This folder is empty.
-        </div>
+    </div>
+    {% endfor %}
     {% endif %}
 {% endblock content %}
 
