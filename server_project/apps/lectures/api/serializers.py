@@ -23,7 +23,7 @@ class LectureFolderSerializer(serializers.ModelSerializer):
         errors = {}
 
         parent = attrs.get("parent")
-        if parent and not parent.user_can_edit(user):
+        if parent and not parent.is_owner(user):
             errors["parent"] = "You don't have permission to edit this folder."
 
         if errors:
@@ -67,7 +67,7 @@ class LectureSerializer(serializers.ModelSerializer):
         errors = {}
 
         folder = attrs.get("folder")
-        if folder and not folder.user_can_edit(user):
+        if folder and not folder.is_owner(user):
             errors["folder"] = "You don't have permission to edit this folder."
 
         contents = attrs.get("contents", [])

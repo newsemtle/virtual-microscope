@@ -33,9 +33,7 @@ class SlideView(
             annotation = Annotation.objects.get(id=annotation_id)
             if annotation.slide != slide:
                 raise Annotation.DoesNotExist
-        except Annotation.DoesNotExist:
-            annotation = None
-        except ValueError:
+        except:
             annotation = None
 
         context["slide"] = slide
@@ -44,7 +42,7 @@ class SlideView(
             context["annotation"].data = json.dumps(annotation.data)
 
         context["can_create_annotation"] = slide.user_can_view(self.request.user)
-        context["can_edit_annotation"] = (
-            annotation.user_can_edit(self.request.user) if annotation else False
+        context["can_edit_annotation"] = annotation and annotation.user_can_edit(
+            self.request.user
         )
         return context

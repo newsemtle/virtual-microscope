@@ -19,7 +19,9 @@ class SlideConsumer(AsyncWebsocketConsumer):
         self.user = self.scope["user"]
         self.slide = await sync_to_async(Slide.objects.get)(id=slide_id)
 
-        if not self.user.is_authenticated or not self.slide.user_can_view(self.user):
+        if not self.user.is_authenticated or not await sync_to_async(
+            self.slide.user_can_view
+        )(self.user):
             await self.close()
             return
 
@@ -29,7 +31,8 @@ class SlideConsumer(AsyncWebsocketConsumer):
         await self.accept()
 
     async def disconnect(self, close_code):
-        await self.channel_layer.group_discard(self.group_name, self.channel_name)
+        if self.group_name:
+            await self.channel_layer.group_discard(self.group_name, self.channel_name)
 
     async def slide_initialized(self, event):
         await self.send(

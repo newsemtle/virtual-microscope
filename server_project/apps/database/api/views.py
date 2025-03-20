@@ -72,17 +72,21 @@ class FolderViewSet(viewsets.ModelViewSet):
         if not request.user.has_perm("database.view_folder"):
             raise PermissionDenied("You don't have permission to view folders.")
 
-        root_folders = self.get_queryset().filter(parent=None)
-        tree = [self._get_tree_structure(folder) for folder in root_folders]
-
         if request.user.is_admin():
+            root_folders = Folder.objects.viewable(request.user, folder="root")
             tree = [
                 {
                     "id": None,
                     "name": "Root",
-                    "subfolders": tree,
+                    "subfolders": [
+                        self._get_tree_structure(folder) for folder in root_folders
+                    ],
                 }
             ]
+        else:
+            root_folders = Folder.objects.user_base_folders(request.user)
+            tree = [self._get_tree_structure(folder) for folder in root_folders]
+
         return Response(tree)
 
     @action(detail=True, methods=["get"])
@@ -91,8 +95,8 @@ class FolderViewSet(viewsets.ModelViewSet):
             raise PermissionDenied("You don't have permission to view folder items.")
 
         folder = self.get_object()
-        subfolders = folder.subfolders.all()
-        slides = Slide.objects.viewable_by_folder(request.user, folder)
+        subfolders = Folder.objects.viewable(request.user, folder=folder)
+        slides = Slide.objects.viewable(request.user, folder=folder)
         return Response(
             {
                 "subfolders": FolderSerializer(subfolders, many=True).data,
@@ -166,7 +170,7 @@ class SlideViewSet(viewsets.ModelViewSet):
             )
 
         slide = self.get_object()
-        annotations = Annotation.objects.viewable_by_slide(request.user, slide)
+        annotations = Annotation.objects.viewable(request.user, slide=slide)
         return Response(
             AnnotationSerializer(
                 annotations, many=True, context={"request": request}

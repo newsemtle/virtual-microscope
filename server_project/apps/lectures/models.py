@@ -1,32 +1,74 @@
 from django.conf import settings
 from django.db import models
+from django.db.models import Q, Value, BooleanField
+from django_cte import With, CTEManager
+from rest_framework.exceptions import ValidationError
 
 
-class LectureFolderManager(models.Manager):
-    def base_folders(self):
-        return self.filter(parent__isnull=True)
+class LectureFolderManager(CTEManager):
+    def editable(self, user, *, folder=None):
+        if folder == "root":
+            return self.none()
 
-    def editable_base_folders(self, user):
         if user.is_admin():
-            return self.base_folders()
-        return self.base_folders().filter(user=user)
+            if folder:
+                return self.filter(parent=folder)
+            return self.all().filter(parent__isnull=False)
+        elif user.is_publisher():
+            if folder:
+                if folder.is_owner(user):
+                    return self.filter(parent=folder)
+                else:
+                    return self.none()
+            return self.descendants_iter(user.base_lecture_folder)
 
-    def editable(self, user):
+        return self.none()
+
+    def viewable(self, user, *, folder=None):
+        extra_viewable = self.none()
+
         if user.is_admin():
-            return self.all()
-        folders = self.editable_base_folders(user)
-        for folder in self.editable_base_folders(user):
-            folders |= self.descendents(folder)
-        return folders
+            if folder == "root" or not folder:
+                extra_viewable |= self.filter(parent__isnull=True)
+        elif user.is_publisher():
+            if folder == "root" or not folder:
+                extra_viewable |= LectureFolder.objects.filter(
+                    pk=user.base_lecture_folder.pk
+                )
+        else:
+            return self.none()
 
-    def viewable(self, user):
-        return self.editable(user)
+        editable = self.editable(user, folder=folder).annotate(
+            is_editable=Value(True, BooleanField())
+        )
+        extra_viewable = extra_viewable.annotate(
+            is_editable=Value(False, BooleanField())
+        )
+        return (editable | extra_viewable).distinct()
 
-    def descendents(self, folder):
-        folders = folder.subfolders.all()
-        for subfolder in folder.subfolders.all():
-            folders |= self.descendents(subfolder)
-        return folders
+    def descendants_iter(self, folder):
+        descendants = folder.subfolders.all()
+        for subfolder in descendants:
+            descendants |= self.descendants_iter(subfolder)
+        return descendants
+
+    def descendants_cte(self, folder):
+        def make_descendants_cte(cte):
+            return (
+                self.filter(parent_id=folder.id)
+                .values("id")
+                .union(
+                    cte.join(LectureFolder, parent_id=cte.col.id).values("id"), all=True
+                )
+            )
+
+        cte = With.recursive(make_descendants_cte)
+
+        descendants = (
+            cte.join(LectureFolder, id=cte.col.id).with_cte(cte).exclude(id=folder.id)
+        )
+
+        return descendants
 
 
 class LectureFolder(models.Model):
@@ -82,10 +124,24 @@ class LectureFolder(models.Model):
     def get_owner(self):
         return self.get_base_folder().user
 
-    def user_can_edit(self, user):
+    def is_owner(self, user):
         if user.is_admin():
             return True
         return self.get_owner() == user
+
+    def user_can_edit(self, user):
+        if self.is_base_folder():
+            return False
+        if user.is_admin():
+            return True
+        return self.get_owner() == user
+
+    def user_can_view(self, user):
+        if user.is_admin():
+            return True
+        elif user.is_publisher():
+            return self.get_owner() == user
+        return False
 
     def is_empty(self):
         if self.lectures.exists():
@@ -105,42 +161,48 @@ class LectureFolder(models.Model):
 
 
 class LectureManager(models.Manager):
-    def root_lectures(self):
-        """Get lectures that aren't in any folder"""
-        return self.filter(parent__isnull=True)
+    def editable(self, user, *, folder=None):
+        q = Q()
 
-    def editable(self, user):
         if user.is_admin():
-            return self.all().distinct()
-        return self.filter(author=user)
+            pass
+        elif user.is_publisher():
+            q &= Q(author=user)
+        else:
+            return self.none()
 
-    def viewable(self, user, include_editable=True):
-        if user.is_admin():
-            return self.all()
-        viewable = self.filter(groups__in=user.groups.all(), is_active=True)
-        if include_editable:
-            viewable |= self.editable(user)
-        return viewable
-
-    def editable_by_folder(self, user, folder):
-        if not folder:
-            if user.is_admin():
-                return self.filter(folder__isnull=True)
+        if folder:
+            if folder == "root":
+                q &= Q(folder__isnull=True)
             else:
-                return self.editable(user).filter(folder__isnull=True)
-        if user.is_admin():
-            return self.filter(folder=folder)
-        return self.editable(user).filter(folder=folder)
+                q &= Q(folder=folder)
 
-    def viewable_by_folder(self, user, folder, include_editable=True):
-        if not folder:
-            if user.is_admin():
-                return self.filter(folder__isnull=True)
-            else:
-                return self.viewable(user, include_editable).filter(folder__isnull=True)
+        return self.filter(q)
+
+    def viewable(self, user, *, folder=None):
+        q = Q()
+
         if user.is_admin():
-            return self.filter(folder=folder)
-        return self.viewable(user, include_editable).filter(folder=folder)
+            pass
+        elif user.is_publisher() or user.is_viewer():
+            q &= Q(groups__in=user.groups.all()) & Q(is_active=True)
+        else:
+            return self.none()
+
+        if folder:
+            if folder == "root":
+                q &= Q(folder__isnull=True)
+            else:
+                q &= Q(folder=folder)
+
+        editable = self.editable(user, folder=folder).annotate(
+            is_editable=Value(True, BooleanField())
+        )
+        extra_viewable = self.filter(q).annotate(
+            is_editable=Value(False, BooleanField())
+        )
+
+        return (editable | extra_viewable).distinct()
 
 
 class Lecture(models.Model):
@@ -208,7 +270,9 @@ class Lecture(models.Model):
         )
 
     def get_slides(self):
-        return self.contents.values_list("slide", flat=True)
+        from apps.database.models import Slide
+
+        return Slide.objects.filter(Q(id__in=self.contents.values("slide")))
 
     def update_lecture_contents(self):
         for lecture_content in self.contents.all():
@@ -249,7 +313,7 @@ class LectureContent(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.slide.user_can_view(self.lecture.author):
-            raise ValueError("Slide must be viewable by the lecture author")
+            raise ValidationError("Slide must be viewable by the lecture author")
 
         if self.annotation:
             if (

@@ -1,4 +1,5 @@
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
+from django.db.models import Value, CharField
 from django.shortcuts import get_object_or_404
 from django.views.generic import ListView
 
@@ -19,21 +20,20 @@ class DatabaseView(LoginRequiredMixin, PermissionRequiredMixin, ListView):
     def get_queryset(self):
         current = self.get_folder()
 
-        if current:
-            subfolders = current.subfolders.all()
-        else:
-            subfolders = Folder.objects.base_folders()
+        if not current:
+            current = "root"
+        subfolders = (
+            Folder.objects.viewable(self.request.user, folder=current)
+            .annotate(type=Value("folder", CharField()))
+            .order_by("name")
+        )
+        slides = (
+            Slide.objects.viewable(self.request.user, folder=current)
+            .annotate(type=Value("image/slide", CharField()))
+            .order_by("name")
+        )
 
-        slides = Slide.objects.viewable_by_folder(self.request.user, current)
-
-        for folder in subfolders:
-            folder.type = "folder"
-
-        for slide in slides:
-            slide.type = "image/slide"
-
-        items = list(subfolders) + list(slides)
-        return sorted(items, key=lambda x: (x.type, x.name.lower()))
+        return list(subfolders) + list(slides)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -41,11 +41,7 @@ class DatabaseView(LoginRequiredMixin, PermissionRequiredMixin, ListView):
 
         context["current_folder"] = current
         context["breadcrumbs"] = self._generate_breadcrumbs(current)
-        context["editable"] = (
-            current.user_can_edit(self.request.user)
-            if current
-            else self.request.user.is_admin()
-        )
+        context["editable"] = current and current.is_owner(self.request.user)
         return context
 
     def _generate_breadcrumbs(self, folder):

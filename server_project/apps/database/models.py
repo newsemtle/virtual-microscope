@@ -6,35 +6,78 @@ from celery import shared_task
 from channels.layers import get_channel_layer
 from django.conf import settings
 from django.db import models
+from django.db.models import Q, Value, BooleanField
+from django_cte import CTEManager, With
 from openslide import OpenSlide
 from openslide.deepzoom import DeepZoomGenerator
 
 
-class FolderManager(models.Manager):
-    def base_folders(self):
-        return self.filter(parent__isnull=True)
+class FolderManager(CTEManager):
+    def user_base_folders(self, user):
+        return [group.profile.base_folder for group in user.groups.all()]
 
-    def editable_base_folders(self, user):
+    def editable(self, user, *, folder=None):
+        if folder == "root":
+            return self.none()
+
         if user.is_admin():
-            return self.base_folders()
-        return self.base_folders().filter(groupprofile__group__in=user.groups.all())
+            if folder:
+                return self.filter(parent=folder)
+            return self.all().filter(parent__isnull=False)
+        elif user.is_publisher():
+            if folder:
+                if folder.is_owner(user):
+                    return self.filter(parent=folder)
+                else:
+                    return self.none()
+            result = self.none()
+            for f in [group.profile.base_folder for group in user.groups.all()]:
+                result |= self.descendants_iter(f)
+            return result
 
-    def editable(self, user):
-        if user.is_admin():
-            return self.all()
-        folders = self.editable_base_folders(user)
-        for folder in self.editable_base_folders(user):
-            folders |= self.descendents(folder)
-        return folders
+        return self.none()
 
-    def viewable(self, user):
-        return self.all()
+    def viewable(self, user, *, folder=None):
+        extra_viewable = self.none()
 
-    def descendents(self, folder):
-        folders = folder.subfolders.all()
-        for subfolder in folder.subfolders.all():
-            folders |= self.descendents(subfolder)
-        return folders
+        if user.is_admin() or user.is_publisher():
+            if folder:
+                if folder == "root":
+                    extra_viewable |= self.filter(parent__isnull=True)
+                else:
+                    extra_viewable |= self.filter(parent=folder)
+            else:
+                extra_viewable |= self.all()
+        else:
+            return self.none()
+
+        editable = self.editable(user, folder=folder).annotate(
+            is_editable=Value(True, BooleanField())
+        )
+        extra_viewable = extra_viewable.annotate(
+            is_editable=Value(False, BooleanField())
+        )
+        return (editable | extra_viewable).distinct()
+
+    def descendants_iter(self, folder):
+        descendants = folder.subfolders.all()
+        for subfolder in descendants:
+            descendants |= self.descendants_iter(subfolder)
+        return descendants
+
+    def descendants_cte(self, folder):
+        def make_descendants_cte(cte):
+            return (
+                self.filter(parent_id=folder.id)
+                .values("id")
+                .union(cte.join(Folder, parent_id=cte.col.id).values("id"), all=True)
+            )
+
+        cte = With.recursive(make_descendants_cte)
+
+        descendants = cte.join(Folder, id=cte.col.id).with_cte(cte)
+
+        return descendants
 
 
 class Folder(models.Model):
@@ -94,15 +137,29 @@ class Folder(models.Model):
             current_folder = current_folder.parent
         return current_folder
 
-    def get_group(self):
-        """Get the group of this folder"""
+    def get_owner_group(self):
+        """Get the owner group of this folder"""
         return self.get_base_folder().groupprofile.group
+
+    def is_owner(self, user):
+        """Check if the user is the owner of this folder"""
+        if user.is_admin():
+            return True
+        return self.get_owner_group() in user.groups.all()
 
     def user_can_edit(self, user):
         """Check if the user can edit this folder"""
+        if self.is_base_folder():
+            return False
         if user.is_admin():
             return True
-        return self.get_group() in user.groups.all()
+        return self.is_owner(user)
+
+    def user_can_view(self, user):
+        """Check if the user can view this folder"""
+        if user.is_admin() or user.is_publisher():
+            return True
+        return False
 
     def get_all_slides(self, recursive=False):
         """Get all slides in this folder and its subfolders"""
@@ -132,39 +189,62 @@ class Folder(models.Model):
 
 
 class SlideManager(models.Manager):
-    def root_slides(self):
-        """Get slides that aren't in any folder"""
-        return self.filter(folder__isnull=True)
+    def editable(self, user, *, folder=None):
+        if user.is_admin():
+            if folder:
+                if folder == "root":
+                    return self.filter(folder__isnull=True)
+                else:
+                    return self.filter(folder=folder)
+            return self.all()
+        elif user.is_publisher():
+            if folder:
+                if folder == "root" or not folder.is_owner(user):
+                    return self.none()
+                return self.filter(folder=folder)
+            result = self.none()
+            for f in Folder.objects.editable(user):
+                result |= f.slides.all()
+            return result
 
-    def viewable_by_folder(self, user, folder):
-        """Get slides by folder that are accessible to the user"""
-        if not folder:
-            if user.is_admin():
-                return self.filter(folder__isnull=True)
+        return self.none()
+
+    def viewable(self, user, *, folder=None):
+        extra_viewable = self.none()
+
+        if user.is_publisher():
+            if folder:
+                if folder == "root":
+                    extra_viewable |= self.filter(
+                        Q(folder__isnull=True) & Q(is_public=True)
+                    )
+                elif not folder.is_owner(user):
+                    extra_viewable |= self.filter(Q(folder=folder) & Q(is_public=True))
             else:
-                return self.filter(folder__isnull=True, is_public=True)
-        elif folder.user_can_edit(user):
-            return self.filter(folder=folder)
-        else:
-            return self.filter(folder=folder, is_public=True)
+                extra_viewable |= self.filter(
+                    Q(folder__isnull=True) & Q(is_public=True)
+                )
+                viewable_folders = Folder.objects.viewable(user).filter(
+                    is_editable=False
+                )
+                extra_viewable |= self.filter(
+                    Q(folder__in=viewable_folders) & Q(is_public=True)
+                )
 
-    def editable(self, user):
-        """Get slides that are accessible to the user"""
-        if user.is_admin():
-            return self.all()
-        slides = self.none()
-        for folder in Folder.objects.editable(user):
-            slides |= folder.slides
-        return slides
+        if not folder:
+            lecture_slides = self.none()
+            for group in user.groups.all():
+                for lecture in group.lectures.filter(is_active=True):
+                    lecture_slides |= lecture.get_slides()
+            extra_viewable |= lecture_slides
 
-    def viewable(self, user):
-        """Get slides that are accessible to the user"""
-        if user.is_admin():
-            return self.all()
-        slides = self.root_slides().filter(is_public=True)
-        for folder in Folder.objects.viewable(user):
-            slides |= self.viewable_by_folder(user, folder)
-        return slides
+        editable = self.editable(user, folder=folder).annotate(
+            is_editable=Value(True, BooleanField())
+        )
+        extra_viewable = extra_viewable.annotate(
+            is_editable=Value(False, BooleanField())
+        )
+        return (editable | extra_viewable).distinct()
 
 
 class Slide(models.Model):
@@ -321,19 +401,15 @@ class Slide(models.Model):
 
         try:
             with OpenSlide(self.file.path) as slide:
-                image_directory = self.get_image_directory()
-
                 if not (
-                    status["dzi_exists"]
-                    and status["tiles_complete"]
+                    status["metadata_valid"]
                     and status["thumbnail_exists"]
                     and status["associated_image_exists"]
                 ):
-                    self._delete_directory(image_directory)
-                    self._generate_tiles(slide)
+                    self._initialize_slide(slide)
 
-                if not status["metadata_valid"]:
-                    self._save_metadata(slide)
+                if not (status["dzi_exists"] and status["tiles_complete"]):
+                    self._generate_tiles(slide)
 
             return self.check_integrity()
 
@@ -346,31 +422,31 @@ class Slide(models.Model):
         for lecture_content in self.lecture_contents.all():
             lecture_content.update()
 
-    def get_group(self):
+    def get_owner_group(self):
         """Get the group of this slide"""
         if self.folder:
-            return self.folder.get_group()
+            return self.folder.get_owner_group()
         return None
 
     def user_can_edit(self, user):
         """Check if the user can edit the slide"""
         if user.is_admin():
             return True
-        elif self.folder:
-            return self.folder.user_can_edit(user)
+        if self.folder:
+            return self.folder.is_owner(user)
         return False
 
     def user_can_view(self, user):
         """Check if the user can view the slide"""
         if user.is_admin():
             return True
-        elif user.is_publisher():
-            return self.user_can_edit(user) or self.is_public
-        elif user.is_viewer():
+        if user.is_publisher():
+            if self.user_can_edit(user) or self.is_public:
+                return True
+        if user.is_viewer():
             for content in self.lecture_contents.all():
                 if content.user_can_view(user):
                     return True
-            return False
         return False
 
     def get_image_directory(self):

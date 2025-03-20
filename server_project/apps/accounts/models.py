@@ -7,6 +7,7 @@ from django.contrib.auth.models import (
 from django.contrib.auth.models import Group
 from django.contrib.auth.validators import UnicodeUsernameValidator
 from django.db import models
+from django.db.models import Q
 from django.db.models.signals import post_delete
 from django.dispatch import receiver
 from django.utils import timezone
@@ -45,36 +46,43 @@ class GroupProfile(models.Model):
     def save(self, *args, **kwargs):
         created = False if self.pk else True
 
-        if created and self.type == self.TypeChoices.PUBLISHER:
-            self.base_folder = Folder.objects.create(name=self.group.name.title())
+        if self.is_publisher_group() and not self.base_folder:
+            self.base_folder = Folder.objects.create(
+                name=self.group.name.title(),
+                author=User.objects.filter(is_superuser=True).first(),
+            )
 
         super().save(*args, **kwargs)
 
         if created:
             self.set_default_permission()
 
+    def delete(self, *args, **kwargs):
+        try:
+            if self.base_folder:
+                self.base_folder.delete()
+        except:
+            pass
+        super().delete(*args, **kwargs)
+
     def set_default_permission(self):
-        if self.type == self.TypeChoices.PUBLISHER:
-            permissions = Permission.objects.filter(content_type__app_label="database")
-            permissions |= Permission.objects.filter(content_type__app_label="lectures")
-            permissions |= Permission.objects.filter(
-                content_type__app_label="slide_viewer"
-            )
-            self.group.permissions.set(permissions)
-        elif self.type == self.TypeChoices.VIEWER:
-            permissions = Permission.objects.filter(
-                content_type__model="slide", codename__contains="view"
-            )
-            permissions |= Permission.objects.filter(
-                content_type__model="lecture", codename__contains="view"
-            )
-            permissions |= Permission.objects.filter(
-                content_type__model="lecturecontent", codename__contains="view"
-            )
-            permissions |= Permission.objects.filter(
-                content_type__app_label="slide_viewer", codename__contains="view"
-            )
-            self.group.permissions.set(permissions)
+        if self.is_publisher_group():
+            q = Q(content_type__app_label="database")
+            q |= Q(content_type__app_label="lectures")
+            q |= Q(content_type__model="annotation")
+            self.group.permissions.set(Permission.objects.filter(q))
+        elif self.is_viewer_group():
+            q = Q(content_type__model="slide") & Q(codename__contains="view")
+            q |= Q(content_type__model="lecture") & Q(codename__contains="view")
+            q |= Q(content_type__model="lecturecontent") & Q(codename__contains="view")
+            q |= Q(content_type__model="annotation") & Q(codename__contains="view")
+            self.group.permissions.set(Permission.objects.filter(q))
+
+    def is_publisher_group(self):
+        return self.type == self.TypeChoices.PUBLISHER
+
+    def is_viewer_group(self):
+        return self.type == self.TypeChoices.VIEWER
 
 
 @receiver(post_delete, sender=GroupProfile)
@@ -170,27 +178,26 @@ class User(AbstractBaseUser, PermissionsMixin):
     REQUIRED_FIELDS = ("first_name", "last_name")
 
     def save(self, *args, **kwargs):
-        old_instance = None
         if self.pk:
             old_instance = User.objects.get(pk=self.pk)
+            if old_instance.username != self.username:
+                self.base_lecture_folder.name = self.username.title()
+                self.base_lecture_folder.save()
+
+        if self.is_publisher() and not self.base_lecture_folder:
+            self.base_lecture_folder = LectureFolder.objects.create(
+                name=self.username.title(),
+                author=User.objects.filter(is_superuser=True).first(),
+            )
 
         super().save(*args, **kwargs)
 
-        if self.is_publisher() and not self.base_lecture_folder:
-            base_lecture_folder = LectureFolder.objects.create(
-                name=self.username.title()
-            )
-            User.objects.filter(pk=self.pk).update(
-                base_lecture_folder=base_lecture_folder
-            )
-            self.base_lecture_folder = base_lecture_folder
-        elif old_instance and old_instance.username != self.username:
-            self.base_lecture_folder.name = self.username.title()
-            self.base_lecture_folder.save()
-
     def delete(self, *args, **kwargs):
-        if self.base_lecture_folder:
-            self.base_lecture_folder.delete()
+        try:
+            if self.base_lecture_folder:
+                self.base_lecture_folder.delete()
+        except:
+            pass
         super().delete(*args, **kwargs)
 
     def clean(self):
@@ -199,6 +206,9 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     def get_full_name(self):
         return f"{self.first_name} {self.last_name}".strip()
+
+    def get_korean_name(self):
+        return f"{self.last_name}{self.first_name}".strip()
 
     def is_admin(self):
         return self.is_staff
