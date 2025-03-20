@@ -10,7 +10,7 @@
 
 {% block content %}
     <!-- Breadcrumb -->
-    <nav class = "breadcrumbs">
+    <nav class="breadcrumbs">
         <a href="{% url 'home' %}" class="breadcrumbs__item">Home</a>
         <a href="" class="breadcrumbs__item is-active">Lectures</a>
     </nav>
@@ -18,75 +18,90 @@
     <div class="d-flex justify-content-center">
         <div class="card rounded-0 my-3" style="width: 1024px;">
             <!-- 카드 헤더 -->
-            <div class="card-header d-flex justify-content-between align-items-center" style="background-color:#edf1f5;">
+            <div class="card-header d-flex justify-content-between align-items-center"
+                 style="background-color:#edf1f5;">
                 <h4 class="m-0">Lectures</h4>
             </div>
         </div>
     </div>
     <!-- Contents -->
     {% if lectures %}
-    {% for lecture in lectures %}
-    <div class="d-flex justify-content-center">
-        <div class="card border-0 rounded-0 mb-0 card-hover"
-            style="height : 100%; max-height: 150px; width : 100%; max-width: 1024px; {% if forloop.counter|divisibleby:"2"%}background-color: #edf1f5;{% endif %}">
-            <!-- lecture url-->
-                <div class="d-flex w-100 h-100" style=" width: 100%;">
-                    <!-- 1영역: 렉쳐 아이콘/flex-item-icon/ 5%-->
-                    <div class="d-flex align-items-center justify-content-center p-2 flex-item-icon" style="width: 5%;">
-                        <i class="bi bi-journal-text fs-3 text-warning"></i>
-                    </div>
-                    <!-- 2영역: 렉쳐 이름, 렉쳐 설명, 대상 / flex-item-name / 65% -->
-                    <div class="d-flex flex-column p-2 flex-item-name" style="width: 55%; overflow: hidden;">
-                        <div class="flex-fill">
-                            <h3 class="mb-0 name-truncate">
-                                <a href="{% url 'lectures:lecture-view' lecture_id=lecture.id %}" style="text-decoration: none; color: inherit;">
-                                    {{ lecture.name }}
-                                </a>
-                            </h3>
-                            <h6 class="mb-0 information-truncate" style="color: rgba(68, 66, 66, 0.38);">
-                                {{ lecture.description }}
-                            </h6>
-                            <h6 class="mb-0 group-truncate"> <i class="bi bi-people-fill"></i> {% for group in lecture.groups.all %}{{ group.name }}{% if not forloop.last%}, {% endif %}{% empty %}No groups.{% endfor %}</h6>
+        {% for lecture in lectures %}
+            <div class="d-flex justify-content-center lecture-item">
+                <div class="card border-0 rounded-0 mb-0 card-hover"
+                     style="height : 100%; max-height: 150px; width : 100%; max-width: 1024px; {% if forloop.counter|divisibleby:"2" %}background-color: #edf1f5;{% endif %}">
+                    <!-- lecture url-->
+                    <div class="d-flex w-100 h-100" style=" width: 100%;">
+                        <!-- 1영역: 렉쳐 아이콘/flex-item-icon/ 5%-->
+                        <div class="d-flex align-items-center justify-content-center p-2 flex-item-icon"
+                             style="width: 5%;">
+                            <i class="bi bi-journal-text fs-3 text-warning"></i>
                         </div>
-                    </div>
-                    <!-- 3영역: Slides number, created, updated / flex-item-right / 20% -->
-                    <div class="d-flex flex-column p-2 flex-item-right" style="width: 20%;">
-                        <p class="mb-0" style="font-size: 15px"><i class="bi bi-person-fill-up fs-5"></i> {{ lecture.author }}
-                        <p class="mb-0" style="font-size: 15px">{{ lecture.get_slides.count }} slides</p>
-                        {% if lecture.is_editable %}
-                        <p class="mb-0" style="font-size: 15px">created: {{ lecture.created_at|date:"Y-m-d H:i" }}</p>
-                        <p class="mb-0" style="font-size: 15px">updated: {{ lecture.updated_at|date:"Y-m-d H:i" }}</p>
-                        {% endif %}
-                    </div>
-                    <!-- 4영역 : Details, Edit, open lovation / flex-item-edit / 10% -->
-                    <div class="d-flex  align-items-center justify-content-center flex-column p-2 flex-item-edit" style="width: 13%;">
-                        <div class="btn-group-vertical btn-group-sm">
+                        <!-- 2영역: 렉쳐 이름, 렉쳐 설명, 대상 / flex-item-name / 65% -->
+                        <div class="d-flex flex-column p-2 flex-item-name" style="width: 55%; overflow: hidden;">
+                            <div class="flex-fill">
+                                <h3 class="mb-0 name-truncate">
+                                    <a href="{% url 'lectures:lecture-view' lecture_id=lecture.id %}"
+                                       style="text-decoration: none; color: inherit;">
+                                        {{ lecture.name }}
+                                    </a>
+                                </h3>
+                                <h6 class="mb-0 information-truncate" style="color: rgba(68, 66, 66, 0.38);">
+                                    {{ lecture.description }}
+                                </h6>
+                                <h6 class="mb-0 group-truncate"><i class="bi bi-people-fill"></i>
+                                    {% for group in lecture.groups.all %}{{ group.name }}{% if not forloop.last %}
+                                        , {% endif %}{% empty %}No groups.{% endfor %}</h6>
+                            </div>
+                        </div>
+                        <!-- 3영역: Slides number, created, updated / flex-item-right / 20% -->
+                        <div class="d-flex flex-column p-2 flex-item-right" style="width: 20%;">
+                            <p class="mb-0" style="font-size: 15px"><i
+                                    class="bi bi-person-fill-up fs-5"></i> {{ lecture.author }}
+                            <p class="mb-0" style="font-size: 15px">{{ lecture.get_slides.count }} slides</p>
                             {% if lecture.is_editable %}
-                            <a type="button" class="btn btn-outline-warning"
-                               href="{% url 'lectures:lecture-database' %}?folder={{ lecture.folder.id }}"
-                               target="_blank" rel="noopener noreferrer nofollow"
-                               data-bs-tooltip="tooltip" title="Open Location">DB에서 열기
-                            </a>
+                                <p class="mb-0" style="font-size: 15px">
+                                    created: {{ lecture.created_at|date:"Y-m-d H:i" }}</p>
+                                <p class="mb-0" style="font-size: 15px">
+                                    updated: {{ lecture.updated_at|date:"Y-m-d H:i" }}</p>
+                            {% endif %}
+                        </div>
+                        <!-- 4영역 : Details, Edit, open lovation / flex-item-edit / 10% -->
+                        <div class="d-flex  align-items-center justify-content-center flex-column p-2 flex-item-edit"
+                             style="width: 13%;">
+                            <div class="btn-group-vertical btn-group-sm">
+                                {% if lecture.is_editable %}
+                                    <a type="button" class="btn btn-outline-warning"
+                                       href="{% url 'lectures:lecture-database' %}?folder={{ lecture.folder.id }}"
+                                       target="_blank" rel="noopener noreferrer nofollow"
+                                       data-bs-tooltip="tooltip" title="Open Location">DB에서 열기
+                                    </a>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <!-- 5영역: visibility 설정 / flex-item-visibility / 7% -->
+                        <div class="d-flex align-items-center justify-content-center flex-column p-2 flex-item-visibility"
+                             style="width: 10%;">
+                            {% if lecture.is_editable %}
+                                <button class="btn btn-outline-danger" data-bs-tooltip="tooltip" title="Hide"
+                                        data-action="hide"
+                                        data-url="{% url 'api:lecture-toggle-activity' pk=lecture.id %}">
+                                    <i class="bi bi-eye-slash"></i>
+                                </button>
                             {% endif %}
                         </div>
                     </div>
-                    <!-- 5영역: visibility 설정 / flex-item-visibility / 7% -->
-                    <div class="d-flex align-items-center justify-content-center flex-column p-2 flex-item-visibility" style="width: 10%;">
-                        {% if lecture.is_editable %}
-                        <button class="btn btn-outline-danger" data-bs-tooltip="tooltip" title="Hide"
-                                data-action="hide"
-                                data-url="{% url 'api:lecture-toggle-activity' pk=lecture.id %}">
-                            <i class="bi bi-eye-slash"></i>
-                        </button>
-                        {% endif %}
-                    </div>
                 </div>
-        </div>
-    </div>
-    {% endfor %}
-    {% comment %} {% else %}
+            </div>
+        {% endfor %}
+        {% comment %} {% else %}
         <div class="alert alert-info" role="alert">
             <i class="bi bi-info-circle me-2"></i>There's no lecture yet.
         </div> {% endcomment %}
     {% endif %}
 {% endblock content %}
+
+
+{% block extra_js %}
+    <script src="{% static 'lectures/js/lecture_bulletins.js' %}" type="text/javascript"></script>
+{% endblock extra_js %}

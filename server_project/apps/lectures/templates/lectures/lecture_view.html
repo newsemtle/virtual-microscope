@@ -91,7 +91,8 @@
                                 {% if editable %}
                                     {% if content.annotation %}
                                         <p class="mb-0 annotation-truncate" style="font-size: 15px"><i
-                                                class="bi bi-pen-fill text-danger"></i>{{ content.annotation.name }} ({{ content.annotation.author.username }})</p>
+                                                class="bi bi-pen-fill text-danger"></i>{{ content.annotation.name }}
+                                            ({{ content.annotation.author.username }})</p>
                                     {% endif %}
                                     <p class="mb-0" style="font-size: 15px">
                                         created: {{ content.slide.updated_at|date:"Y-m-d" }}</p>

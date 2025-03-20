@@ -5,13 +5,10 @@ document.querySelectorAll('.toggle-activity-btn').forEach((button) => button.add
         onSuccess: (data) => {
             const isActive = data.is_active;
             const icon = this.querySelector('i');
-            const updated = this.closest('tr').querySelector('.updated-at');
 
             icon.classList.toggle("bi-toggle-on", isActive);
             icon.classList.toggle("bi-toggle-off", !isActive);
             icon.nextSibling.textContent = isActive ? " On " : " Off ";
-
-            updated.textContent = data.updated_at_formatted;
         },
         onError: (error) => {
             showFeedback('Error toggling lecture activity: ' + error.message, "danger")

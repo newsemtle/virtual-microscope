@@ -1,118 +1,121 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-md-6">
-        <div class="card mt-5 shadow-sm">
-            <div class="card-body p-4">
-                <h2 class="card-title text-center mb-4">Login</h2>
-                
-                {% if messages %}
-                <div class="messages mb-3">
-                    {% for message in messages %}
-                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show">
-                        {{ message }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                    </div>
-                    {% endfor %}
-                </div>
-                {% endif %}
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card mt-5 shadow-sm">
+                <div class="card-body p-4">
+                    <h2 class="card-title text-center mb-4">Login</h2>
 
-                <form method="post" novalidate>
-                    {% csrf_token %}
-                    
-                    {% if form.non_field_errors %}
-                    <div class="alert alert-danger alert-dismissible fade show">
-                        {% for error in form.non_field_errors %}
-                            {{ error }}
-                        {% endfor %}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                    </div>
-                    {% endif %}
-
-                    {% for field in form %}
-                    <div class="mb-3 row align-items-center">
-                        <label for="{{ field.id_for_label }}" class="col-sm-4 col-form-label fw-bold text-end">
-                            {{ field.label }}
-                        </label>
-                        <div class="col-sm-8">
-                            <div class="input-group">
-                                {{ field }}
-                                {% if field.name == 'password' %}
-                                <button class="btn btn-outline-secondary" type="button" onclick="togglePassword('{{ field.id_for_label }}')">
-                                    <i class="bi bi-eye"></i>
-                                </button>
-                                {% endif %}
-                            </div>
-                            {% if field.help_text %}
-                            <small class="form-text text-muted">{{ field.help_text }}</small>
-                            {% endif %}
-                            {% if field.errors %}
-                            <div class="text-danger mt-1">
-                                {% for error in field.errors %}
-                                    <small><i class="bi bi-exclamation-circle"></i> {{ error }}</small>
-                                {% endfor %}
-                            </div>
-                            {% endif %}
+                    {% if messages %}
+                        <div class="messages mb-3">
+                            {% for message in messages %}
+                                <div class="alert alert-{{ message.tags }} alert-dismissible fade show">
+                                    {{ message }}
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert"
+                                            aria-label="Close"></button>
+                                </div>
+                            {% endfor %}
                         </div>
-                    </div>
-                    {% endfor %}
-
-                    {% if next %}
-                    <input type="hidden" name="next" value="{{ next }}">
                     {% endif %}
 
-                    <div class="d-grid gap-2">
-                        <button type="submit" class="btn btn-primary btn-lg">
-                            <i class="bi bi-box-arrow-in-right"></i> Sign In
-                        </button>
+                    <form method="post" novalidate>
+                        {% csrf_token %}
+
+                        {% if form.non_field_errors %}
+                            <div class="alert alert-danger alert-dismissible fade show">
+                                {% for error in form.non_field_errors %}
+                                    {{ error }}
+                                {% endfor %}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"
+                                        aria-label="Close"></button>
+                            </div>
+                        {% endif %}
+
+                        {% for field in form %}
+                            <div class="mb-3 row align-items-center">
+                                <label for="{{ field.id_for_label }}" class="col-sm-4 col-form-label fw-bold text-end">
+                                    {{ field.label }}
+                                </label>
+                                <div class="col-sm-8">
+                                    <div class="input-group">
+                                        {{ field }}
+                                        {% if field.name == 'password' %}
+                                            <button class="btn btn-outline-secondary" type="button"
+                                                    onclick="togglePassword('{{ field.id_for_label }}')">
+                                                <i class="bi bi-eye"></i>
+                                            </button>
+                                        {% endif %}
+                                    </div>
+                                    {% if field.help_text %}
+                                        <small class="form-text text-muted">{{ field.help_text }}</small>
+                                    {% endif %}
+                                    {% if field.errors %}
+                                        <div class="text-danger mt-1">
+                                            {% for error in field.errors %}
+                                                <small><i class="bi bi-exclamation-circle"></i> {{ error }}</small>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        {% endfor %}
+
+                        {% if next %}
+                            <input type="hidden" name="next" value="{{ next }}">
+                        {% endif %}
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="bi bi-box-arrow-in-right"></i> Sign In
+                            </button>
+                        </div>
+                    </form>
+
+                    <hr class="my-4">
+
+                    <div class="text-center">
+                        <p class="mb-0">Don't have an account?</p>
+                        <a href="{% url 'accounts:register' %}" class="btn btn-outline-primary mt-2">
+                            Create Account
+                        </a>
                     </div>
-                </form>
-
-                <hr class="my-4">
-
-                <div class="text-center">
-                    <p class="mb-0">Don't have an account?</p>
-                    <a href="{% url 'accounts:register' %}" class="btn btn-outline-primary mt-2">
-                        Create Account
-                    </a>
                 </div>
             </div>
         </div>
     </div>
-</div>
 {% endblock content %}
 
 {% block extra_js %}
-<script>
-    function togglePassword(fieldId) {
-        const passwordField = document.getElementById(fieldId);
-        const button = passwordField.nextElementSibling.querySelector('i');
-        
-        if (passwordField.type === 'password') {
-            passwordField.type = 'text';
-            button.classList.remove('bi-eye');
-            button.classList.add('bi-eye-slash');
-        } else {
-            passwordField.type = 'password';
-            button.classList.remove('bi-eye-slash');
-            button.classList.add('bi-eye');
+    <script>
+        function togglePassword(fieldId) {
+            const passwordField = document.getElementById(fieldId);
+            const button = passwordField.nextElementSibling.querySelector('i');
+
+            if (passwordField.type === 'password') {
+                passwordField.type = 'text';
+                button.classList.remove('bi-eye');
+                button.classList.add('bi-eye-slash');
+            } else {
+                passwordField.type = 'password';
+                button.classList.remove('bi-eye-slash');
+                button.classList.add('bi-eye');
+            }
         }
-    }
-    
-    // Add Bootstrap validation styles
-    (function () {
-        'use strict'
-        const forms = document.querySelectorAll('.needs-validation')
-        Array.from(forms).forEach(form => {
-            form.addEventListener('submit', event => {
-                if (!form.checkValidity()) {
-                    event.preventDefault()
-                    event.stopPropagation()
-                }
-                form.classList.add('was-validated')
-            }, false)
-        })
-    })()
-</script>
+
+        // Add Bootstrap validation styles
+        (function () {
+            'use strict'
+            const forms = document.querySelectorAll('.needs-validation')
+            Array.from(forms).forEach(form => {
+                form.addEventListener('submit', event => {
+                    if (!form.checkValidity()) {
+                        event.preventDefault()
+                        event.stopPropagation()
+                    }
+                    form.classList.add('was-validated')
+                }, false)
+            })
+        })()
+    </script>
 {% endblock extra_js %}
