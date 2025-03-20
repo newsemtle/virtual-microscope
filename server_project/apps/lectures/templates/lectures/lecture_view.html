@@ -1,19 +1,10 @@
 {% extends "base.html" %}
 {% load static %}
 
-{% block extra_head %}
-    <style>
-        .card-hover {
-            transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
-        }
 
-        .card-hover:hover {
-            box-shadow: 0 5px 15px #8fa1b9;
-        }
-    </style>
-{% endblock %}
 {% block extra_css %}
     <link rel="stylesheet" href="{% static 'common_static/css/breadcrumb.css' %}">
+    <link rel="stylesheet" href="{% static "lectures/css/lecture_view.css" %}">
 {% endblock %}
 
 
@@ -22,11 +13,11 @@
     <nav class="breadcrumbs">
         <a href="{% url 'home' %}" class="breadcrumbs__item">Home</a>
         <a href="{% url 'lectures:lecture-bulletins' %}" class="breadcrumbs__item">Lectures</a>
-        <a href="" class="breadcrumbs__item is-active">Lecture Slides</a>
+        <a href="" class="breadcrumbs__item is-active">{{ lecture.name }}</a>
     </nav>
     <!-- Header -->
     <div class="d-flex justify-content-center">
-        <div class="card rounded-0 my-3" style="width: 1000px;">
+        <div class="card rounded-0 my-3" style="width: 1024px;">
             <!-- 카드 헤더 -->
             <div class="card-header d-flex justify-content-between align-items-center"
                  style="background-color:#edf1f5;">
@@ -56,57 +47,57 @@
         {% for content in contents %}
             <div class="d-flex justify-content-center">
                 <!-- 카드의 너비와 높이를 고정 -->
-                {% if content.annotation %}
-                    <!-- Annotation 유무에 따라 url 달리 하기 -->
-                    <a href="{% url 'slide_viewer:slide-view' slide_id=content.slide.id %}?annotation={{ content.annotation.id }}"
-                       class="text-decoration-none d-block">
-                {% else %}
-                    <a href="{% url 'slide_viewer:slide-view' slide_id=content.slide.id %}"
-                       class="text-decoration-none d-block">
-                {% endif %}
-                <!-- 카드의 너비와 높이를 고정 -->
                 <div class="card border-0 rounded-0 mb-0 card-hover"
-                     style="height: 150px; width: 1000px; {% if forloop.counter|divisibleby:"2" %}background-color: #edf1f5;{% endif %}">
-                    <!-- 내부를 flex container로 만들어 세 영역으로 분할 -->
-                    <div class="d-flex h-100">
+                     style="height : 100%; max-height: 150px; width : 100%; max-width: 1024px; {% if forloop.counter|divisibleby:"2" %}background-color: #edf1f5;{% endif %}">
+                    {% if content.annotation %}
+                        <!-- Annotation 유무에 따라 url 달리 하기 -->
+                        <a href="{% url 'slide_viewer:slide-view' slide_id=content.slide.id %}?annotation={{ content.annotation.id }}"
+                           style="text-decoration: none; color: inherit;">
+                    {% else %}
+                        <a href="{% url 'slide_viewer:slide-view' slide_id=content.slide.id %}"
+                           style="text-decoration: none; color: inherit;">
+                    {% endif %}
+                    <!-- 내부를 flex container로 만들어 네 영역으로 분할 -->
+                    <div class="d-inline-flex h-100" style=" width: 100%;">
                         <!-- 제일 왼쪽 : 번호 표시 -->
-                        <div class="d-flex align-items-center justify-content-center p-1" style="flex: 1 1 2%;">
+                        <div class="d-flex align-items-center justify-content-center p-1 flex-item-number"
+                             style="width: 2%;">
                             <h6> {{ forloop.counter }} </h6>
                         </div>
                         <!-- 왼쪽 영역: 이미지  -->
-                        <div class="d-flex align-items-center justify-content-center p-1" style="flex: 1 1 15%;">
+                        <div class="d-flex align-items-center justify-content-center p-2 flex-item-image"
+                             style="width: 15%;">
                             <img src="{% url 'api:slide-thumbnail' pk=content.slide.id %}" alt="Slide Thumbnail"
                                  style="max-width: 100%; max-height: 100%; object-fit: contain;">
                         </div>
                         <!-- 중앙 영역: 슬라이드 이름 -->
-                        <div class="d-flex flex-column p-1" style="flex: 1 1 43%; overflow: hidden;">
-                            <div class="flex-fill" style="height: 50%;">
-                                <h5 class="mb-0" style="white-space: normal; text-overflow: ellipsis;">
+                        <div class="d-flex flex-column p-2 flex-item-name" style="width: 63%; overflow: hidden;">
+                            <div class="flex-fill">
+                                <h3 class="mb-0 name-truncate">
                                     {{ content.slide.name }}
-                                </h5>
-                            </div>
-                            <div class="flex-fill" style="height: 50%;">
-                                <p class="mb-0" style="white-space: normal; text-overflow: ellipsis;">
-                                    정보 : {{ content.slide.information }}
-                                </p>
+                                </h3>
+                                <h6 class="mb-0 information-truncate" style="color: rgba(68, 66, 66, 0.38);">
+                                    {{ content.slide.information }}
+                                </h6>
+                                <h6 class="mb-0"><i class="bi bi-people-fill"></i>
+                                    {% for group in lecture.groups.all %}{{ group.name }}{% if not forloop.last %}
+                                        , {% endif %}{% empty %}No groups.{% endfor %}</h6>
                             </div>
                         </div>
-                        <!-- 오른쪽 영역: Annotation, Created, Updated -->
-                        <div class="d-flex flex-column p-1" style="flex: 1 1 20%;">
-                            {% if editable %}
-                                {% if content.annotation %}
-                                    <p class="mb-1">{{ content.annotation.name }}
-                                        ({{ content.annotation.author.username }})</p>
+                        <!-- 오른쪽 영역: Annotation, Created, Updated (css right area)-->
+                        <div class="d-flex flex-column p-2 flex-item-right" style="width: 20%;">
+                            <p class="mb-0" style="font-size: 15px"><i
+                                    class="bi bi-person-fill-up fs-5"></i> {{ lecture.author }}
+                                {% if editable %}
+                                    {% if content.annotation %}
+                                        <p class="mb-0 annotation-truncate" style="font-size: 15px"><i
+                                                class="bi bi-pen-fill text-danger"></i>{{ content.annotation.name }} ({{ content.annotation.author.username }})</p>
+                                    {% endif %}
+                                    <p class="mb-0" style="font-size: 15px">
+                                        created: {{ content.slide.updated_at|date:"Y-m-d" }}</p>
+                                    <p class="mb-0" style="font-size: 15px">
+                                        updated: {{ content.slide.updated_at|date:"Y-m-d" }}</p>
                                 {% endif %}
-                            {% endif %}
-                        </div>
-                        <div class="d-flex flex-column p-1" style="flex: 1 1 20%;">
-                            <h6> 대상 </h6>
-                            {% for group in lecture.groups.all %}
-                                {{ group.name }}{% if not forloop.last %}, {% endif %}
-                            {% empty %}
-                                No groups.
-                            {% endfor %}
                         </div>
                     </div>
                 </div>

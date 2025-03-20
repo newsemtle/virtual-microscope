@@ -5,11 +5,11 @@
 
 {% block extra_head %}
     <!-- Openseadragon -->
-    <script src="{% static 'slide_viewer/openseadragon/openseadragon.min.js' %}"></script>
+    <script src="{% static 'openseadragon/openseadragon.min.js' %}"></script>
     <!-- Openseadragon scalebar 플러그인 -->
-    <script src="{% static 'slide_viewer/openseadragon/openseadragon-scalebar.js' %}"></script>
+    <script src="{% static 'openseadragon/openseadragon-scalebar.js' %}"></script>
     <!-- annotorious JS -->
-    <script src="{% static 'slide_viewer/annotorious/js/annotorious-openseadragon.js' %}"></script>
+    <script src="{% static 'annotorious/js/annotorious-openseadragon.js' %}"></script>
     <script src="https://cdn.jsdelivr.net/npm/@annotorious/plugin-tools@1.0.2/dist/annotorious-plugin-tools.js"></script>
 {% endblock extra_head %}
 
@@ -17,9 +17,9 @@
 <!-- css -->
 {% block extra_css %}
     <!-- custom slide-viewer css -->
-    <link rel="stylesheet" href="{% static 'slide_viewer/css/viewer_styles.css' %}">
+    <link rel="stylesheet" href="{% static 'slide_viewer/css/viewer.css' %}">
     <!-- annotorious CSS -->
-    <link rel="stylesheet" href="{% static 'slide_viewer/annotorious/css/annotorious-openseadragon.css' %}">
+    <link rel="stylesheet" href="{% static 'annotorious/css/annotorious-openseadragon.css' %}">
     <link rel="stylesheet"
           href="https://cdn.jsdelivr.net/npm/@annotorious/plugin-tools@1.0.2/dist/annotorious-plugin-tools.css">
 {% endblock extra_css %}
@@ -382,7 +382,7 @@
         var viewer = OpenSeadragon({
             id: "openseadragon-container",
             tileSources: "{% url 'api:slide-dzi' pk=slide.id %}",
-            prefixUrl: "{% static 'slide_viewer/openseadragon/images' %}/",
+            prefixUrl: "{% static 'slide_viewer/../../../../static/openseadragon/images' %}/",
             //네비게이터
             showNavigator: true,
             navigatorPosition: "BOTTOM_RIGHT", //네비게이터 위치
@@ -481,7 +481,7 @@
         viewer.addHandler("open", function () {
             // 100배에 필요한 zoom factor를 미리 구해본 뒤
             const zoomFactorAt100x = calculateZoomFactor(100);
-        
+
             // 그 값을 maxZoomLevel에 설정
             viewer.viewport.maxZoomLevel = zoomFactorAt100x;
         });
@@ -835,7 +835,7 @@
             }
         });
 
-        
+
         //Information popup 추가
         // info팝업을 열기 위한 함수
         function openinfoPopup() {
@@ -873,5 +873,5 @@
 
 
     </script>
-    <script src="{% static 'slide_viewer/viewer.js' %}" type="text/javascript"></script>
+    <script src="{% static 'slide_viewer/js/viewer.js' %}" type="text/javascript"></script>
 {% endblock extra_js %}
