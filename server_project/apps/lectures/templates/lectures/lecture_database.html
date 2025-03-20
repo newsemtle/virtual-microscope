@@ -201,7 +201,7 @@
                         <!-- 5영역 visibility /flex-item-visibility / 10% -->
                         <div class="d-flex align-items-center justify-content-center flex-column p-2 flex-item-visibility"
                              style="width: 10%;">
-                            {% if item.type == "lecture" and item.is_editable %}
+                            {% if item.type != "folder" and item.is_editable %}
                                 <button type="button" class="btn btn-sm btn-outline-primary toggle-activity-btn"
                                         data-bs-tooltip="tooltip" title="Toggle Activity"
                                         data-url="{% url 'api:lecture-toggle-activity' pk=item.id %}">

@@ -38,10 +38,11 @@ class DatabaseView(LoginRequiredMixin, PermissionRequiredMixin, ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         current = self.get_folder()
+        user = self.request.user
 
         context["current_folder"] = current
         context["breadcrumbs"] = self._generate_breadcrumbs(current)
-        context["editable"] = current and current.is_owner(self.request.user)
+        context["editable"] = current.is_owner(user) if current else user.is_admin()
         return context
 
     def _generate_breadcrumbs(self, folder):

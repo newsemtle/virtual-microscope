@@ -1,5 +1,5 @@
-document.querySelectorAll(".slide").forEach((slide) => {
-    const slideId = slide.dataset.slideId;
+document.querySelectorAll(".slide-upload-progress").forEach((progress) => {
+    const slideId = progress.dataset.slideId;
 
     const socket = new WebSocket(`ws://${window.location.host}/ws/slide/${slideId}/`);
 
