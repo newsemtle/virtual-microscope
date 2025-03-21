@@ -8,7 +8,6 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 
     lectureForm.addEventListener("click", function (event) {
-        event.preventDefault();
         const actionElement = event.target.closest("[data-action]");
         if (!actionElement) return;
         const action = actionElement.dataset.action;
@@ -16,8 +15,10 @@ document.addEventListener("DOMContentLoaded", function () {
         const listItem = actionElement.closest("li");
 
         if (action === "up" || action === "down") {
+            event.preventDefault();
             moveContent(listItem, action);
         } else if (action === "remove") {
+            event.preventDefault();
             removeContent(listItem);
         }
     });
@@ -35,7 +36,6 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 
     databaseList.addEventListener("click", function (event) {
-        event.preventDefault();
         const actionElement = event.target.closest("[data-action]");
         if (!actionElement) return;
 
@@ -43,8 +43,10 @@ document.addEventListener("DOMContentLoaded", function () {
         const listItem = actionElement.closest("li");
 
         if (action === "add") {
+            event.preventDefault();
             addContent(listItem);
         } else if (action === "collapse") {
+            event.preventDefault();
             collapseFolder(listItem);
         }
     });
@@ -306,9 +308,11 @@ function submitChanges(formItem) {
     fetchData({
         url: formItem.dataset.url,
         method: 'PATCH',
-        data: JSON.stringify(data),
-        onSuccess: (responseData) => {
-            showFeedback(`Lecture '${responseData.name}' updated successfully!`, "success");
+        data: data,
+        onSuccess: (data) => {
+            sendFeedback(`Lecture '${data.name}' updated successfully!`, "success")
+            localStorage.setItem("refreshPage", "true");
+            window.close();
         },
         onError: (error) => {
             showFeedback("Error updating lecture: " + error.message, "danger");

@@ -1,6 +1,5 @@
 import logging
 
-from django.contrib import messages
 from django.utils import timezone
 from rest_framework import viewsets
 from rest_framework.decorators import action
@@ -65,7 +64,7 @@ class LectureFolderViewSet(viewsets.ModelViewSet):
         if not request.user.has_perm("lectures.view_lecturefolder"):
             raise PermissionDenied("You do not have permission to view folders.")
 
-        root_folders = self.get_queryset().filter(parent=None)
+        root_folders = LectureFolder.objects.viewable(request.user, folder="root")
         tree = [self._get_tree_structure(folder) for folder in root_folders]
         return Response(tree)
 

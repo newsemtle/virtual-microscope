@@ -1,29 +1,40 @@
 from django.conf import settings
 from django.db import models
+from django.db.models import Value, BooleanField
 
 from apps.database.models import Slide
 
 
 class AnnotationManager(models.Manager):
-    def editable_by_slide(self, user, slide):
+    def editable(self, user, *, slide=None):
         if user.is_admin():
-            return self.filter(slide=slide)
-        return self.filter(slide=slide, author=user)
+            if slide:
+                return self.filter(slide=slide)
+            return self.all()
+        elif user.is_publisher():
+            if slide:
+                return self.filter(author=user, slide=slide)
+            return self.filter(author=user)
 
-    def viewable_by_slide(self, user, slide):
-        if user.is_admin():
-            return self.filter(slide=slide)
-        if slide.user_can_view(user):
-            return self.filter(slide=slide)
         return self.none()
 
-    def viewable(self, user):
-        if user.is_admin():
-            return self.all()
-        annotations = self.filter(author=user)
-        for slide in Slide.objects.viewable(user):
-            annotations |= self.viewable_by_slide(user, slide)
-        return annotations
+    def viewable(self, user, *, slide=None):
+        extra_viewable = self.none()
+
+        if user.is_publisher():
+            if slide:
+                extra_viewable |= self.filter(slide=slide)
+            else:
+                for slide in Slide.objects.viewable(user):
+                    extra_viewable |= slide.annotations.all()
+
+        editable = self.editable(user, slide=slide).annotate(
+            is_editable=Value(True, BooleanField())
+        )
+        extra_viewable = extra_viewable.annotate(
+            is_editable=Value(False, BooleanField())
+        )
+        return (editable | extra_viewable).distinct()
 
 
 class Annotation(models.Model):
@@ -67,4 +78,13 @@ class Annotation(models.Model):
         return self.author == user
 
     def user_can_view(self, user):
-        return self.user_can_edit(user) or self.slide.user_can_view(user)
+        if user.is_admin():
+            return True
+        elif user.is_publisher():
+            return self.user_can_edit(user) or self.slide.user_can_view(user)
+        elif user.is_viewer():
+            for content in self.slide.lecture_contents.all():
+                if content.user_can_view(user):
+                    return True
+            return False
+        return False

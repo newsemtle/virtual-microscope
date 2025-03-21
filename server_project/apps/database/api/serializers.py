@@ -28,7 +28,7 @@ class FolderSerializer(serializers.ModelSerializer):
         errors = {}
 
         parent = attrs.get("parent")
-        if parent and not parent.user_can_edit(user):
+        if parent and not parent.is_owner(user):
             errors["parent"] = "You don't have permission to edit this folder."
 
         if errors:
@@ -76,16 +76,11 @@ class SlideSerializer(serializers.ModelSerializer):
         read_only_fields = ["author", "image_root", "metadata"]
 
     def validate(self, attrs):
-        if not attrs.get("name"):
-            attrs["name"] = os.path.splitext(os.path.basename(attrs.get("file").name))[
-                0
-            ]
-
         user = self.context["request"].user
         errors = {}
 
         folder = attrs.get("folder")
-        if folder and not folder.user_can_edit(user):
+        if folder and not folder.is_owner(user):
             errors["folder"] = "You don't have permission to edit this folder."
 
         if errors:
@@ -94,6 +89,11 @@ class SlideSerializer(serializers.ModelSerializer):
         return super().validate(attrs)
 
     def create(self, validated_data):
+        if not validated_data.get("name"):
+            validated_data["name"] = os.path.splitext(
+                os.path.basename(validated_data.get("file").name)
+            )[0]
+
         validated_data["author"] = self.context["request"].user
         return super().create(validated_data)
 

@@ -4,7 +4,9 @@ from django.contrib.auth.mixins import (
     PermissionRequiredMixin,
 )
 from django.contrib.auth.models import Group
-from django.shortcuts import redirect, get_object_or_404
+from django.core.exceptions import PermissionDenied
+from django.db.models import CharField, Value
+from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse_lazy
 from django.views.generic import ListView
 
@@ -19,14 +21,13 @@ class LectureBulletinsView(LoginRequiredMixin, PermissionRequiredMixin, ListView
     permission_required = "lectures.view_lecture"
 
     def get_queryset(self):
-        if self.request.user.is_admin():
-            lectures = Lecture.objects.filter(is_active=True)
-        else:
-            lectures = Lecture.objects.viewable(self.request.user, False)
-            lectures |= Lecture.objects.editable(self.request.user).filter(
-                is_active=True
-            )
-        return sorted(lectures, key=lambda x: x.updated_at, reverse=True)
+        user = self.request.user
+        lectures = (
+            Lecture.objects.viewable(user)
+            .filter(is_active=True)
+            .order_by("-updated_at")
+        )
+        return lectures
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -49,43 +50,43 @@ class LectureDatabaseView(
         return get_object_or_404(LectureFolder, id=folder_id)
 
     def test_func(self):
-        if self.request.user.is_admin():
-            return True
-
+        user = self.request.user
         current = self.get_folder()
         if current:
-            return current.user_can_edit(self.request.user)
+            return current.user_can_view(user)
+        return user.is_admin()
 
-        return self.request.user.base_lecture_folder
+    def handle_no_permission(self):
+        user = self.request.user
+        if not user.is_authenticated:
+            return super().handle_no_permission()
 
-    def dispatch(self, request, *args, **kwargs):
-        if not self.request.user.is_admin() and not self.get_folder():
-            folder = self.request.user.base_lecture_folder
+        folder = user.base_lecture_folder
+        if folder:
             return redirect(
-                reverse_lazy("lectures:lecture-database")
-                + f"?folder={folder.id or None}"
+                reverse_lazy("lectures:lecture-database") + f"?folder={folder.id}"
             )
-        return super().dispatch(request, *args, **kwargs)
+        else:
+            raise PermissionDenied("You do not have permission to access this page.")
 
     def get_queryset(self):
+        user = self.request.user
         current = self.get_folder()
 
-        if current:
-            subfolders = current.subfolders.all()
-        else:
-            subfolders = LectureFolder.objects.base_folders()
+        if not current:
+            current = "root"
+        subfolders = (
+            LectureFolder.objects.viewable(user, folder=current)
+            .annotate(type=Value("folder", CharField()))
+            .order_by("name")
+        )
+        lectures = (
+            Lecture.objects.viewable(user, folder=current)
+            .annotate(type=Value("lecture", CharField()))
+            .order_by("name")
+        )
 
-        lectures = Lecture.objects.viewable_by_folder(self.request.user, current)
-
-        for folder in subfolders:
-            folder.type = "folder"
-
-        for lecture in lectures:
-            lecture.type = "lecture"
-            lecture.is_editable = lecture.user_can_edit(self.request.user)
-
-        items = list(subfolders) + list(lectures)
-        return sorted(items, key=lambda x: (x.type, x.name.lower()))
+        return list(subfolders) + list(lectures)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -124,8 +125,8 @@ class LectureView(
         return lecture.user_can_view(self.request.user)
 
     def get_queryset(self):
-        contents = self.get_lecture().contents.all()
-        return sorted(contents, key=lambda x: x.order)
+        contents = self.get_lecture().contents.all().order_by("order")
+        return contents
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -150,8 +151,8 @@ class LectureEditView(
         return lecture.user_can_edit(self.request.user)
 
     def get_queryset(self):
-        contents = self.get_lecture().contents.all()
-        return sorted(contents, key=lambda x: x.order)
+        contents = self.get_lecture().contents.all().order_by("order")
+        return contents
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -163,14 +164,16 @@ class LectureEditView(
             profile__type=GroupProfile.TypeChoices.VIEWER
         )
 
-        base_folders = Folder.objects.base_folders()
-        root_slides = Slide.objects.viewable_by_folder(self.request.user, None)
-        for folder in base_folders:
-            folder.type = "folder"
-        for slide in root_slides:
-            slide.type = "slide"
-
-        items = list(base_folders) + list(root_slides)
-        context["items"] = sorted(items, key=lambda x: (x.type, x.name.lower()))
+        base_folders = (
+            Folder.objects.viewable(self.request.user, folder="root")
+            .annotate(type=Value("folder", CharField()))
+            .order_by("name")
+        )
+        root_slides = (
+            Slide.objects.viewable(self.request.user, folder="root")
+            .annotate(type=Value("image/slide", CharField()))
+            .order_by("name")
+        )
+        context["items"] = list(base_folders) + list(root_slides)
 
         return context

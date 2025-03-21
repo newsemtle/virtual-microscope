@@ -68,7 +68,7 @@
                         <div class="d-flex align-items-center justify-content-center p-2 flex-item-image"
                              style="width: 15%;">
                             <img src="{% url 'api:slide-thumbnail' pk=content.slide.id %}" alt="Slide Thumbnail"
-                                 style="max-width: 100%; max-height: 100%; object-fit: contain;">
+                                 class="img-fluid">
                         </div>
                         <!-- 중앙 영역: 슬라이드 이름 -->
                         <div class="d-flex flex-column p-2 flex-item-name" style="width: 63%; overflow: hidden;">
@@ -91,8 +91,8 @@
                                 {% if editable %}
                                     {% if content.annotation %}
                                         <p class="mb-0 annotation-truncate" style="font-size: 15px"><i
-                                                class="bi bi-pen-fill text-danger"></i> {{ content.annotation.name }}
-                                            - {{ content.annotation.author.username }}</p>
+                                                class="bi bi-pen-fill text-danger"></i>{{ content.annotation.name }}
+                                            ({{ content.annotation.author.username }})</p>
                                     {% endif %}
                                     <p class="mb-0" style="font-size: 15px">
                                         created: {{ content.slide.updated_at|date:"Y-m-d" }}</p>

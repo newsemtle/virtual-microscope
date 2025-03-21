@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.contrib.auth import views as auth_views
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.urls import reverse_lazy
@@ -11,17 +12,17 @@ class HomeView(TemplateView):
     template_name = "accounts/home.html"
 
     def get_context_data(self, **kwargs):
+        user = self.request.user
         context = super().get_context_data(**kwargs)
-        if self.request.user.is_authenticated:
-            context["show_database"] = self.request.user.has_perm(
-                "database.view_folder"
-            )
-            context["show_lecture_database"] = self.request.user.has_perm(
-                "lectures.view_lecture"
-            )
-        else:
-            context["show_database"] = False
-            context["show_lecture_database"] = False
+
+        context["show_database"] = False
+        context["show_lecture_database"] = False
+        if user.is_authenticated:
+            if user.is_admin() or user.is_publisher():
+                context["show_database"] = True
+                context["show_lecture_database"] = True
+
+        context["VERSION"] = settings.VERSION
         return context
 
 
