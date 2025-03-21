@@ -182,15 +182,16 @@ class User(AbstractBaseUser, PermissionsMixin):
             old_instance = User.objects.get(pk=self.pk)
             if old_instance.username != self.username:
                 self.base_lecture_folder.name = self.username.title()
-                self.base_lecture_folder.save()
+                self.base_lecture_folder.save(update_fields=["name"])
 
+        super().save(*args, **kwargs)
+        
         if self.is_publisher() and not self.base_lecture_folder:
             self.base_lecture_folder = LectureFolder.objects.create(
                 name=self.username.title(),
                 author=User.objects.filter(is_superuser=True).first(),
             )
-
-        super().save(*args, **kwargs)
+            self.save(update_fields=["base_lecture_folder"])
 
     def delete(self, *args, **kwargs):
         try:
