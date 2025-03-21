@@ -27,6 +27,9 @@ body {
         /* 가로 폭이 1200px 이하로는 줄지 않음 */
         min-height: 100vh;
     }
+    .nav-small-query {
+        display : none !important;
+    }
 }
 
 
@@ -59,6 +62,12 @@ body {
         max-height: 200px;
         overflow-y: auto;
     }
+    .nav-large-query {
+        display : none !important;
+    }
+    .slide-text {
+        display: none !important;
+      }
 }
 
 /* 화면 너비가 480 이하인 경우 (모바일)*/
@@ -69,7 +78,7 @@ body {
         min-width: 100vw;
         min-height: 100vh;
         grid-template-columns: 1fr;
-        grid-template-rows: 96px 40px 1fr 40px auto 30px;
+        grid-template-rows: 56px 40px 1fr 40px auto 30px;
         grid-template-areas:
             'header'
             'nav'
@@ -90,15 +99,39 @@ body {
         max-height: 200px;
         overflow-y: auto;
     }
+    .nav-large-query {
+        display : none !important;
+    }
+    .slide-text {
+        display: none !important;
+      }
 }
 
 /* slide name style */
 .slide-text {
-    font-size: 25px;
+    font-size: 1.5rem;
     color: black;
     font-weight: bold;
     padding: 0;
 }
+
+.nav-slide-text {
+    font-size: 1rem;
+    color: white;
+    font-weight: bold;
+    padding: 0;
+    width: 100%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.footer-padding{
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+  }
+  
+
 
 
 /* 상단 헤더 */

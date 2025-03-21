@@ -4,6 +4,12 @@
   .card-hover:hover {
     box-shadow: 0 5px 15px #8fa1b9;
 }
+.slide-text {
+    font-size: 25px;
+    color: black;
+    font-weight: bold;
+    padding: 0;
+}
 
 @media (min-width: 1025px) {
     .name-truncate {
@@ -13,13 +19,26 @@
         overflow: hidden;
         text-overflow: ellipsis;
     }
+    .information-truncate {
+        width: 100%;
+        word-break: break-word;
+        font-size: 1rem;
+        line-height: 1.2;
+        text-overflow: ellipsis;
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        min-height: calc(1.5em * 2);
+    }
 }
 
 
 @media (max-width: 1024px) {
     .flex-item-right,
     .flex-item-edit,
-    .flex-item-visibility {
+    .flex-item-visibility,
+    .slide-text {
         display: none !important;
       }
     
@@ -32,5 +51,15 @@
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
+    }
+    .information-truncate {
+        width: 100%;
+        word-break: break-word;
+        font-size: 0.7rem;
+        text-overflow: ellipsis;
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
     }
 }

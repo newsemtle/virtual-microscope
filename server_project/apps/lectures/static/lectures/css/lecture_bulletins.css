@@ -4,6 +4,12 @@
   .card-hover:hover {
     box-shadow: 0 5px 15px #8fa1b9;
 }
+.slide-text {
+    font-size: 25px;
+    color: black;
+    font-weight: bold;
+    padding: 0;
+}
 
 @media (min-width: 1025px) {
     .name-truncate {
@@ -26,13 +32,13 @@
         overflow: hidden;
         min-height: calc(1.5em * 2);
     }
-
 }
 
 @media (max-width: 1024px) {
     .flex-item-right,
     .flex-item-edit,
-    .group-truncate {
+    .group-truncate,
+    .slide-text {
         display: none !important;
       }
     .flex-item-icon { flex: 1; }

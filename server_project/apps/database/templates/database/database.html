@@ -6,6 +6,10 @@
     <link rel="stylesheet" href="{% static 'database/css/database.css' %}">
 {% endblock %}
 
+<!-- 화면 상단 중앙에 DB/Slide인 거 표시하기(css에 slide-text 추가해 줘야함)-->
+{% block slide_name %}
+    DB/Slide
+{% endblock slide_name %}
 
 {% block content %}
     <!-- Breadcrumb -->
@@ -69,11 +73,11 @@
                         <i class="bi bi-folder-symlink fs-3 text-warning"></i>
                     </div>
                     <!-- 2영역 이름 /flex-item-name / 90% -->
-                    <div class="d-flex justify-content-center flex-column p-2 flex-item-name"
+                    <div class="d-flex justify-content-center flex-column p-2 flex-item-name position-relative"
                          style="width: 90%; overflow: hidden;">
                         <h3 class="mb-0" style="font-size: 2rem">
                             <a href="{% url 'database:database' %}?folder={{ current_folder.parent.id }}"
-                               style="text-decoration: none; color: inherit;">
+                               style="text-decoration: none; color: inherit;" class="stretched-link">
                                 ..
                             </a>
                         </h3>
@@ -92,7 +96,7 @@
                     <div class="d-flex w-100 h-100" style=" width: 100%;">
                         <!-- 1영역 아이콘 /flex-item-icon / 5% -->
                         <div class="d-flex align-items-center justify-content-center p-2 flex-item-icon"
-                             style="width: 5%;">
+                             style="width: 10%;">
                             <!-- folder 아이콘 -->
                             {% if item.type == "folder" %}
                                 <i class="bi bi-folder fs-3 text-warning"></i>
@@ -102,18 +106,23 @@
                             {% endif %}
                         </div>
                         <!-- 2영역 이름 /flex-item-name / 55% -->
-                        <div class="d-flex justify-content-center flex-column p-2 flex-item-name"
-                             style="width: 55%; overflow: hidden;">
+                        <div class="d-flex justify-content-center flex-column p-2 flex-item-name position-relative"
+                             style="width: 45%; overflow: hidden;">
                             {% if item.type == "folder" %}
                                 <h3 class="mb-0 name-truncate">
                                     <a href="{% url 'database:database' %}?folder={{ item.id }}"
-                                       style="text-decoration: none; color: inherit;">{{ item.name }}</a>
+                                       style="text-decoration: none; color: inherit;" class="stretched-link" >{{ item.name }}</a>
                                 </h3>
                             {% else %}
-                                <h3 class="mb-0 name-truncate">
-                                    <a href="{% url 'slide_viewer:slide-view' slide_id=item.id %}"
-                                       style="text-decoration: none; color: inherit;">{{ item.name }}</a>
-                                </h3>
+                                <div class="flex-fill">
+                                    <h3 class="mb-0 name-truncate">
+                                        <a href="{% url 'slide_viewer:slide-view' slide_id=item.id %}" class="stretched-link" 
+                                        style="text-decoration: none; color: inherit;">{{ item.name }}</a>
+                                    </h3>
+                                    <h6 class="mb-0 information-truncate" style="color: rgba(68, 66, 66, 0.38);">
+                                        {{ item.information }}
+                                    </h6>
+                                </div>
                             {% endif %}
                         </div>
                         <!-- 3영역 작성자, 날짜 /flex-item-right / 20% -->
@@ -122,6 +131,19 @@
                                     class="bi bi-person-fill-up fs-5"></i> {{ item.author|title }}</p>
                             <p class="mb-0" style="font-size: 15px">created: {{ item.created_at|date:"Y-m-d H:i" }}</p>
                             <p class="mb-0" style="font-size: 15px">updated: {{ item.updated_at|date:"Y-m-d H:i" }}</p>
+                            <!-- accessability 표시-->
+                            {% if item.type != "folder" %}
+                                {% if item.is_public %}
+                                    <p class="mb-0" style="font-size: 15px"><span class="badge rounded-pill bg-info text-dark">Public</span>
+                                {% else %}
+                                    <p class="mb-0" style="font-size: 15px"><span class="badge rounded-pill bg-secondary">Private</span>
+                                {% endif %}
+                            {% endif %}
+                            <!-- 진행상황 표시 -->
+                            {% if item.type != "folder" and not item.processed %}
+                                <progress class="slide-upload-progress" max="100" style="width: 100%"
+                                      data-slide-id="{{ item.id }}"></progress>
+                            {% endif %}
                         </div>
                         <!-- 4영역 Edit 버튼 /flex-item-edit / 10%-->
                         <div class="d-flex  align-items-center justify-content-center flex-column p-2 flex-item-edit"
@@ -181,7 +203,7 @@
                                                 data-bs-target="#image-edit-modal" data-bs-tooltip="tooltip"
                                                 title="Edit"
                                                 data-url="{% url 'api:slide-detail' pk=item.id %}">
-                                            Details
+                                            Edit
                                         </button>
                                         <!-- move 버튼 -->
                                         <button type="button" class="btn btn-outline-dark btn-sm rounded-0"
@@ -208,16 +230,12 @@
                         <!-- 5영역 visibility /flex-item-visibility / 10% -->
                         <div class="d-flex align-items-center justify-content-center flex-column p-2 flex-item-visibility"
                              style="width: 10%;">
-                            {% if item.type != "folder" and not item.processed %}
-                                <progress class="slide-upload-progress" max="100" style="width: 100%"
-                                          data-slide-id="{{ item.id }}"></progress>
-                            {% endif %}
                             {% if item.type != "folder" and item.is_editable %}
                                 <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal"
                                         data-bs-target="#annotation-manage-modal" data-bs-tooltip="tooltip"
                                         title="Annotations"
                                         data-url="{% url 'api:slide-annotations' pk=item.id %}">
-                                    Annotation
+                                    Annotation ({{ item.annotations.count }})
                                 </button>
                             {% endif %}
                         </div>

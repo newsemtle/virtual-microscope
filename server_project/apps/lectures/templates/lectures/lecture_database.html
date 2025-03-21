@@ -7,6 +7,11 @@
 {% endblock %}
 
 
+<!-- 화면 상단 중앙에 DB/Lecture인 거 표시하기(css에 slide-text 추가해 줘야함)-->
+{% block slide_name %}
+    DB/Lecture
+{% endblock slide_name %}
+
 {% block content %}
     <!-- Breadcrumb -->
     <nav class="breadcrumbs" aria-label="breadcrumb">
@@ -67,11 +72,11 @@
                         <i class="bi bi-folder-symlink fs-3 text-warning"></i>
                     </div>
                     <!-- 2영역 이름 /flex-item-name / 90% -->
-                    <div class="d-flex justify-content-center flex-column p-2 flex-item-name"
+                    <div class="d-flex justify-content-center flex-column p-2 flex-item-name position-relative"
                          style="width: 90%; overflow: hidden;">
                         <h3 class="mb-0" style="font-size: 2rem">
                             <a href="{% url 'lectures:lecture-database' %}?folder={{ current_folder.parent.id }}"
-                               style="text-decoration: none; color: inherit;">
+                               style="text-decoration: none; color: inherit;" class="stretched-link">
                                 ..
                             </a>
                         </h3>
@@ -98,18 +103,27 @@
                             {% endif %}
                         </div>
                         <!-- 2영역 이름 /flex-item-name / 55% -->
-                        <div class="d-flex justify-content-center flex-column p-2 flex-item-name"
+                        <div class="d-flex justify-content-center flex-column p-2 flex-item-name position-relative"
                              style="width: 55%; overflow: hidden;">
                             {% if item.type == "folder" %}
                                 <h3 class="mb-0 name-truncate">
                                     <a href="{% url 'lectures:lecture-database' %}?folder={{ item.id }}"
-                                       style="text-decoration: none; color: inherit;">{{ item.name }}</a>
+                                       style="text-decoration: none; color: inherit;" class="stretched-link">{{ item.name }}</a>
                                 </h3>
                             {% else %}
                                 <h3 class="mb-0 name-truncate">
                                     <a href="{% url 'lectures:lecture-view' lecture_id=item.id %}"
-                                       style="text-decoration: none; color: inherit;">{{ item.name }}</a>
+                                       style="text-decoration: none; color: inherit;" class="stretched-link">{{ item.name }}</a>
                                 </h3>
+                                <h6 class="mb-0 information-truncate" style="color: rgba(68, 66, 66, 0.38);">
+                                    {{ item.description }}
+                                </h6>
+                                <h6 class="mb-0 group-truncate"> <i class="bi bi-people-fill"></i>
+                                    {% for group in item.groups.all %}
+                                        {{ group.name }}{% if not forloop.last%}, {% endif %}
+                                        {% empty %}No groups.
+                                    {% endfor %}
+                                </h6>
                             {% endif %}
                         </div>
                         <!-- 3영역 날짜 /flex-item-right / 20% -->
