@@ -7,6 +7,10 @@
     <link rel="stylesheet" href="{% static 'lectures/css/lecture_bulletins.css' %}">
 {% endblock %}
 
+<!-- 화면 상단 중앙에 Lectures인 거 표시하기(css에 slide-text 추가해 줘야함)-->
+{% block slide_name %}
+    Lectures
+{% endblock slide_name %}
 
 {% block content %}
     <!-- Breadcrumb -->
@@ -38,11 +42,11 @@
                             <i class="bi bi-journal-text fs-3 text-warning"></i>
                         </div>
                         <!-- 2영역: 렉쳐 이름, 렉쳐 설명, 대상 / flex-item-name / 65% -->
-                        <div class="d-flex flex-column p-2 flex-item-name" style="width: 55%; overflow: hidden;">
+                        <div class="d-flex flex-column p-2 flex-item-name position-relative" style="width: 55%; overflow: hidden;">
                             <div class="flex-fill">
                                 <h3 class="mb-0 name-truncate">
                                     <a href="{% url 'lectures:lecture-view' lecture_id=lecture.id %}"
-                                       style="text-decoration: none; color: inherit;">
+                                       style="text-decoration: none; color: inherit;" class="stretched-link">
                                         {{ lecture.name }}
                                     </a>
                                 </h3>
@@ -50,8 +54,11 @@
                                     {{ lecture.description }}
                                 </h6>
                                 <h6 class="mb-0 group-truncate"><i class="bi bi-people-fill"></i>
-                                    {% for group in lecture.groups.all %}{{ group.name }}{% if not forloop.last %}
-                                        , {% endif %}{% empty %}No groups.{% endfor %}</h6>
+                                    {% for group in lecture.groups.all %}
+                                        {{ group.name }}{% if not forloop.last %}, {% endif %}
+                                        {% empty %}No groups.
+                                    {% endfor %}
+                                </h6>
                             </div>
                         </div>
                         <!-- 3영역: Slides number, created, updated / flex-item-right / 20% -->

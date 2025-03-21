@@ -22,7 +22,7 @@
             <a class="navbar-brand" href="{% url 'home' %}">
                 <img src="{% static 'common_static/img/logo.svg' %}" height="30" class="d-inline-block align-top"
                      alt="인제대학교 의과대학">
-                Virtual Microscope
+                <span class="d-none d-sm-inline">Virtual Microscope</span>
             </a>
 
             <!-- 중앙: 항상 보이는 slide_name 영역 -->
@@ -102,7 +102,7 @@
 
 {% block extra_modal %}{% endblock %}
 
-<footer class="text-center">
+<footer class="text-center py-3 footer-padding">
     <small>&copy; 2024 SEMTLE, Inje University</small>
     <br>
     <small>{{ VERSION }}</small>

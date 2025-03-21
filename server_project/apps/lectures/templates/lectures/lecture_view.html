@@ -79,9 +79,6 @@
                                 <h6 class="mb-0 information-truncate" style="color: rgba(68, 66, 66, 0.38);">
                                     {{ content.slide.information }}
                                 </h6>
-                                <h6 class="mb-0"><i class="bi bi-people-fill"></i>
-                                    {% for group in lecture.groups.all %}{{ group.name }}{% if not forloop.last %}
-                                        , {% endif %}{% empty %}No groups.{% endfor %}</h6>
                             </div>
                         </div>
                         <!-- 오른쪽 영역: Annotation, Created, Updated (css right area)-->

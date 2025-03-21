@@ -39,252 +39,232 @@
 
 <!-- nav block -->
 {% block nav_content %}
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark custom-nav">
+    <!-- 화면 클 때 나오는 네비게이션 -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark custom-nav nav-large-query">
         <div class="container-fluid custom-nav">
-            <!-- 토글 버튼 -->
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#slideNav"
-                    aria-controls="slideNav" aria-expanded="false" aria-label="Toggle navigation">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <!-- 토글 대상 -->
-            <div class="collapse navbar-collapse" id="slideNav">
-                <ul class="navbar-nav w-100">
-                    <!-- File 드롭다운 버튼 -->
-                    <li class="nav-item">
-                        <div class="btn-group" role="group">
-                            <button id="btnGroupDrop_file" type="button"
-                                    class="btn btn btn-outline-light custom-button dropdown-toggle"
-                                    data-bs-toggle="dropdown"
-                                    aria-expanded="false" title="File"> File
+            <!-- 전체 버튼 그룹 -->
+            <div class="btn-group" role="group">
+                <!-- File 드롭다운 버튼 -->
+                <div class="btn-group" role="group">
+                    <button id="btnGroupDrop_file" type="button"
+                            class="btn btn btn-outline-light custom-button dropdown-toggle"
+                            data-bs-toggle="dropdown"
+                            aria-expanded="false" title="File"> File
+                    </button>
+                    <ul class="dropdown-menu" aria-labelledby="btnGroupDrop_file">
+                        <!-- 저장 버튼 -->
+                        <li>
+                            {% if can_edit_annotation %}
+                                <button class="dropdown-item" id="annotation-update-btn" title="Save"
+                                        data-annotation-id="{{ annotation.id }}"
+                                        data-url="{% url 'api:annotation-detail' pk=annotation.id %}">
+                                    <i class="bi bi-floppy"></i> Save
+                                </button>
+                            {% endif %}
+                            {% if can_create_annotation %}
+                                <button class="dropdown-item" title="Save As" data-bs-toggle="modal"
+                                        data-bs-target="#annotation-create-modal">
+                                    <i class="bi bi-floppy"></i> Save As..
+                                </button>
+                            {% endif %}
+                        </li>
+                        <!-- 업로드 버튼 -->
+                        <li>
+                            <button class="dropdown-item" title="Upload"
+                                    onclick="document.getElementById('load-file').click()">
+                                <i class="bi bi-file-earmark-arrow-up"></i> Upload
                             </button>
-                            <ul class="dropdown-menu" aria-labelledby="btnGroupDrop_file">
-                                <!-- 저장 버튼 -->
-                                <li>
-                                    {% if can_edit_annotation %}
-                                        <button class="dropdown-item" id="annotation-update-btn" title="Save"
-                                                data-annotation-id="{{ annotation.id }}"
-                                                data-url="{% url 'api:annotation-detail' pk=annotation.id %}">
-                                            <i class="bi bi-floppy"></i> Save
-                                        </button>
-                                    {% endif %}
-                                    {% if can_create_annotation %}
-                                        <button class="dropdown-item" title="Save As" data-bs-toggle="modal"
-                                                data-bs-target="#annotation-create-modal">
-                                            <i class="bi bi-floppy"></i> Save As..
-                                        </button>
-                                    {% endif %}
-                                </li>
-                                <!-- 업로드 버튼 -->
-                                <li>
-                                    <button class="dropdown-item" title="Upload"
-                                            onclick="document.getElementById('load-file').click()">
-                                        <i class="bi bi-file-earmark-arrow-up"></i> Upload
-                                    </button>
-                                    <input type="file" id="load-file" class="d-none" title="Upload"/>
-                                </li>
-                                <li>
-                                    <hr class="dropdown-divider" style="--bs-dropdown-divider-margin-y: 0">
-                                </li>
-                                <!-- 정보 버튼 -->
-                                <li>
-                                    <button class="dropdown-item" title="Slide-Information" onclick="openinfoPopup()">
-                                        <i class="bi bi-info-circle"></i> Information
-                                    </button>
-                                </li>
-                                <!-- 도움말 버튼 -->
-                                <li>
-                                    <button class="dropdown-item" title="Help">
-                                        <i class="bi bi-question-circle"></i> Help
-                                    </button>
-                                </li>
-                            </ul>
-                        </div>
-                    </li>
-                    <!-- View 드롭다운 버튼 -->
-                    <li class="nav-item">
-                        <div class="btn-group" role="group">
-                            <button id="btnGroupDrop_view" type="button"
-                                    class="btn btn btn-outline-light custom-button dropdown-toggle"
-                                    data-bs-toggle="dropdown"
-                                    aria-expanded="false" title="File"> View
+                            <input type="file" id="load-file" class="d-none" title="Upload"/>
+                        </li>
+                        <li>
+                            <hr class="dropdown-divider" style="--bs-dropdown-divider-margin-y: 0">
+                        </li>
+                        <!-- 정보 버튼 -->
+                        <li>
+                            <button class="dropdown-item" title="Slide-Information" onclick="openinfoPopup()">
+                                <i class="bi bi-info-circle"></i> Information
                             </button>
-                            <ul class="dropdown-menu" aria-labelledby="btnGroupDrop_view">
-                                <!-- 네비게이터 버튼-->
-                                <li>
-                                    <button class="dropdown-item" onclick="toggleNav()" title="Toggle Navigator">
-                                        <i class="bi bi-geo-alt-fill"></i> Navigator
-                                    </button>
-                                </li>
-                                <!-- 전체화면 버튼 -->
-                                <li>
-                                    <button class="dropdown-item" onclick="toggleFullScreen()" title="Full Screen">
-                                        <i class="bi bi-arrows-fullscreen"></i> Full Screen
-                                    </button>
-                                </li>
-                            </ul>
-                        </div>
-                    </li>
-                    <!-- 배율 드롭다운 버튼 -->
-                    <li class="nav-item">
-                        <div class="btn-group" role="group">
-                            <button id="btnGroupDrop_scale" type="button"
-                                    class="btn btn btn-outline-light custom-button dropdown-toggle"
-                                    data-bs-toggle="dropdown"
-                                    aria-expanded="false" style="width: 102px;" title="Change Lens">
+                        </li>
+                        <!-- 도움말 버튼 -->
+                        <li>
+                            <button class="dropdown-item" title="Help">
+                                <i class="bi bi-question-circle"></i> Help
                             </button>
-                            <ul class="dropdown-menu" aria-labelledby="btnGroupDrop_scale">
-                                <!-- Reset 버튼 -->
-                                <li>
-                                    <button class="dropdown-item" onclick="viewer.viewport.goHome()">
-                                        Reset
-                                    </button>
-                                </li>
-                                <!-- 배율 버튼 -->
-                                <li>
-                                    <button class="dropdown-item" onclick="setZoomLevel(1.25)">1.25X</button>
-                                </li>
-                                <li>
-                                    <button class="dropdown-item" onclick="setZoomLevel(2.5)">2.5X</button>
-                                </li>
-                                <li>
-                                    <button class="dropdown-item" onclick="setZoomLevel(5)">5X</button>
-                                </li>
-                                <li>
-                                    <button class="dropdown-item" onclick="setZoomLevel(10)">10X</button>
-                                </li>
-                                <li>
-                                    <button class="dropdown-item" onclick="setZoomLevel(20)">20X</button>
-                                </li>
-                                <li>
-                                    <button class="dropdown-item" onclick="setZoomLevel(40)">40X</button>
-                                </li>
-                                <li>
-                                    <button class="dropdown-item" onclick="setZoomLevel(63)">63X</button>
-                                </li>
-                                <li>
-                                    <button class="dropdown-item" onclick="setZoomLevel(100)">100X</button>
-                                </li>
-                            </ul>
-                        </div>
-                    </li>
-                    <!-- 그리기 드롭다운 버튼-->
-                    <li class="nav-item">
-                        <div class="btn-group" role="group">
-                            <button id="btnGroupDrop_annotation" type="button"
-                                    class="btn btn btn-outline-light custom-button dropdown-toggle"
-                                    data-bs-toggle="dropdown"
-                                    aria-expanded="false" title="Drawing" style="background-color: blue">
-                                <span>Drawing </span><span id="ink">●</span>
+                        </li>
+                    </ul>
+                </div>
+                <!-- View 드롭다운 버튼 -->
+                <div class="btn-group" role="group">
+                    <button id="btnGroupDrop_view" type="button"
+                            class="btn btn btn-outline-light custom-button dropdown-toggle"
+                            data-bs-toggle="dropdown"
+                            aria-expanded="false" title="File"> View
+                    </button>
+                    <ul class="dropdown-menu" aria-labelledby="btnGroupDrop_view">
+                        <!-- 네비게이터 버튼-->
+                        <li>
+                            <button class="dropdown-item" onclick="toggleNav()" title="Toggle Navigator">
+                                <i class="bi bi-geo-alt-fill"></i> Navigator
                             </button>
-                            <ul class="dropdown-menu" aria-labelledby="btnGroupDrop_annotation">
-                                <!-- Annotation 버튼-->
-                                <li>
-                                    <button class="dropdown-item"><i class="bi bi-arrow-up-left"></i> Pointer</button>
-                                </li>
-                                <li>
-                                    <button class="dropdown-item" onclick="setDrawingTool('ellipse')"><i
-                                            class="bi bi-circle"></i> Circle
-                                    </button>
-                                </li>
-                                <li>
-                                    <button class="dropdown-item" onclick="setDrawingTool('rectangle')"><i
-                                            class="bi bi-square"></i> Rectangle
-                                    </button>
-                                </li>
-                                <li>
-                                    <hr class="dropdown-divider" style="--bs-dropdown-divider-margin-y: 0">
-                                </li>
-                                <!-- Measure 버튼-->
-                                <li>
-                                    <button class="dropdown-item"><i class="bi bi-rulers"></i> Linear Measure</button>
-                                </li>
-                                <li>
-                                    <hr class="dropdown-divider" style="--bs-dropdown-divider-margin-y: 0">
-                                </li>
-                                <li class="dropdown-item">
-                                    <i class="bi bi-palette"></i><span> Choose Color </span>
-                                </li>
-                                <!-- 항상 보이는 색상 팔레트 -->
-                                <div class="color-palette">
-                                    <div class="color-option" data-color="#ff0000">
-                                        <div class="color-circle red"></div>
-                                    </div>
-                                    <div class="color-option" data-color="#0000ff">
-                                        <div class="color-circle blue"></div>
-                                    </div>
-                                    <div class="color-option" data-color="#000001">
-                                        <div class="color-circle black"></div>
-                                    </div>
-                                    <div class="color-option" data-color="#ffffff">
-                                        <div class="color-circle white"></div>
-                                    </div>
-                                    <div class="color-option" data-color="#ffff00">
-                                        <div class="color-circle yellow"></div>
-                                    </div>
-                                    <div class="color-option" data-color="#ff00ff">
-                                        <div class="color-circle magenta"></div>
-                                    </div>
-                                    <div class="color-option" data-color="#00ff00">
-                                        <div class="color-circle green"></div>
-                                    </div>
-                                    <div class="color-option" data-color="#8b4513">
-                                        <div class="color-circle brown"></div>
-                                    </div>
-                                </div>
-                            </ul>
+                        </li>
+                        <!-- 전체화면 버튼 -->
+                        <li>
+                            <button class="dropdown-item" onclick="toggleFullScreen()" title="Full Screen">
+                                <i class="bi bi-arrows-fullscreen"></i> Full Screen
+                            </button>
+                        </li>
+                    </ul>
+                </div>
+                <!-- 배율 드롭다운 버튼 -->
+                <div class="btn-group" role="group">
+                    <button id="btnGroupDrop_scale" type="button"
+                            class="btn btn btn-outline-light custom-button dropdown-toggle"
+                            data-bs-toggle="dropdown"
+                            aria-expanded="false" style="width: 102px;" title="Change Lens">
+                    </button>
+                    <ul class="dropdown-menu" aria-labelledby="btnGroupDrop_scale">
+                        <!-- Reset 버튼 -->
+                        <li>
+                            <button class="dropdown-item" onclick="viewer.viewport.goHome()">
+                                Reset
+                            </button>
+                        </li>
+                        <!-- 배율 버튼 -->
+                        <li>
+                            <button class="dropdown-item" onclick="setZoomLevel(1.25)">1.25X</button>
+                        </li>
+                        <li>
+                            <button class="dropdown-item" onclick="setZoomLevel(2.5)">2.5X</button>
+                        </li>
+                        <li>
+                            <button class="dropdown-item" onclick="setZoomLevel(5)">5X</button>
+                        </li>
+                        <li>
+                            <button class="dropdown-item" onclick="setZoomLevel(10)">10X</button>
+                        </li>
+                        <li>
+                            <button class="dropdown-item" onclick="setZoomLevel(20)">20X</button>
+                        </li>
+                        <li>
+                            <button class="dropdown-item" onclick="setZoomLevel(40)">40X</button>
+                        </li>
+                        <li>
+                            <button class="dropdown-item" onclick="setZoomLevel(63)">63X</button>
+                        </li>
+                        <li>
+                            <button class="dropdown-item" onclick="setZoomLevel(100)">100X</button>
+                        </li>
+                    </ul>
+                </div>
+                <!-- 그리기 드롭다운 버튼-->
+                <div class="btn-group" role="group">
+                    <button id="btnGroupDrop_annotation" type="button"
+                            class="btn btn btn-outline-light custom-button dropdown-toggle"
+                            data-bs-toggle="dropdown"
+                            aria-expanded="false" title="Drawing" style="background-color: rgb(243, 88, 83);">
+                        <span>Drawing </span><span id="ink">●</span>
+                    </button>
+                    <ul class="dropdown-menu" aria-labelledby="btnGroupDrop_annotation">
+                        <!-- Annotation 버튼-->
+                        <li>
+                            <button class="dropdown-item"><i class="bi bi-arrow-up-left"></i> Pointer</button>
+                        </li>
+                        <li>
+                            <button class="dropdown-item" onclick="setDrawingTool('ellipse')"><i
+                                    class="bi bi-circle"></i> Circle
+                            </button>
+                        </li>
+                        <li>
+                            <button class="dropdown-item" onclick="setDrawingTool('rectangle')"><i
+                                    class="bi bi-square"></i> Rectangle
+                            </button>
+                        </li>
+                        <li>
+                            <hr class="dropdown-divider" style="--bs-dropdown-divider-margin-y: 0">
+                        </li>
+                        <!-- Measure 버튼-->
+                        <li>
+                            <button class="dropdown-item"><i class="bi bi-rulers"></i> Linear Measure</button>
+                        </li>
+                        <li>
+                            <hr class="dropdown-divider" style="--bs-dropdown-divider-margin-y: 0">
+                        </li>
+                        <li class="dropdown-item">
+                            <i class="bi bi-palette"></i><span> Choose Color </span>
+                        </li>
+                        <!-- 항상 보이는 색상 팔레트 -->
+                        <div class="color-palette">
+                            <div class="color-option" data-color="#ff0000">
+                                <div class="color-circle red"></div>
+                            </div>
+                            <div class="color-option" data-color="#0000ff">
+                                <div class="color-circle blue"></div>
+                            </div>
+                            <div class="color-option" data-color="#000001">
+                                <div class="color-circle black"></div>
+                            </div>
+                            <div class="color-option" data-color="#ffffff">
+                                <div class="color-circle white"></div>
+                            </div>
+                            <div class="color-option" data-color="#ffff00">
+                                <div class="color-circle yellow"></div>
+                            </div>
+                            <div class="color-option" data-color="#ff00ff">
+                                <div class="color-circle magenta"></div>
+                            </div>
+                            <div class="color-option" data-color="#00ff00">
+                                <div class="color-circle green"></div>
+                            </div>
+                            <div class="color-option" data-color="#8b4513">
+                                <div class="color-circle brown"></div>
+                            </div>
                         </div>
-                    </li>
-                    <!-- 뒤로가기(취소) 버튼 -->
-                    <li class="nav-item">
-                        <button class="btn btn btn-outline-light custom-button" onclick="anno.undo()"
-                                title="Undo" style="background-color: blue">
-                            <i class="bi bi-arrow-counterclockwise"></i>
-                        </button>
-                    </li>
-                    <!-- 앞으로가기 버튼 -->
-                    <li class="nav-item">
-                        <button class="btn btn btn-outline-light custom-button" onclick="anno.redo()"
-                                title="Redo" style="background-color: blue">
-                            <i class="bi bi-arrow-clockwise"></i>
-                        </button>
-                    </li>
-                    <!-- 숨기기 버튼 -->
-                    <li class="nav-item">
-                        <button class="btn btn btn-outline-light custom-button" id="invisible-btn"
-                                title="Hide Annotation" style="background-color: blue;">
-                            <i class="bi bi-eye-slash"></i>
-                        </button>
-                    </li>
-                    <!-- 지우개 버튼 -->
-                    <li class="nav-item">
-                        <button class="btn btn btn-outline-light custom-button" id="erase-btn"
-                                title="Remove Annotation" style="background-color: blue; display: none;">
-                            <i class="bi bi-eraser"></i>
-                        </button>
-                    </li>
-                    <!-- annotation 수정 버튼 -->
-                    <li class="nav-item">
-                        <button class="btn btn btn-outline-light custom-button" id="edit-btn"
-                                title="Edit Annotation" style="background-color: blue; display: none;">
-                            <i class="bi bi-pen"></i>
-                        </button>
-                    </li>
-
-                    <!-- Reset 버튼(이 이후로 오른쪽으로 밀림림) -->
-                    <li class="nav-item ms-auto">
-                        <button class="btn btn btn-outline-light custom-button"
-                                onclick="viewer.viewport.goHome()" title="Reset View">
-                            <i class="bi bi-house"></i>
-                        </button>
-                    </li>
-                    <!-- 저장 버튼 -->
-                    <li class="nav-item">
-                        <button class="btn btn btn-outline-light custom-button" title="Save">
-                            <i class="bi bi-floppy"></i>
-                        </button>
-                    </li>
-                </ul>
+                    </ul>
+                </div>
+                <!-- 뒤로가기(취소) 버튼 -->
+                <button class="btn btn btn-outline-light custom-button" onclick="anno.undo()"
+                        title="Undo" style="background-color: rgb(243, 88, 83);">
+                    <i class="bi bi-arrow-counterclockwise"></i>
+                </button>
+                <!-- 앞으로가기 버튼 -->
+                <button class="btn btn btn-outline-light custom-button" onclick="anno.redo()"
+                        title="Redo" style="background-color: rgb(243, 88, 83);">
+                    <i class="bi bi-arrow-clockwise"></i>
+                </button>
+                <!-- 숨기기 버튼 -->
+                <button class="btn btn btn-outline-light custom-button" id="invisible-btn"
+                        title="Hide Annotation" style="background-color: rgb(243, 88, 83);">
+                    <i class="bi bi-eye-slash"></i>
+                </button>
+                <!-- 지우개 버튼 -->
+                <button class="btn btn btn-outline-light custom-button" id="erase-btn"
+                        title="Remove Annotation" style="background-color: rgb(243, 88, 83); display: none;">
+                    <i class="bi bi-eraser"></i>
+                </button>
+                <!-- annotation 수정 버튼 -->
+                <button class="btn btn btn-outline-light custom-button" id="edit-btn"
+                        title="Edit Annotation" style="background-color: rgb(243, 88, 83); display: none;">
+                    <i class="bi bi-pen"></i>
+                </button>
             </div>
+            <!-- 오른쪽 버튼 그룹들 -->
+            <div class="btn-group ms-auto nav-media-query" role="group">
+                <!-- Reset 버튼(이 이후로 오른쪽으로 밀림림) -->
+                <button class="btn btn btn-outline-light custom-button"
+                        onclick="viewer.viewport.goHome()" title="Reset View">
+                    <i class="bi bi-house"></i>
+                </button>
+                <!-- 저장 버튼 -->
+                <button class="btn btn btn-outline-light custom-button" title="Save">
+                    <i class="bi bi-floppy"></i>
+                </button>
+            </div>
+        </div>
+    </nav>
+    <!-- 화면 작을 때 나오는 네비게이션 -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark custom-nav nav-small-query">
+        <div class="container-fluid custom-nav nav-slide-text d-flex justify-content-center">
+            {{ slide.name }}
         </div>
     </nav>
 {% endblock nav_content %}
