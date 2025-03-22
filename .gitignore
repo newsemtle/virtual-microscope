@@ -8,6 +8,7 @@ migrations/
 db.sqlite3
 logs/
 secrets.json
+settings.py
 
 # IDE
 .idea/

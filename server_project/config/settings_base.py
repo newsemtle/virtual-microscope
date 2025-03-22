@@ -12,29 +12,11 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 
 import json
 import os
-import subprocess
 import sys
-from datetime import datetime
 from pathlib import Path
 
 from django.contrib.messages import constants as messages
 from django.core.exceptions import ImproperlyConfigured
-
-# Version
-
-branch = (
-    subprocess.check_output(["git", "rev-parse", "--abbrev-ref", "HEAD"])
-    .strip()
-    .decode("utf-8")
-)
-commit_time = (
-    subprocess.check_output(["git", "log", "-1", "--format=%cd"])
-    .strip()
-    .decode("utf-8")
-)
-commit_time_obj = datetime.strptime(commit_time, "%a %b %d %H:%M:%S %Y %z")
-formatted_commit_time = commit_time_obj.strftime("%Y:%m:%d %H:%M:%S")
-VERSION = f"branch: {branch} | last_commit: {formatted_commit_time}"
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -42,12 +24,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
-secrets_file_path = os.path.join(BASE_DIR, "secrets.json")
-
 
 def get_secret(setting):
     try:
-        with open(secrets_file_path) as f:
+        with open(os.path.join(BASE_DIR, "secrets.json")) as f:
             secrets = json.loads(f.read())
         return secrets[setting]
     except KeyError:
@@ -61,7 +41,9 @@ SECRET_KEY = get_secret("SECRET_KEY")
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ["*"]
+ALLOWED_HOSTS = []
+
+# Logging
 
 if not os.path.exists(os.path.join(BASE_DIR, "logs")):
     try:
@@ -250,6 +232,11 @@ LOGOUT_REDIRECT_URL = "/"
 
 # Django Rest Framework
 
+DEFAULT_RENDERER_CLASSES = [
+    "rest_framework.renderers.JSONRenderer",
+]
+if DEBUG:
+    DEFAULT_RENDERER_CLASSES.append("rest_framework.renderers.BrowsableAPIRenderer")
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
         "rest_framework.authentication.SessionAuthentication",
@@ -261,11 +248,10 @@ REST_FRAMEWORK = {
     "DEFAULT_FILTER_BACKENDS": [
         "django_filters.rest_framework.DjangoFilterBackend",
     ],
+    "DEFAULT_RENDERER_CLASSES": DEFAULT_RENDERER_CLASSES,
+    "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
+    "PAGE_SIZE": 10,
 }
-if not DEBUG:
-    REST_FRAMEWORK["DEFAULT_RENDERER_CLASSES"] = [
-        "rest_framework.renderers.JSONRenderer",
-    ]
 
 # Bootstrap Messages
 
