@@ -1,8 +1,12 @@
 document.querySelectorAll(".slide-upload-progress").forEach((progress) => {
     const slideId = progress.dataset.slideId;
 
-    const socket = new WebSocket(`ws://${window.location.host}/ws/slide/${slideId}/`);
+    let protocol = window.location.protocol === "https:" ? "wss" : "ws";
+    let socket = new WebSocket(`${protocol}://${window.location.host}/ws/slide/${slideId}/`);
 
+    socket.onopen = function () {
+        console.log(`Connected to ${protocol.toUpperCase()}`);
+    };
     socket.onmessage = function (event) {
         const data = JSON.parse(event.data);
         if (data.event === "slide_initialized") {
@@ -12,9 +16,16 @@ document.querySelectorAll(".slide-upload-progress").forEach((progress) => {
             progress.value = data.progress;
             if (data.progress === 100) {
                 progress.remove();
+                socket.close();
                 showFeedback(`Slide '${data.slide_name}' finished processing.`, 'success')
             }
         }
+    };
+    socket.onclose = function () {
+        console.log("WebSocket closed");
+    };
+    socket.onerror = function (error) {
+        console.error("WebSocket error:", error);
     };
 });
 
