@@ -7,7 +7,6 @@ from ..models import Annotation
 
 
 class AnnotationSerializer(serializers.ModelSerializer):
-    name = serializers.CharField(required=False, allow_blank=True)
     author = serializers.CharField(source="author.username", default=None)
     url = serializers.SerializerMethodField()
     viewer_url = serializers.SerializerMethodField()
@@ -44,11 +43,6 @@ class AnnotationSerializer(serializers.ModelSerializer):
         return super().validate(attrs)
 
     def create(self, validated_data):
-        if not validated_data.get("name"):
-            validated_data["name"] = datetime.datetime.now().strftime(
-                "%Y-%m-%d %H:%M:%S"
-            )
-
         validated_data["author"] = self.context["request"].user
         return super().create(validated_data)
 

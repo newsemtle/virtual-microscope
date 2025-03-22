@@ -43,6 +43,9 @@ DEBUG = True
 
 ALLOWED_HOSTS = []
 
+CSRF_COOKIE_SECURE = True
+SESSION_COOKIE_SECURE = True
+
 # Logging
 
 if not os.path.exists(os.path.join(BASE_DIR, "logs")):
@@ -229,6 +232,12 @@ AUTH_USER_MODEL = "accounts.User"
 LOGIN_URL = "/accounts/login/"
 LOGIN_REDIRECT_URL = "/"
 LOGOUT_REDIRECT_URL = "/"
+
+# Session
+
+SESSION_COOKIE_AGE = 30 * 60  # 30 minutes
+SESSION_SAVE_EVERY_REQUEST = False
+SESSION_EXPIRE_AT_BROWSER_CLOSE = False
 
 # Django Rest Framework
 
