@@ -1,1 +1,1 @@
-__version__ = "[feature/server-settings] 2025.03.22 commit-3"
+__version__ = "[feature/server-settings] 2025.03.23 commit-1"
