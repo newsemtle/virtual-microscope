@@ -52,7 +52,7 @@
                     {% if user.is_authenticated %}
                         <li class="nav-item">
                             <a class="nav-link" href="{% url 'accounts:profile' %}">
-                                <i class="bi bi-person"></i> Profile
+                                <i class="bi bi-person"></i> {{ user.username }}'s Profile
                             </a>
                         </li>
                         <li class="nav-item">
@@ -104,8 +104,10 @@
 
 <footer class="text-center py-3 footer-padding">
     <small>&copy; 2024 SEMTLE, Inje University</small>
-    <br>
-    <small>{{ VERSION }}</small>
+    {% if VERSION %}
+        <br>
+        <small>v. {{ VERSION }}</small>
+    {% endif %}
 </footer>
 
 <script src="{% static 'bootstrap/js/bootstrap.bundle.min.js' %}" type="text/javascript"></script>

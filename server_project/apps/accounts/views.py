@@ -1,10 +1,10 @@
-from django.conf import settings
 from django.contrib.auth import views as auth_views
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.urls import reverse_lazy
 from django.views.generic import TemplateView
 from django.views.generic.edit import CreateView
 
+from config import __version__
 from . import forms
 
 
@@ -22,7 +22,7 @@ class HomeView(TemplateView):
                 context["show_database"] = True
                 context["show_lecture_database"] = True
 
-        context["VERSION"] = settings.VERSION
+        context["VERSION"] = __version__
         return context
 
 
