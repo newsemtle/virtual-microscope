@@ -111,13 +111,15 @@
                             {% if item.type == "folder" %}
                                 <h3 class="mb-0 name-truncate">
                                     <a href="{% url 'database:database' %}?folder={{ item.id }}"
-                                       style="text-decoration: none; color: inherit;" class="stretched-link" >{{ item.name }}</a>
+                                       style="text-decoration: none; color: inherit;"
+                                       class="stretched-link">{{ item.name }}</a>
                                 </h3>
                             {% else %}
                                 <div class="flex-fill">
                                     <h3 class="mb-0 name-truncate">
-                                        <a href="{% url 'slide_viewer:slide-view' slide_id=item.id %}" class="stretched-link" 
-                                        style="text-decoration: none; color: inherit;">{{ item.name }}</a>
+                                        <a href="{% url 'slide_viewer:slide-view' slide_id=item.id %}"
+                                           class="stretched-link"
+                                           style="text-decoration: none; color: inherit;">{{ item.name }}</a>
                                     </h3>
                                     <h6 class="mb-0 information-truncate" style="color: rgba(68, 66, 66, 0.38);">
                                         {{ item.information }}
@@ -134,15 +136,17 @@
                             <!-- accessability 표시-->
                             {% if item.type != "folder" %}
                                 {% if item.is_public %}
-                                    <p class="mb-0" style="font-size: 15px"><span class="badge rounded-pill bg-info text-dark">Public</span>
-                                {% else %}
-                                    <p class="mb-0" style="font-size: 15px"><span class="badge rounded-pill bg-secondary">Private</span>
+                                    <p class="mb-0" style="font-size: 15px"><span
+                                            class="badge rounded-pill bg-info text-dark">Public</span>
+                                        {% else %}
+                                    <p class="mb-0" style="font-size: 15px">
+                                    <span class="badge rounded-pill bg-secondary">Private</span>
                                 {% endif %}
                             {% endif %}
                             <!-- 진행상황 표시 -->
                             {% if item.type != "folder" and not item.processed %}
-                                <progress class="slide-upload-progress" max="100" style="width: 100%"
-                                      data-slide-id="{{ item.id }}"></progress>
+                                <progress class="slide-upload-progress" id="slide-{{ item.id }}-progress" max="100"
+                                          style="width: 100%" data-slide-id="{{ item.id }}"></progress>
                             {% endif %}
                         </div>
                         <!-- 4영역 Edit 버튼 /flex-item-edit / 10%-->

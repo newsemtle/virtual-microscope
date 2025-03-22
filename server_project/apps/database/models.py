@@ -14,7 +14,7 @@ from openslide.deepzoom import DeepZoomGenerator
 
 class FolderManager(CTEManager):
     def user_base_folders(self, user):
-        return [group.profile.base_folder for group in user.groups.all()]
+        return self.filter(Q(groupprofile__group__in=user.groups.all()))
 
     def editable(self, user, *, folder=None):
         if folder == "root":
@@ -31,7 +31,7 @@ class FolderManager(CTEManager):
                 else:
                     return self.none()
             result = self.none()
-            for f in [group.profile.base_folder for group in user.groups.all()]:
+            for f in self.user_base_folders(user):
                 result |= self.descendants_iter(f)
             return result
 
@@ -194,17 +194,15 @@ class SlideManager(models.Manager):
             if folder:
                 if folder == "root":
                     return self.filter(folder__isnull=True)
-                else:
-                    return self.filter(folder=folder)
+                return self.filter(folder=folder)
             return self.all()
         elif user.is_publisher():
             if folder:
                 if folder == "root" or not folder.is_owner(user):
                     return self.none()
                 return self.filter(folder=folder)
-            result = self.none()
-            for f in Folder.objects.editable(user):
-                result |= f.slides.all()
+            result = self.filter(Q(folder__in=Folder.objects.user_base_folders(user)))
+            result |= self.filter(Q(folder__in=Folder.objects.editable(user)))
             return result
 
         return self.none()
