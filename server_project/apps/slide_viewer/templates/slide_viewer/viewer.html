@@ -74,14 +74,6 @@
                                         </button>
                                     {% endif %}
                                 </li>
-                                <!-- 업로드 버튼 -->
-                                <li>
-                                    <button class="dropdown-item" title="Upload"
-                                            onclick="document.getElementById('load-file').click()">
-                                        <i class="bi bi-file-earmark-arrow-up"></i> Upload
-                                    </button>
-                                    <input type="file" id="load-file" class="d-none" title="Upload"/>
-                                </li>
                                 <li>
                                     <hr class="dropdown-divider" style="--bs-dropdown-divider-margin-y: 0">
                                 </li>
@@ -121,6 +113,20 @@
                                         <i class="bi bi-arrows-fullscreen"></i> Full Screen
                                     </button>
                                 </li>
+                                <!-- Brightness Control -->
+                                <li class="dropdown-item">
+                                    <label for="brightness">밝기:</label>
+                                    <input type="range" id="brightness" min="0" max="2" step="0.01" value="1" oninput="updateFilters()">
+                                    <span id="brightness-value">1.00</span>
+                                    <button type="button" onclick="resetBrightness()">Reset</button>
+                                </li>
+                                <!-- Contrast Control -->
+                                <li class="dropdown-item">
+                                    <label for="contrast">대비:</label>
+                                    <input type="range" id="contrast" min="0" max="2" step="0.01" value="1" oninput="updateFilters()">
+                                    <span id="contrast-value">1.00</span>
+                                    <button type="button" onclick="resetContrast()">Reset</button>
+                                </li>                                
                             </ul>
                         </div>
                     </li>
@@ -612,38 +618,25 @@
         AnnotoriousTools.mountPlugin(anno);
 
         const slideId = {{ slide.id }};
-        //console.log(anno.listDrawingTools());
         
-        
-        // URL에서 annotation 파라미터 읽기
-        const urlParams = new URLSearchParams(window.location.search);
-        const annotationId = urlParams.get('annotation'); // 예: "3"
 
-        // API에서 주석 목록을 불러오기
-        const annotationsUrl = `/api/database/slides/${slideId}/annotations/?format=json`;
-        fetch(annotationsUrl)
-        .then(response => response.json())
-        .then(annotations => {
-            // API에서 반환된 배열에서 id가 annotationId와 일치하는 객체를 찾습니다.
-            const targetAnnotation = annotations.find(item => String(item.id) === annotationId);
-            
-            if (targetAnnotation) {
-            // targetAnnotation.data가 배열인 경우, 각 annotation 데이터를 Annotorious에 추가합니다.
-            if (Array.isArray(targetAnnotation.data) && targetAnnotation.data.length > 0) {
-                targetAnnotation.data.forEach(annot => {
-                // annot는 실제로 Annotorious가 이해할 수 있는 형식이어야 합니다.
+        //저장된 주석 이미지 및 설명(슬라이드 자체 설명 & 주석 설명) 띄우기 (fetch 사용 제거)
+        if (annotation && annotation.data) {
+            annotation.data.forEach(annot => {
                 anno.addAnnotation(annot);
+                updateAnnotationDisplay(annot);
                 });
-            } else {
-                console.error("찾은 주석 객체에 표시할 data가 없습니다.");
-            }
-            } else {
-            console.error("해당 annotation id를 가진 주석을 찾을 수 없습니다.");
-            }
-        })
-        .catch(error => {
-            console.error('주석 데이터를 불러오는 중 오류가 발생했습니다:', error);
-        });
+                
+                //슬라이드 자체 설명
+                const articleHeader = document.getElementById('article-header');
+                const descriptionElement = document.createElement('p');
+                const formattedDescription = annotation.description.replace(/\n/g, '<br>');
+                descriptionElement.innerHTML = formattedDescription;
+                descriptionElement.classList.add('annotation-description'); // 클래스 추가
+                articleHeader.appendChild(descriptionElement);
+
+        }
+
 
         // 그리기 모드 변경 핸들러
         function setDrawingTool(tool) {
@@ -676,9 +669,7 @@
                     anno.removeAnnotation(selectedAnnotation.id);
 
                     // article-header와 article-body에서 해당 annotation의 요소 제거
-                    let headerElem = document.getElementById('annotation-desc-' + selectedAnnotation.id);
-                    let bodyElem = document.getElementById('annotation-name-' + selectedAnnotation.id);
-                    if (headerElem) headerElem.remove();
+                    let bodyElem = document.getElementById('annotation-combined-' + selectedAnnotation.id);
                     if (bodyElem) bodyElem.remove();
 
                 };
@@ -740,39 +731,7 @@
                     annotation["name"] = title;
                     annotation["description"] = comment;
 
-                    // article-header에 주석의 description 추가
-                    const articleHeader = document.getElementById('article-header');
-                    const descriptionElement = document.createElement('p');
-
-                    descriptionElement.id = 'annotation-desc-' + annotation.id;
-                    const formattedDescription = annotation["description"].replace(/\n/g, '<br>');
-                    descriptionElement.innerHTML = formattedDescription;
-                    descriptionElement.classList.add('annotation-description'); // 클래스 추가
-                    articleHeader.appendChild(descriptionElement);
-
-                    // article-body에 주석의 name 추가
-                    const articleBody = document.getElementById('article-body');
-                    const nameElement = document.createElement('h3');
-
-                    nameElement.id = 'annotation-name-' + annotation.id;
-                    const formattedName = annotation["name"].replace(/\n/g, '<br>');
-                    nameElement.innerHTML = formattedName;
-                    nameElement.classList.add('annotation-name'); // 클래스 추가
-                    articleBody.appendChild(nameElement);
-
-                    // descriptionElement와 nameElement에 클릭 이벤트 추가
-                    descriptionElement.addEventListener('click', function () {
-                        anno.fitBounds(annotation, {immediately: false, padding: 50});
-                        ; // annotation에 대한 fitBounds() 실행
-                    });
-
-                    nameElement.addEventListener('click', function () {
-                        anno.fitBounds(annotation, {immediately: false, padding: 50});
-                        ; // annotation에 대한 fitBounds() 실행
-                    });
-
-
-                    console.log('Annotation saved:', {annotation});
+                    updateAnnotationDisplay(annotation);
 
                     closePopup();
 
@@ -787,22 +746,42 @@
             document.getElementById('annotation-popup').style.display = 'none';
         }
 
-        // 주석 저장
-        function saveAnnotationsToFile() {
-            const annotoriousAnnotations = anno.getAnnotations();
-            //const slideDescription = document.getElementById('slide-description').value;
-
-            //const annotations = {
-            //    annotorious: annotoriousAnnotations,
-            //    description: slideDescription
-            //};
-            const jsonString = JSON.stringify(annotoriousAnnotations);
-            const blob = new Blob([jsonString], {type: "application/json"});
-            const link = document.createElement("a");
-            link.href = URL.createObjectURL(blob);
-            link.download = "annotations.json";
-            link.click();
+        function updateAnnotationDisplay(annotation) {
+            // article-body에 주석의 설명과 이름을 한 문단으로 추가
+            const articleBody = document.getElementById('article-body');
+            const combinedElement = document.createElement('p');
+            combinedElement.id = 'annotation-combined-' + annotation.id;
+        
+            // 설명 부분
+            const descriptionSpan = document.createElement('span');
+            descriptionSpan.classList.add('annotation-description');
+            descriptionSpan.style.color = 'black';
+            const formattedDescription = annotation["description"].replace(/\n/g, '<br>');
+            descriptionSpan.innerHTML = formattedDescription;
+        
+            // 구분자
+            const separator = document.createTextNode(': ');
+        
+            // 이름 부분
+            const nameSpan = document.createElement('span');
+            nameSpan.classList.add('annotation-name');
+            nameSpan.style.color = 'blue';
+            const formattedName = annotation["name"].replace(/\n/g, '<br>');
+            nameSpan.innerHTML = formattedName;
+        
+            // 요소들을 조합하여 하나의 문단에 추가
+            combinedElement.appendChild(nameSpan);
+            combinedElement.appendChild(separator);
+            combinedElement.appendChild(descriptionSpan);
+        
+            articleBody.appendChild(combinedElement);
+        
+            // 클릭 시 주석 영역으로 이동 (combinedElement 전체에 이벤트 적용)
+            combinedElement.addEventListener('click', function () {
+                anno.fitBounds(annotation, { immediately: false, padding: 50 });
+            });
         }
+        
 
         // 주석 수정 함수
         function openEditPopup(annotation) {
@@ -824,22 +803,11 @@
                 annotation["name"] = newTitle;
                 annotation["description"] = newComment;
 
-                // article-header와 article-body의 기존 요소 업데이트
-                // 기존에 저장할 때 부여했던 고유 ID를 사용한다고 가정 (예: annotation.id)
-                const headerElem = document.getElementById('annotation-desc-' + annotation.id);
-                if (headerElem) {
-                    const formattedDescription = annotation["description"].replace(/\n/g, '<br>');
-                    headerElem.innerHTML = formattedDescription;
-                }
-                const bodyElem = document.getElementById('annotation-name-' + annotation.id);
-                if (bodyElem) {
-                    const formattedName = annotation["name"].replace(/\n/g, '<br>');
-                    bodyElem.innerHTML = formattedName;
-                }
-
-                console.log('Annotation edited:', annotation);
-
                 anno.updateAnnotation(annotation);
+
+                let bodyElem = document.getElementById('annotation-combined-' + annotation.id);
+                if (bodyElem) bodyElem.remove();
+                updateAnnotationDisplay(annotation);
 
                 closePopup();
             };
@@ -900,6 +868,38 @@
 
         // 주석 생성 이벤트 처리: 주석이 만들어지면 서버에 저장
 
+
+        // Function to update filters based on slider values
+        function updateFilters() {
+            const brightness = document.getElementById('brightness').value;
+            const contrast = document.getElementById('contrast').value;
+
+            // Update the displayed values
+            document.getElementById('brightness-value').textContent = Math.round((parseFloat(brightness)*100-100));
+            document.getElementById('contrast-value').textContent = Math.round((parseFloat(contrast)*100-100));
+
+            // Apply CSS filters to the OpenSeadragon viewer
+            document.querySelector('.openseadragon-canvas').style.filter = `brightness(${brightness}) contrast(${contrast})`;
+        }
+
+        // Function to reset brightness to default
+        function resetBrightness() {
+            const brightnessSlider = document.getElementById('brightness');
+            brightnessSlider.value = 1;
+            updateFilters();
+        }
+
+        // Function to reset contrast to default
+        function resetContrast() {
+            const contrastSlider = document.getElementById('contrast');
+            contrastSlider.value = 1;
+            updateFilters();
+        }
+
+        // Initialize filters on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            updateFilters();
+        });
 
     </script>
     <script src="{% static 'slide_viewer/viewer.js' %}" type="text/javascript"></script>
