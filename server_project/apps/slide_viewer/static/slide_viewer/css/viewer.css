@@ -349,14 +349,20 @@ footer {
     overflow-x: hidden; /* 가로 스크롤 비활성화 */
 }
 
-/* 기본 스타일 */
-.annotation-name {
-    color: blue;
-}
 
 /* 마우스 오버 시 스타일 */
-.annotation-description:hover,
 .annotation-name:hover {
     cursor: pointer; /* 손 모양 커서 */
     text-decoration: underline; /* 밑줄 추가 */
+}
+
+#filter-controls-overlay {
+    /* 위의 인라인 스타일 대신 CSS 파일에서 관리할 수도 있습니다. */
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    z-index: 9999; /* 뷰어 위에 표시 */
+    background: rgba(255, 255, 255, 0.8);
+    padding: 10px;
+    border-radius: 5px;
 }
