@@ -46,89 +46,89 @@
             <div class="btn-group" role="group">
                <!-- File 드롭다운 버튼 -->
                <div class="btn-group" role="group">
-                <button id="btnGroupDrop_file" type="button"
-                        class="btn btn btn-outline-light custom-button dropdown-toggle"
-                        data-bs-toggle="dropdown"
-                        aria-expanded="false" title="File"> File
-                </button>
-                <ul class="dropdown-menu" aria-labelledby="btnGroupDrop_file">
-                    <!-- 저장 버튼 -->
-                    <li>
-                        {% if can_edit_annotation %}
-                            <button class="dropdown-item" id="annotation-update-btn" title="Save"
-                                    data-annotation-id="{{ annotation.id }}"
-                                    data-url="{% url 'api:annotation-detail' pk=annotation.id %}">
-                                <i class="bi bi-floppy"></i> Save
+                    <button id="btnGroupDrop_file" type="button"
+                            class="btn btn btn-outline-light custom-button dropdown-toggle"
+                            data-bs-toggle="dropdown"
+                            aria-expanded="false" title="File"> File
+                    </button>
+                    <ul class="dropdown-menu" aria-labelledby="btnGroupDrop_file">
+                        <!-- 저장 버튼 -->
+                        <li>
+                            {% if can_edit_annotation %}
+                                <button class="dropdown-item" id="annotation-update-btn" title="Save"
+                                        data-annotation-id="{{ annotation.id }}"
+                                        data-url="{% url 'api:annotation-detail' pk=annotation.id %}">
+                                    <i class="bi bi-floppy"></i> Save
+                                </button>
+                            {% endif %}
+                            {% if can_create_annotation %}
+                                <button class="dropdown-item" title="Save As" data-bs-toggle="modal"
+                                        data-bs-target="#annotation-create-modal">
+                                    <i class="bi bi-floppy"></i> Save As..
+                                </button>
+                            {% endif %}
+                        </li>
+                        <!-- 업로드 버튼 -->
+                        <li>
+                            <button class="dropdown-item" title="Upload"
+                                    onclick="document.getElementById('load-file').click()">
+                                <i class="bi bi-file-earmark-arrow-up"></i> Upload
                             </button>
-                        {% endif %}
-                        {% if can_create_annotation %}
-                            <button class="dropdown-item" title="Save As" data-bs-toggle="modal"
-                                    data-bs-target="#annotation-create-modal">
-                                <i class="bi bi-floppy"></i> Save As..
+                            <input type="file" id="load-file" class="d-none" title="Upload"/>
+                        </li>
+                        <li>
+                            <hr class="dropdown-divider" style="--bs-dropdown-divider-margin-y: 0">
+                        </li>
+                        <!-- 정보 버튼 -->
+                        <li>
+                            <button class="dropdown-item" title="Slide-Information" onclick="openinfoPopup()">
+                                <i class="bi bi-info-circle"></i> Information
                             </button>
-                        {% endif %}
-                    </li>
-                    <!-- 업로드 버튼 -->
-                    <li>
-                        <button class="dropdown-item" title="Upload"
-                                onclick="document.getElementById('load-file').click()">
-                            <i class="bi bi-file-earmark-arrow-up"></i> Upload
-                        </button>
-                        <input type="file" id="load-file" class="d-none" title="Upload"/>
-                    </li>
-                    <li>
-                        <hr class="dropdown-divider" style="--bs-dropdown-divider-margin-y: 0">
-                    </li>
-                    <!-- 정보 버튼 -->
-                    <li>
-                        <button class="dropdown-item" title="Slide-Information" onclick="openinfoPopup()">
-                            <i class="bi bi-info-circle"></i> Information
-                        </button>
-                    </li>
-                    <!-- 도움말 버튼 -->
-                    <li>
-                        <button class="dropdown-item" title="Help">
-                            <i class="bi bi-question-circle"></i> Help
-                        </button>
-                    </li>
-                </ul>
-            </div>
-            <!-- View 드롭다운 버튼 -->
-            <div class="btn-group" role="group">
-                <button id="btnGroupDrop_view" type="button"
-                        class="btn btn btn-outline-light custom-button dropdown-toggle"
-                        data-bs-toggle="dropdown"
-                        aria-expanded="false" title="File"> View
-                </button>
-                <ul class="dropdown-menu" aria-labelledby="btnGroupDrop_view">
-                    <!-- 네비게이터 버튼-->
-                    <li>
-                        <button class="dropdown-item" onclick="toggleNav()" title="Toggle Navigator">
-                            <i class="bi bi-geo-alt-fill"></i> Navigator
-                        </button>
-                    </li>
-                    <!-- 전체화면 버튼 -->
-                    <li>
-                        <button class="dropdown-item" onclick="toggleFullScreen()" title="Full Screen">
-                            <i class="bi bi-arrows-fullscreen"></i> Full Screen
-                        </button>
-                    </li>
-                    <!-- Brightness Control -->
-                    <li class="dropdown-item">
-                        <label for="brightness">밝기:</label>
-                        <input type="range" id="brightness" min="0" max="2" step="0.01" value="1" oninput="updateFilters()">
-                        <span id="brightness-value">1.00</span>
-                        <button type="button" onclick="resetBrightness()">Reset</button>
-                    </li>
-                    <!-- Contrast Control -->
-                    <li class="dropdown-item">
-                        <label for="contrast">대비:</label>
-                        <input type="range" id="contrast" min="0" max="2" step="0.01" value="1" oninput="updateFilters()">
-                        <span id="contrast-value">1.00</span>
-                        <button type="button" onclick="resetContrast()">Reset</button>
-                    </li>
-                </ul>
-            </div>
+                        </li>
+                        <!-- 도움말 버튼 -->
+                        <li>
+                            <button class="dropdown-item" title="Help">
+                                <i class="bi bi-question-circle"></i> Help
+                            </button>
+                        </li>
+                    </ul>
+                </div>
+                <!-- View 드롭다운 버튼 -->
+                <div class="btn-group" role="group">
+                    <button id="btnGroupDrop_view" type="button"
+                            class="btn btn btn-outline-light custom-button dropdown-toggle"
+                            data-bs-toggle="dropdown"
+                            aria-expanded="false" title="File"> View
+                    </button>
+                    <ul class="dropdown-menu" aria-labelledby="btnGroupDrop_view">
+                        <!-- 네비게이터 버튼-->
+                        <li>
+                            <button class="dropdown-item" onclick="toggleNav()" title="Toggle Navigator">
+                                <i class="bi bi-geo-alt-fill"></i> Navigator
+                            </button>
+                        </li>
+                        <!-- 전체화면 버튼 -->
+                        <li>
+                            <button class="dropdown-item" onclick="toggleFullScreen()" title="Full Screen">
+                                <i class="bi bi-arrows-fullscreen"></i> Full Screen
+                            </button>
+                        </li>
+                        <!-- Brightness Control -->
+                        <li class="dropdown-item">
+                            <label for="brightness">밝기:</label>
+                            <input type="range" id="brightness" min="0" max="2" step="0.01" value="1" oninput="updateFilters()">
+                            <span id="brightness-value">1.00</span>
+                            <button type="button" onclick="resetBrightness()">Reset</button>
+                        </li>
+                        <!-- Contrast Control -->
+                        <li class="dropdown-item">
+                            <label for="contrast">대비:</label>
+                            <input type="range" id="contrast" min="0" max="2" step="0.01" value="1" oninput="updateFilters()">
+                            <span id="contrast-value">1.00</span>
+                            <button type="button" onclick="resetContrast()">Reset</button>
+                        </li>
+                    </ul>
+                </div>
                 <!-- 배율 드롭다운 버튼 -->
                 <div class="btn-group" role="group">
                     <button id="btnGroupDrop_scale" type="button"

@@ -12,11 +12,29 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 
 import json
 import os
+import subprocess
 import sys
+from datetime import datetime
 from pathlib import Path
 
 from django.contrib.messages import constants as messages
 from django.core.exceptions import ImproperlyConfigured
+
+# Version
+
+branch = (
+    subprocess.check_output(["git", "rev-parse", "--abbrev-ref", "HEAD"])
+    .strip()
+    .decode("utf-8")
+)
+commit_time = (
+    subprocess.check_output(["git", "log", "-1", "--format=%cd"])
+    .strip()
+    .decode("utf-8")
+)
+commit_time_obj = datetime.strptime(commit_time, "%a %b %d %H:%M:%S %Y %z")
+formatted_commit_time = commit_time_obj.strftime("%Y:%m:%d %H:%M:%S")
+VERSION = f"branch: {branch} | last_commit: {formatted_commit_time}"
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -102,6 +120,7 @@ LOGGING = {
 # Application definition
 
 INSTALLED_APPS = [
+    "daphne",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -109,6 +128,7 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "rest_framework",
+    "channels",
     "apps.accounts",
     "apps.database",
     "apps.lectures",
@@ -145,13 +165,31 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "config.wsgi.application"
 
+ASGI_APPLICATION = "config.asgi.application"
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [("127.0.0.1", 6379)],
+        },
+    },
+}
+
+CELERY_BROKER_URL = "amqp://localhost"
+CELERY_ACCEPT_CONTENT = ["json"]
+CELERY_TASK_SERIALIZER = "json"
+CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
+
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
 DATABASES = {
     "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
+        "ENGINE": "django.db.backends.postgresql",
+        "OPTIONS": {
+            "service": "virtual_microscope_service",
+            "passfile": os.path.expanduser("~/.pgpass"),
+        },
     }
 }
 

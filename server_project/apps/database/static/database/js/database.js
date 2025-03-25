@@ -1,3 +1,34 @@
+document.querySelectorAll(".slide-upload-progress").forEach((progress) => {
+    const slideId = progress.dataset.slideId;
+
+    let protocol = window.location.protocol === "https:" ? "wss" : "ws";
+    let socket = new WebSocket(`${protocol}://${window.location.host}/ws/slide/${slideId}/`);
+
+    socket.onopen = function () {
+        console.log(`Connected to ${protocol.toUpperCase()}`);
+    };
+    socket.onmessage = function (event) {
+        const data = JSON.parse(event.data);
+        if (data.event === "slide_initialized") {
+            showFeedback(`Slide '${data.slide_name}' initialized successfully.\nRefresh to see changes.`, 'success')
+        } else if (data.event === "progress_update") {
+            const progress = document.getElementById(`slide-${data.slide_id}-progress`);
+            progress.value = data.progress;
+            if (data.progress === 100) {
+                progress.remove();
+                socket.close();
+                showFeedback(`Slide '${data.slide_name}' finished processing.`, 'success')
+            }
+        }
+    };
+    socket.onclose = function () {
+        console.log("WebSocket closed");
+    };
+    socket.onerror = function (error) {
+        console.error("WebSocket error:", error);
+    };
+});
+
 document.getElementById("folder-rename-modal").addEventListener("show.bs.modal", function (event) {
     let button = event.relatedTarget;
 

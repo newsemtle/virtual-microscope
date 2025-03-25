@@ -1,97 +1,108 @@
 {% extends 'base.html' %}
 
 {% block extra_head %}
-<style>
-    .feature {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        height: 4rem;
-        width: 4rem;
-        font-size: 2rem;
-    }
-</style>
+    <style>
+        .feature {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            height: 4rem;
+            width: 4rem;
+            font-size: 2rem;
+        }
+    </style>
 {% endblock %}
 
 {% block content %}
-<div>
-    {% if user.is_authenticated %}
-    <div class="py-5" style="background: #8fa1b9;">
-        <div class="container px-5">
-            <div class="row gx-5 justify-content-center">
-                <div class="col-lg-6">
-                    <div class="text-center my-5">
-                        <h1 class="display-5 fw-bolder text-white mb-2">Welcome, {{ user.username }}</h1>
-                        <div class="d-grid grid gap-3 d-sm-flex justify-content-sm-center">
-                            <div class="d-grid gap-3 d-sm-flex justify-content-sm-center">
-                                <h4 class="fs-6 fw-normal text-white mb-2">Name: {{ user.get_full_name }}</h4>
-                                <h4 class="fs-6 fw-normal text-white mb-2">Last login: {{ user.last_login|date:"Y-m-d H:i" }}</h4>
+    <div>
+        {% if user.is_authenticated %}
+            <div class="py-5" style="background: #8fa1b9;">
+                <div class="container px-5">
+                    <div class="row gx-5 justify-content-center">
+                        <div class="col-lg-6">
+                            <div class="text-center my-5">
+                                <h1 class="display-5 fw-bolder text-white mb-2">
+                                    <!-- 이름 영어 한글 구분해서 할지 그냥 할지 정해야 함-->
+                                    Welcome, {{ user.get_korean_name }}
+                                </h1>
+                                <div class="d-grid grid gap-3 d-sm-flex justify-content-sm-center">
+                                    <div class="d-grid gap-3 d-sm-flex justify-content-sm-center">
+                                        <h4 class="fs-6 fw-normal text-white mb-2">Username: {{ user.username }}</h4>
+                                        <h4 class="fs-6 fw-normal text-white mb-2">Group: {{ user.groups.all|join:", "|default:"-" }}</h4>
+                                    </div>
+                                </div>
+                                <div class="d-grid grid gap-3 d-sm-flex justify-content-sm-center">
+                                    <div class="d-grid gap-3 d-sm-flex justify-content-sm-center">
+                                        <h4 class="fs-6 fw-normal text-white mb-2">Last login: {{ user.last_login|date:"Y-m-d H:i" }}</h4>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
-    </div>
 
-    <div class="py-5 border-bottom" id="features">
-        <div class="container px-5 my-5">
-            <div class="row gx-5">
-                {% if show_database %}
-                <div class="col-lg-4 mb-5 mb-lg-0">
-                    <div class="feature bg-primary bg-gradient text-white rounded-3 mb-3"><i class="bi bi-folder"></i>
-                    </div>
-                    <h2 class="h4 fw-bolder">Database</h2>
-                    <p>Navigate all uploaded files in folder structure</p>
-                    <a class="text-decoration-none" href="{% url 'database:database' %}">
-                        View Database
-                        <i class="bi bi-arrow-right"></i>
-                    </a>
-                </div>
-                {% endif %}
-                {% if show_lecture_database %}
-                <div class="col-lg-4 mb-5 mb-lg-0">
-                    <div class="feature bg-primary bg-gradient text-white rounded-3 mb-3"><i class="bi bi-folder"></i>
-                    </div>
-                    <h2 class="h4 fw-bolder">Lecture Database</h2>
-                    <p>Navigate all your lectures in folder structure.</p>
-                    <a class="text-decoration-none" href="{% url 'lectures:lecture-database' %}">
-                        View Lecture Database
-                        <i class="bi bi-arrow-right"></i>
-                    </a>
-                </div>
-                {% endif %}
-                <div class="col-lg-4">
-                    <div class="feature bg-primary bg-gradient text-white rounded-3 mb-3"><i class="bi bi-journal-text"></i>
-                    </div>
-                    <h2 class="h4 fw-bolder">Lectures</h2>
-                    <p>View all lectures that you can explore.</p>
-                    <a class="text-decoration-none" href="{% url 'lectures:lecture-bulletins' %}">
-                        View Lectures
-                        <i class="bi bi-arrow-right"></i>
-                    </a>
-                </div>
-            </div>
-        </div>
-    </div>
-    {% else %}
-    <div class="py-5"  style="background: #8fa1b9;">
-        <div class="container px-5">
-            <div class="row gx-5 justify-content-center">
-                <div class="col-lg-6">
-                    <div class="text-center my-5">
-                        <h1 class="display-5 fw-bolder text-white mb-2">Welcome to Virtual Microscope</h1>
-                        <p class="lead text-white-50 mb-4">Please log in to access all features.</p>
-                        <div class="d-grid gap-3 d-sm-flex justify-content-sm-center">
-                            <a class="btn btn-primary btn-lg px-4 me-sm-3" href="{% url 'accounts:login' %}">Login</a>
-                            <a class="btn btn-outline-light btn-lg px-4"
-                                href="{% url 'accounts:register' %}">Register</a>
+            <div class="py-5 border-bottom" id="features">
+                <div class="container px-5 my-5">
+                    <div class="row gx-5">
+                        {% if show_database %}
+                            <div class="col-lg-4 mb-5 mb-lg-0 position-relative">
+                                <div class="feature bg-primary bg-gradient text-white rounded-3 mb-3"><i
+                                        class="bi bi-folder"></i>
+                                </div>
+                                <h2 class="h4 fw-bolder">DB/Slide</h2>
+                                <p>Navigate all uploaded files in folder structure</p>
+                                <a class="text-decoration-none stretched-link" href="{% url 'database:database' %}">
+                                    View DB/Slide
+                                    <i class="bi bi-arrow-right"></i>
+                                </a>
+                            </div>
+                        {% endif %}
+                        {% if show_lecture_database %}
+                            <div class="col-lg-4 mb-5 mb-lg-0 position-relative">
+                                <div class="feature bg-primary bg-gradient text-white rounded-3 mb-3"><i
+                                        class="bi bi-folder"></i>
+                                </div>
+                                <h2 class="h4 fw-bolder">DB/lecture</h2>
+                                <p>Navigate all your lectures in folder structure.</p>
+                                <a class="text-decoration-none stretched-link" href="{% url 'lectures:lecture-database' %}">
+                                    View DB/lecture
+                                    <i class="bi bi-arrow-right"></i>
+                                </a>
+                            </div>
+                        {% endif %}
+                        <div class="col-lg-4 position-relative">
+                            <div class="feature bg-primary bg-gradient text-white rounded-3 mb-3"><i
+                                    class="bi bi-journal-text"></i>
+                            </div>
+                            <h2 class="h4 fw-bolder">Lectures</h2>
+                            <p>View all lectures that you can explore.</p>
+                            <a class="text-decoration-none stretched-link" href="{% url 'lectures:lecture-bulletins' %}">
+                                View Lectures
+                                <i class="bi bi-arrow-right"></i>
+                            </a>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
+        {% else %}
+            <div class="py-5" style="background: #8fa1b9;">
+                <div class="container px-5">
+                    <div class="row gx-5 justify-content-center">
+                        <div class="col-lg-6">
+                            <div class="text-center my-5">
+                                <h1 class="display-5 fw-bolder text-white mb-2">Welcome to Virtual Microscope</h1>
+                                <p class="lead text-white-50 mb-4">Please log in to access all features.</p>
+                                <div class="d-grid gap-3 d-sm-flex justify-content-sm-center">
+                                    <a class="btn btn-primary btn-lg px-4 me-sm-3" href="{% url 'accounts:login' %}">Login</a>
+                                    <a class="btn btn-outline-light btn-lg px-4"
+                                       href="{% url 'accounts:register' %}">Register</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
     </div>
-    {% endif %}
-</div>
 {% endblock content %}
