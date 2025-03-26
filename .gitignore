@@ -3,12 +3,12 @@
 __pycache__/
 
 # Django
+staticfiles/
 media/
 migrations/
-db.sqlite3
 logs/
-secrets.json
-settings.py
+db.sqlite3
+.env
 
 # IDE
 .idea/
@@ -19,3 +19,6 @@ slides/
 
 # Mac Environment
 .DS_Store
+
+# Old Files
+secrets.json

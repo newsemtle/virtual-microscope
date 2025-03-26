@@ -70,7 +70,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const timeLeftInSeconds = Math.floor(timeInMs / 1000);
 
-            const hoursLeft = Math.floor((timeLeftInSeconds % (3600 * 24)) / 3600);
+            const hoursLeft = Math.floor(timeLeftInSeconds / 3600);
             const minutesLeft = Math.floor((timeLeftInSeconds % 3600) / 60);
             const secondsLeft = Math.floor(timeLeftInSeconds % 60);
 

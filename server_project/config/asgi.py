@@ -10,8 +10,10 @@ https://docs.djangoproject.com/en/5.1/howto/deployment/asgi/
 import os
 
 import django
+from dotenv import load_dotenv
 
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")
+load_dotenv()
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings.base")
 
 django.setup()
 
