@@ -14,6 +14,9 @@ RUN apt update && apt install -y libpq-dev && rm -rf /var/lib/apt/lists/*
 RUN pip install --no-cache-dir --upgrade pip
 RUN pip install --no-cache-dir -r requirements.txt
 
+# Collect static files
+RUN python manage.py collectstatic --noinput
+
 # Expose the port Daphne will run on
 EXPOSE 8000
 

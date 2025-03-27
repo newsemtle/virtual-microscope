@@ -12,3 +12,8 @@ DATABASES = {
         "PORT": os.getenv("POSTGRES_PORT", 5432),
     }
 }
+
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+CSRF_TRUSTED_ORIGINS = ["https://vm.zerostone.com"]
+SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SECURE = True
