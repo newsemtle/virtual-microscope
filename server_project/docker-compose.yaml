@@ -1,0 +1,56 @@
+services:
+  django:
+    build: .
+    restart: always
+    command: daphne -b 0.0.0.0 -p 8000 config.asgi:application
+    volumes:
+      - .:/app
+    depends_on:
+      - postgresql
+      - redis
+      - rabbitmq
+    env_file:
+      - .env
+    ports:
+      - "8000:8000"
+
+  celery:
+    build: .
+    restart: always
+    command: celery -A config worker --loglevel=info
+    volumes:
+      - .:/app
+    depends_on:
+      - django
+      - rabbitmq
+    env_file:
+      - .env
+
+  postgresql:
+    image: postgres:16
+    restart: always
+    env_file:
+      - .env
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - ${POSTGRES_PORT}
+
+  redis:
+    image: redis:alpine
+    restart: always
+    expose:
+      - ${REDIS_PORT}
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    restart: always
+    env_file:
+      - .env
+    expose:
+      - ${RABBITMQ_PORT}
+    ports:
+      - "15672:15672"
+
+volumes:
+  postgres_data:

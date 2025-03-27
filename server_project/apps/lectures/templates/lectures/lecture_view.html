@@ -25,7 +25,8 @@
                 <!-- Edit 버튼 -->
                 {% if editable %}
                     <a type="button" class="btn btn-primary btn-sm"
-                       href="{% url 'lectures:lecture-edit' lecture_id=lecture.id %}">
+                       href="{% url 'lectures:lecture-edit' lecture_id=lecture.id %}"
+                       target="_blank" rel="noopener noreferrer nofollow">
                         <i class="bi bi-pencil"></i> Edit
                     </a>
                 {% endif %}

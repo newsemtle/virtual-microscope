@@ -4,11 +4,10 @@ from django.contrib.auth.models import (
     PermissionsMixin,
     Permission,
 )
-from django.contrib.auth.models import Group
 from django.contrib.auth.validators import UnicodeUsernameValidator
 from django.db import models
 from django.db.models import Q
-from django.db.models.signals import post_delete
+from django.db.models.signals import m2m_changed
 from django.dispatch import receiver
 from django.utils import timezone
 
@@ -59,6 +58,8 @@ class GroupProfile(models.Model):
 
     def delete(self, *args, **kwargs):
         try:
+            if self.group:
+                self.group.delete()
             if self.base_folder:
                 self.base_folder.delete()
         except:
@@ -83,14 +84,6 @@ class GroupProfile(models.Model):
 
     def is_viewer_group(self):
         return self.type == self.TypeChoices.VIEWER
-
-
-@receiver(post_delete, sender=GroupProfile)
-def delete_base_folder(sender, instance, **kwargs):
-    if instance.group:
-        instance.group.delete()
-    if instance.base_folder:
-        instance.base_folder.delete()
 
 
 class UserManager(BaseUserManager):
@@ -180,12 +173,12 @@ class User(AbstractBaseUser, PermissionsMixin):
     def save(self, *args, **kwargs):
         if self.pk:
             old_instance = User.objects.get(pk=self.pk)
-            if old_instance.username != self.username:
+            if old_instance.username != self.username and self.base_lecture_folder:
                 self.base_lecture_folder.name = self.username.title()
                 self.base_lecture_folder.save(update_fields=["name"])
 
         super().save(*args, **kwargs)
-        
+
         if self.is_publisher() and not self.base_lecture_folder:
             self.base_lecture_folder = LectureFolder.objects.create(
                 name=self.username.title(),
@@ -223,3 +216,14 @@ class User(AbstractBaseUser, PermissionsMixin):
         return self.groups.filter(
             profile__type=GroupProfile.TypeChoices.VIEWER
         ).exists()
+
+
+@receiver(m2m_changed, sender=User.groups.through)
+def create_lecture_folder_on_publisher_add(sender, instance, action, **kwargs):
+    if action in ["post_add"]:
+        if instance.is_publisher() and not instance.base_lecture_folder:
+            instance.base_lecture_folder = LectureFolder.objects.create(
+                name=instance.username.title(),
+                author=User.objects.filter(is_superuser=True).first(),
+            )
+            instance.save(update_fields=["base_lecture_folder"])
