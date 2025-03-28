@@ -339,7 +339,7 @@
             <label for="comment">Comment:</label><br>
             <textarea id="comment" name="comment" required></textarea><br><br>
             <button type="submit">Save</button>
-            <button type="button" onclick="closePopup()">Cancel</button>
+            <button type="button" onclick="cancelPopup()">Cancel</button>
         </form>
     </div>
 
@@ -523,6 +523,12 @@
 
         // Add keyboard controls
         document.addEventListener('keydown', function (event) {
+
+            const popup = document.getElementById('annotation-popup');
+            if (popup && popup.style.display !== 'none') {
+                return;
+            }
+            
             if (event.ctrlKey && event.key.toLowerCase() === 'z') {
                 event.preventDefault(); // 기본 Ctrl+C 동작(복사) 방지
                 anno.undo();
@@ -600,8 +606,8 @@
         // Annotorious 초기화
         let anno;
         let selectedColor = '#ff0000'
+        let editMode = false;
         document.getElementById("ink").style.color = selectedColor;
-        let count = 0;
         anno = AnnotoriousOSD.createOSDAnnotator(viewer);
         AnnotoriousTools.mountPlugin(anno);
 
@@ -639,7 +645,7 @@
             anno.setDrawingEnabled(false);
             viewer.setMouseNavEnabled(true);
             annotation["motivation"] = selectedColor;
-
+            editMode = false;
 
             openPopup(annotation)
         });
@@ -734,6 +740,13 @@
             document.getElementById('annotation-popup').style.display = 'none';
         }
 
+        function cancelPopup() {
+            if (!editMode){
+                anno.removeAnnotation(anno.getSelected()[0]);
+            }
+            closePopup();
+        }
+
         function updateAnnotationDisplay(annotation) {
             // article-body에 주석의 설명과 이름을 한 문단으로 추가
             const articleBody = document.getElementById('article-body');
@@ -773,6 +786,7 @@
 
         // 주석 수정 함수
         function openEditPopup(annotation) {
+            editMode = true;
             // 기존 값으로 입력 필드 미리 채우기
             document.getElementById('title').value = annotation["name"] || '';
             document.getElementById('comment').value = annotation["description"] || '';
@@ -806,6 +820,7 @@
             const icon = this.querySelector('i');
             // 현재 아이콘이 eye-slash이면 보이는 상태 => 숨기기
             if (icon.classList.contains('bi-eye-slash')) {
+                anno.cancelSelected();
                 anno.setVisible(false); // 주석 숨기기
                 icon.classList.remove('bi-eye-slash');
                 icon.classList.add('bi-eye');
