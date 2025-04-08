@@ -6,7 +6,6 @@ from django.contrib.auth.models import (
     Permission,
 )
 from django.contrib.auth.validators import UnicodeUsernameValidator
-from django.contrib.staticfiles.storage import staticfiles_storage
 from django.core.cache import cache
 from django.db import models
 from django.db.models import Q
@@ -149,7 +148,6 @@ class User(AbstractBaseUser, PermissionsMixin):
     profile_image = models.ImageField(
         "profile image",
         upload_to="public/profile_images",
-        default=staticfiles_storage.path("common_static/default.png"),
         blank=True,
         null=True,
     )
