@@ -144,9 +144,38 @@
                                 {% endif %}
                             {% endif %}
                             <!-- 진행상황 표시 -->
-                            {% if item.type != "folder" and item.building %}
-                                <progress class="slide-upload-progress" id="slide-{{ item.id }}-progress" max="100"
-                                          style="width: 100%" data-slide-id="{{ item.id }}"></progress>
+                            {% if item.type != "folder" %}
+                                {% if item.building %}
+                                    <div class="mt-1 position-relative align-items-center">
+                                        <div class="progress bg-secondary bg-opacity-50 slide-upload-progress"
+                                             role="progressbar" aria-valuemin="0" aria-valuemax="100"
+                                             data-slide-id="{{ item.id }}">
+                                            <div class="progress-bar progress-bar-striped progress-bar-animated"
+                                                 id="slide-{{ item.id }}-progress-bar">
+                                            </div>
+                                            <div class="position-absolute w-100 h-100 d-flex justify-content-center align-items-center"
+                                                 id="slide-{{ item.id }}-progress-text"
+                                                 style="font-size: 15px; color: white">
+                                                Wait..
+                                            </div>
+                                        </div>
+                                    </div>
+                                {% elif item.build_status == 'failed' %}
+                                    <div class="mt-1 position-relative align-items-center">
+                                        <div class="progress bg-danger bg-opacity-50 slide-upload-progress"
+                                             role="progressbar" aria-valuemin="0" aria-valuemax="100"
+                                             data-slide-id="{{ item.id }}">
+                                            <div class="progress-bar progress-bar-striped progress-bar-animated"
+                                                 id="slide-{{ item.id }}-progress-bar">
+                                            </div>
+                                            <div class="position-absolute w-100 h-100 d-flex justify-content-center align-items-center"
+                                                 id="slide-{{ item.id }}-progress-text"
+                                                 style="font-size: 15px; color: white">
+                                                Failed
+                                            </div>
+                                        </div>
+                                    </div>
+                                {% endif %}
                             {% endif %}
                         </div>
                         <!-- 4영역 Edit 버튼 /flex-item-edit / 10%-->

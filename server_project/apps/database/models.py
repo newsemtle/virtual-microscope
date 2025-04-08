@@ -417,7 +417,17 @@ class Slide(models.Model):
         return False
 
     def _initialize_slide(self, slide: OpenSlide):
+        channel_layer = get_channel_layer()
         try:
+            async_to_sync(channel_layer.group_send)(
+                f"slide_{self.pk}",
+                {
+                    "type": "slide.initialize",
+                    "completed": False,
+                    "status": "Initializing slide",
+                },
+            )
+
             # Setup directory
             image_directory = self.get_image_directory()
             os.makedirs(image_directory, exist_ok=True)
@@ -441,12 +451,12 @@ class Slide(models.Model):
             Slide.objects.filter(pk=self.pk).update(metadata=metadata)
             self.metadata = metadata
 
-            channel_layer = get_channel_layer()
             async_to_sync(channel_layer.group_send)(
                 f"slide_{self.pk}",
                 {
-                    "type": "slide.initialized",
-                    "status": "Initializing slide",
+                    "type": "slide.initialize",
+                    "completed": True,
+                    "status": "Slide initialized",
                 },
             )
 
@@ -467,10 +477,6 @@ class Slide(models.Model):
 
             deepzoom = DeepZoomGenerator(slide)
 
-            # Create DZI file
-            dzi = deepzoom.get_dzi(tile_format)
-            with open(self.get_dzi_path(), "w") as f:
-                f.write(dzi)
             async_to_sync(channel_layer.group_send)(
                 f"slide_{self.pk}",
                 {
@@ -479,6 +485,10 @@ class Slide(models.Model):
                     "status": "Creating DZI file",
                 },
             )
+            # Create DZI file
+            dzi = deepzoom.get_dzi(tile_format)
+            with open(self.get_dzi_path(), "w") as f:
+                f.write(dzi)
 
             # Get total number of tiles
             total_tiles = sum(cols * rows for cols, rows in deepzoom.level_tiles)
@@ -493,13 +503,6 @@ class Slide(models.Model):
                 cols, rows = deepzoom.level_tiles[level]
                 for col in range(cols):
                     for row in range(rows):
-                        tile_path = os.path.join(
-                            level_dir, f"{col}_{row}.{tile_format}"
-                        )
-                        tile = deepzoom.get_tile(level, (col, row))
-                        tile.save(tile_path)
-
-                        processed_tiles += 1
                         if processed_tiles % batch_size == 0:
                             progress = 5 + int((processed_tiles / total_tiles) * 90)
                             async_to_sync(channel_layer.group_send)(
@@ -510,6 +513,13 @@ class Slide(models.Model):
                                     "status": f"Processing tiles ({processed_tiles}/{total_tiles})",
                                 },
                             )
+
+                        tile_path = os.path.join(
+                            level_dir, f"{col}_{row}.{tile_format}"
+                        )
+                        tile = deepzoom.get_tile(level, (col, row))
+                        tile.save(tile_path)
+                        processed_tiles += 1
 
             async_to_sync(channel_layer.group_send)(
                 f"slide_{self.pk}",
