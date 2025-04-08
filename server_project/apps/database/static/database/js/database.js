@@ -324,17 +324,7 @@ document.getElementById("image-delete-form").addEventListener("submit", function
 });
 document.getElementById("image-rebuild-form").addEventListener("submit", function (event) {
     event.preventDefault();
-    fetchData({
-        url: this.dataset.url,
-        method: "POST",
-        onSuccess: (data) => {
-            location.reload();
-        },
-        onError: (error) => {
-            showFeedback(error.message, 'danger');
-            $(this).closest('.modal').modal('hide');
-        }
-    });
+    submitModalForm(this, "POST");
 });
 document.getElementById("annotation-rename-form").addEventListener("submit", function (event) {
     event.preventDefault();

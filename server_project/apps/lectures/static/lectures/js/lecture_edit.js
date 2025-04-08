@@ -306,9 +306,8 @@ function submitChanges(formItem) {
         method: 'PATCH',
         data: data,
         onSuccess: (data) => {
-            sendFeedback(`Lecture '${data.name}' updated successfully!`, "success")
-            localStorage.setItem("refreshPage", "true");
-            window.close();
+            sendFeedback(`Lecture '${data.name}' updated successfully!`, "success");
+            window.location.href = data.folder_url;
         },
         onError: (error) => {
             showFeedback("Error updating lecture: " + error.message, "danger");

@@ -83,7 +83,10 @@ document.getElementById("lecture-detail-modal").addEventListener("show.bs.modal"
 
 document.getElementById("lecture-copy-modal").addEventListener("show.bs.modal", function (event) {
     let button = event.relatedTarget;
-    document.getElementById("lecture-copy-form").dataset.url = button.dataset.url;
+    const duplicateForm = document.getElementById("lecture-duplicate-form");
+    const sendForm = document.getElementById("lecture-send-form");
+    duplicateForm.dataset.url = button.dataset.duplicateUrl;
+    sendForm.dataset.url = button.dataset.sendUrl;
 
     fetchData({
         url: button.dataset.urlUsers,
@@ -143,6 +146,7 @@ document.getElementById("lecture-copy-modal").addEventListener("show.bs.modal", 
                     input.name = "target";
                     input.value = user.id;
                     input.required = true;
+                    input.disabled = user.id.toString() === sendForm.dataset.ownerId;
 
                     const label = document.createElement('label');
                     label.className = 'form-check-label';
@@ -194,8 +198,7 @@ document.getElementById("lecture-create-form").addEventListener("submit", functi
         method: "POST",
         data: new FormData(this),
         onSuccess: (data) => {
-            window.open(data.edit_url, "_blank", "noopener,noreferrer");
-            location.reload();
+            window.location.href = data.edit_url;
         },
         onError: (error) => {
             showFeedback(error.message, 'danger');
@@ -207,7 +210,11 @@ document.getElementById("lecture-move-form").addEventListener("submit", function
     event.preventDefault();
     submitModalForm(this, "PATCH");
 });
-document.getElementById("lecture-copy-form").addEventListener("submit", function (event) {
+document.getElementById("lecture-duplicate-form").addEventListener("submit", function (event) {
+    event.preventDefault();
+    submitModalForm(this, "POST");
+});
+document.getElementById("lecture-send-form").addEventListener("submit", function (event) {
     event.preventDefault();
     submitModalForm(this, "POST");
 });
