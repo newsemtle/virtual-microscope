@@ -30,38 +30,43 @@
                             <input type="text" class="form-control" id="lecture-name" name="name"
                                    value="{{ lecture.name }}">
                         </div>
-                        <div class="mb-3">
+                        <div>
                             <label for="lecture-description" class="form-label">Description</label>
                             <textarea class="form-control" id="lecture-description" name="description"
                                       rows="2">{{ lecture.description|default:"" }}</textarea>
                         </div>
                     </div>
                     <div class="col-md-6">
-                        <div class="mb-3">
-                            <label class="form-label">Groups: select groups to allow access</label>
-                            <div class="mb-2">
-                                <label class="col-2 ps-3">Publishers:</label>
-                                {% for publisher in publishers %}
-                                    <div class="form-check-inline">
-                                        <input class="form-check-input" type="checkbox" name="groups[]"
-                                               id="group-{{ publisher.id }}" value="{{ publisher.id }}"
-                                               {% if publisher in lecture.groups.all %}checked{% endif %}>
-                                        <label class="form-check-label"
-                                               for="group-{{ publisher.id }}">{{ publisher.name }}</label>
-                                    </div>
-                                {% endfor %}
+                        <label class="form-label fw-bold">Groups</label>
+                        <span class="text-muted">(Select groups to allow access)</span>
+                        <div class="row">
+                            <div class="col">
+                                <label class="form-label text-decoration-underline">Publishers</label>
+                                <div class="overflow-y-scroll" style="max-height: 150px;">
+                                    {% for publisher in publishers %}
+                                        <div class="form-check ms-2">
+                                            <input class="form-check-input" type="checkbox" name="groups[]"
+                                                   id="group-{{ publisher.id }}" value="{{ publisher.id }}"
+                                                   {% if publisher in lecture.groups.all %}checked{% endif %}>
+                                            <label class="form-check-label"
+                                                   for="group-{{ publisher.id }}">{{ publisher.name }}</label>
+                                        </div>
+                                    {% endfor %}
+                                </div>
                             </div>
-                            <div>
-                                <label class="col-2 ps-3">Viewers:</label>
-                                {% for viewer in viewers %}
-                                    <div class="form-check-inline">
-                                        <input class="form-check-input" type="checkbox" name="groups[]"
-                                               id="group-{{ viewer.id }}" value="{{ viewer.id }}"
-                                               {% if viewer in lecture.groups.all %}checked{% endif %}>
-                                        <label class="form-check-label"
-                                               for="group-{{ viewer.id }}">{{ viewer.name }}</label>
-                                    </div>
-                                {% endfor %}
+                            <div class="col">
+                                <label class="form-label text-decoration-underline">Viewers</label>
+                                <div class="overflow-y-scroll" style="max-height: 150px;">
+                                    {% for viewer in viewers %}
+                                        <div class="form-check ms-2">
+                                            <input class="form-check-input" type="checkbox" name="groups[]"
+                                                   id="group-{{ viewer.id }}" value="{{ viewer.id }}"
+                                                   {% if viewer in lecture.groups.all %}checked{% endif %}>
+                                            <label class="form-check-label"
+                                                   for="group-{{ viewer.id }}">{{ viewer.name }}</label>
+                                        </div>
+                                    {% endfor %}
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -71,8 +76,9 @@
         <div class="row">
             <div class="col-md-6">
                 <div class="card mb-3">
-                    <div class="card-header">
+                    <div class="card-header d-flex align-items-baseline">
                         <h5 class="card-title">Contents</h5>
+                        <span class="text-muted ms-2">(These images will be added to the lecture.)</span>
                     </div>
                     <div class="card-body">
                         <ul class="list-group" id="content-list">
@@ -87,7 +93,7 @@
                                     <img src="{% url 'api:slide-thumbnail' pk=content.slide.id %}"
                                          height=40 class="me-2" alt="">
                                     <a href="{% url 'slide_viewer:slide-view' slide_id=content.slide.id %}"
-                                       class="text-decoration-none" target="_blank"
+                                       class="text-decoration-none text-body" target="_blank"
                                        rel="noopener noreferrer nofollow">{{ content.slide.name }}</a>
                                     <div class="ms-auto col-3">
                                         <label for="annotation-for-{{ content.slide.id }}">Annotation:</label>
@@ -116,15 +122,17 @@
             </div>
             <div class="col-md-6">
                 <div class="card mb-3">
-                    <div class="card-header">
+                    <div class="card-header d-flex align-items-baseline">
                         <h5 class="card-title">Database</h5>
+                        <span class="text-muted ms-2">(Select images to add.)</span>
                     </div>
                     <div class="card-body">
                         {% if items %}
                             <ul class="list-group" id="database-list">
                                 {% for item in items %}
                                     {% if item.type == "folder" %}
-                                        <li class="list-group-item" data-url="{% url 'api:folder-items' pk=item.id %}"
+                                        <li class="list-group-item"
+                                            data-url="{% url 'api:folder-items' pk=item.id %}"
                                             data-folder-id="{{ item.id }}">
                                             <i class="bi bi-chevron-right me-2" data-bs-toggle="collapse"
                                                href="#collapse-{{ item.id }}" role="button"
@@ -142,7 +150,7 @@
                                             <img src="{% url 'api:slide-thumbnail' pk=item.id %}"
                                                  height=40 class="me-2" alt="">
                                             <a href="{% url 'slide_viewer:slide-view' slide_id=item.id %}"
-                                               class="text-decoration-none" target="_blank"
+                                               class="text-decoration-none text-body" target="_blank"
                                                rel="noopener noreferrer nofollow">{{ item.name }}</a>
                                         </li>
                                     {% endif %}

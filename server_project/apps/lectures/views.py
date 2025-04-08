@@ -46,7 +46,7 @@ class LectureDatabaseView(
     def get_folder(self):
         folder_id = self.request.GET.get("folder")
         if not folder_id:
-            return None
+            return None  # Root
         return get_object_or_404(LectureFolder, id=folder_id)
 
     def test_func(self):
@@ -93,6 +93,14 @@ class LectureDatabaseView(
         current = self.get_folder()
         context["current_folder"] = current
         context["breadcrumbs"] = self._generate_breadcrumbs(current)
+
+        if current:
+            context["parent_available"] = (
+                True if current.parent else self.request.user.is_admin()
+            )
+        else:
+            context["parent_available"] = False
+
         return context
 
     def _generate_breadcrumbs(self, folder):
@@ -158,10 +166,10 @@ class LectureEditView(
         context = super().get_context_data(**kwargs)
         context["lecture"] = self.get_lecture()
         context["publishers"] = Group.objects.filter(
-            profile__type=GroupProfile.TypeChoices.PUBLISHER
+            profile__type=GroupProfile.Type.PUBLISHER
         )
         context["viewers"] = Group.objects.filter(
-            profile__type=GroupProfile.TypeChoices.VIEWER
+            profile__type=GroupProfile.Type.VIEWER
         )
 
         base_folders = (
