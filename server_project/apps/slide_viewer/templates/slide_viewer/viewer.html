@@ -44,8 +44,8 @@
         <div class="container-fluid custom-nav">
             <!-- 전체 버튼 그룹 -->
             <div class="btn-group" role="group">
-               <!-- File 드롭다운 버튼 -->
-               <div class="btn-group" role="group">
+                <!-- File 드롭다운 버튼 -->
+                <div class="btn-group" role="group">
                     <button id="btnGroupDrop_file" type="button"
                             class="btn btn btn-outline-light custom-button dropdown-toggle"
                             data-bs-toggle="dropdown"
@@ -116,14 +116,16 @@
                         <!-- Brightness Control -->
                         <li class="dropdown-item">
                             <label for="brightness">밝기:</label>
-                            <input type="range" id="brightness" min="0" max="2" step="0.01" value="1" oninput="updateFilters()">
+                            <input type="range" id="brightness" min="0" max="2" step="0.01" value="1"
+                                   oninput="updateFilters()">
                             <span id="brightness-value">1.00</span>
                             <button type="button" onclick="resetBrightness()">Reset</button>
                         </li>
                         <!-- Contrast Control -->
                         <li class="dropdown-item">
                             <label for="contrast">대비:</label>
-                            <input type="range" id="contrast" min="0" max="2" step="0.01" value="1" oninput="updateFilters()">
+                            <input type="range" id="contrast" min="0" max="2" step="0.01" value="1"
+                                   oninput="updateFilters()">
                             <span id="contrast-value">1.00</span>
                             <button type="button" onclick="resetContrast()">Reset</button>
                         </li>
@@ -207,7 +209,7 @@
                             <i class="bi bi-palette"></i><span> Choose Color </span>
                         </li>
                         <!-- 항상 보이는 색상 팔레트 -->
-                        <div class="color-palette">
+                        <li class="color-palette">
                             <div class="color-option" data-color="#ff0000">
                                 <div class="color-circle red"></div>
                             </div>
@@ -232,7 +234,7 @@
                             <div class="color-option" data-color="#8b4513">
                                 <div class="color-circle brown"></div>
                             </div>
-                        </div>
+                        </li>
                     </ul>
                 </div>
                 <!-- 뒤로가기(취소) 버튼 -->
@@ -375,7 +377,7 @@
         var viewer = OpenSeadragon({
             id: "openseadragon-container",
             tileSources: "{% url 'api:slide-dzi' pk=slide.id %}",
-            prefixUrl: "{% static 'slide_viewer/../../../../static/openseadragon/images' %}/",
+            prefixUrl: "{% static 'openseadragon/images' %}/",
             //네비게이터
             showNavigator: true,
             navigatorPosition: "BOTTOM_RIGHT", //네비게이터 위치
@@ -605,22 +607,22 @@
         AnnotoriousTools.mountPlugin(anno);
 
         const slideId = {{ slide.id }};
-        
+
 
         //저장된 주석 이미지 및 설명(슬라이드 자체 설명 & 주석 설명) 띄우기 (fetch 사용 제거)
         if (annotation && annotation.data) {
             annotation.data.forEach(annot => {
                 anno.addAnnotation(annot);
                 updateAnnotationDisplay(annot);
-                });
-                
-                //슬라이드 자체 설명
-                const articleHeader = document.getElementById('article-header');
-                const descriptionElement = document.createElement('p');
-                const formattedDescription = annotation.description.replace(/\n/g, '<br>');
-                descriptionElement.innerHTML = formattedDescription;
-                descriptionElement.classList.add('annotation-description'); // 클래스 추가
-                articleHeader.appendChild(descriptionElement);
+            });
+
+            //슬라이드 자체 설명
+            const articleHeader = document.getElementById('article-header');
+            const descriptionElement = document.createElement('p');
+            const formattedDescription = annotation.description.replace(/\n/g, '<br>');
+            descriptionElement.innerHTML = formattedDescription;
+            descriptionElement.classList.add('annotation-description'); // 클래스 추가
+            articleHeader.appendChild(descriptionElement);
 
         }
 
@@ -738,37 +740,37 @@
             const articleBody = document.getElementById('article-body');
             const combinedElement = document.createElement('p');
             combinedElement.id = 'annotation-combined-' + annotation.id;
-        
+
             // 설명 부분
             const descriptionSpan = document.createElement('span');
             descriptionSpan.classList.add('annotation-description');
             descriptionSpan.style.color = 'black';
             const formattedDescription = annotation["description"].replace(/\n/g, '<br>');
             descriptionSpan.innerHTML = formattedDescription;
-        
+
             // 구분자
             const separator = document.createTextNode(': ');
-        
+
             // 이름 부분
             const nameSpan = document.createElement('span');
             nameSpan.classList.add('annotation-name');
             nameSpan.style.color = 'blue';
             const formattedName = annotation["name"].replace(/\n/g, '<br>');
             nameSpan.innerHTML = formattedName;
-        
+
             // 요소들을 조합하여 하나의 문단에 추가
             combinedElement.appendChild(nameSpan);
             combinedElement.appendChild(separator);
             combinedElement.appendChild(descriptionSpan);
-        
+
             articleBody.appendChild(combinedElement);
-        
+
             // 클릭 시 주석 영역으로 이동 (combinedElement 전체에 이벤트 적용)
             combinedElement.addEventListener('click', function () {
-                anno.fitBounds(annotation, { immediately: false, padding: 50 });
+                anno.fitBounds(annotation, {immediately: false, padding: 50});
             });
         }
-        
+
 
         // 주석 수정 함수
         function openEditPopup(annotation) {
@@ -862,8 +864,8 @@
             const contrast = document.getElementById('contrast').value;
 
             // Update the displayed values
-            document.getElementById('brightness-value').textContent = Math.round((parseFloat(brightness)*100-100));
-            document.getElementById('contrast-value').textContent = Math.round((parseFloat(contrast)*100-100));
+            document.getElementById('brightness-value').textContent = Math.round((parseFloat(brightness) * 100 - 100));
+            document.getElementById('contrast-value').textContent = Math.round((parseFloat(contrast) * 100 - 100));
 
             // Apply CSS filters to the OpenSeadragon viewer
             document.querySelector('.openseadragon-canvas').style.filter = `brightness(${brightness}) contrast(${contrast})`;

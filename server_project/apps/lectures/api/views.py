@@ -1,5 +1,6 @@
 import logging
 
+from django.contrib.auth import get_user_model
 from django.utils import timezone
 from rest_framework import viewsets
 from rest_framework.decorators import action
@@ -22,7 +23,9 @@ class LectureFolderViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save()
-        logger.info(f"Lecture folder '{serializer.instance.name}' created by {self.request.user}")
+        logger.info(
+            f"Lecture folder '{serializer.instance.name}' created by {self.request.user}"
+        )
 
     def perform_update(self, serializer):
         folder = self.get_object()
@@ -46,7 +49,9 @@ class LectureFolderViewSet(viewsets.ModelViewSet):
         data = self.get_serializer(folder).data
         data.update(
             {
-                "parent_name": str(folder.parent) or "-",
+                "parent_path": (
+                    folder.parent.get_full_path() if folder.parent else "Root"
+                ),
                 "created_at_formatted": timezone.localtime(folder.created_at).strftime(
                     "%Y-%m-%d %H:%M:%S"
                 ),
@@ -91,7 +96,9 @@ class LectureViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save()
-        logger.info(f"Lecture '{serializer.instance.name}' created by {self.request.user}")
+        logger.info(
+            f"Lecture '{serializer.instance.name}' created by {self.request.user}"
+        )
 
     def perform_update(self, serializer):
         lecture = self.get_object()
@@ -112,7 +119,7 @@ class LectureViewSet(viewsets.ModelViewSet):
         data = self.get_serializer(lecture).data
         data.update(
             {
-                "folder_name": str(lecture.folder) or "-",
+                "folder_name": str(lecture.folder) if lecture.folder else "Root",
                 "group_names": [group.name for group in lecture.groups.all()],
                 "created_at_formatted": timezone.localtime(lecture.created_at).strftime(
                     "%Y-%m-%d %H:%M:%S"
@@ -146,6 +153,31 @@ class LectureViewSet(viewsets.ModelViewSet):
                 ),
             }
         )
+
+    @action(detail=True, methods=["post"])
+    def copy(self, request, *args, **kwargs):
+        user = request.user
+        lecture = self.get_object()
+        target_id = request.data.get("target")
+        if not target_id:
+            return Response({"error": "Target is required"}, status=400)
+
+        self._check_edit_permissions(lecture)
+
+        target = get_user_model().objects.get(pk=target_id)
+        if not target.base_lecture_folder:
+            return Response(
+                {"error": "Target doesn't have lecture folder."}, status=400
+            )
+
+        lecture.pk = None
+        lecture.name = f"{lecture.name} (copy)"
+        lecture.author = target
+        lecture.folder = target.base_lecture_folder
+        lecture.save()
+
+        logger.info(f"Lecture '{lecture.name}' copied to {target} by {user}")
+        return Response({"message": f"Lecture copied to '{target}' successfully."})
 
     def _check_edit_permissions(self, lecture):
         if not lecture.user_can_edit(self.request.user):

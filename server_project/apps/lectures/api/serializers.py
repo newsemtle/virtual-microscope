@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from rest_framework.reverse import reverse
 
 from ..models import Lecture, LectureContent, LectureFolder
 
@@ -45,6 +46,7 @@ class LectureContentSerializer(serializers.ModelSerializer):
 class LectureSerializer(serializers.ModelSerializer):
     author = serializers.CharField(source="author.username", default=None)
     contents = LectureContentSerializer(many=True, required=False)
+    edit_url = serializers.SerializerMethodField()
 
     class Meta:
         model = Lecture
@@ -59,6 +61,7 @@ class LectureSerializer(serializers.ModelSerializer):
             "is_active",
             "created_at",
             "updated_at",
+            "edit_url",
         ]
         read_only_fields = ["author"]
 
@@ -109,3 +112,6 @@ class LectureSerializer(serializers.ModelSerializer):
 
         lecture.save()
         return lecture
+
+    def get_edit_url(self, obj):
+        return reverse("lectures:lecture-edit", kwargs={"lecture_id": obj.pk})

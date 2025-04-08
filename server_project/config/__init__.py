@@ -1,4 +1,4 @@
-__version__ = "[feature/server-settings] 2025.03.27 commit-1"
+__version__ = "[feature/server] 2025.04.08 commit-1"
 
 
 from .celery import app as celery_app

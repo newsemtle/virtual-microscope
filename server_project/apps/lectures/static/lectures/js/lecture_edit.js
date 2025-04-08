@@ -1,6 +1,6 @@
 document.addEventListener("DOMContentLoaded", function () {
     updateSelectedImages();
-    
+
     const lectureForm = document.getElementById("lecture-form");
 
     lectureForm.addEventListener("submit", function (event) {
@@ -167,7 +167,7 @@ function collapseFolder(listItem) {
 
                     const text = document.createElement('a')
                     text.href = item.view_url;
-                    text.classList.add('text-decoration-none');
+                    text.className = 'text-decoration-none text-body';
                     text.textContent = item.name;
                     text.target = '_blank';
                     text.rel = 'noopener noreferrer nofollow';
@@ -234,7 +234,7 @@ function addContent(listItem) {
 
     const slideText = document.createElement('a');
     slideText.href = listItem.querySelector('a').href;
-    slideText.classList.add('text-decoration-none');
+    slideText.className = 'text-decoration-none text-body';
     slideText.textContent = slideName;
     slideText.target = '_blank';
     slideText.rel = 'noopener noreferrer nofollow';
@@ -328,8 +328,10 @@ function updateSelectedImages() {
 
         if (selectedImages.includes(slideId)) {
             item.classList.add('opacity-50')
+            item.classList.add('bg-secondary-subtle')
         } else {
             item.classList.remove('opacity-50');
+            item.classList.remove('bg-secondary-subtle');
         }
     });
 }
