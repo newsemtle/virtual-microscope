@@ -1,13 +1,24 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block content %}
     <div class="row justify-content-center">
-        <div class="col-md-8">
+        <div class="col-md-6">
             <div class="card">
                 <div class="card-header">
                     <h3 class="card-title mb-0">Profile Information</h3>
                 </div>
                 <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-sm-2">
+                            {% if user.profile_image %}
+                                <img class="img-fluid" src="{{ user.profile_image.url }}" alt="profile image">
+                            {% else %}
+                                <img class="img-fluid" src="{% static 'common_static/img/default_profile_image.png' %}"
+                                     alt="profile image">
+                            {% endif %}
+                        </div>
+                    </div>
                     <div class="row mb-3">
                         <div class="col-sm-3">
                             <strong>Username:</strong>
