@@ -1,8 +1,11 @@
 import logging
 import os
 
+from django.core.cache import cache
 from django.http import FileResponse
 from django.shortcuts import get_object_or_404
+from django.template.defaultfilters import filesizeformat
+from django.urls import reverse
 from django.utils import timezone
 from rest_framework import viewsets
 from rest_framework.decorators import action
@@ -54,7 +57,7 @@ class FolderViewSet(viewsets.ModelViewSet):
         data = self.get_serializer(folder).data
         data.update(
             {
-                "parent_path": folder.parent.get_full_path() if folder.parent else "-",
+                "parent_path": folder.parent.get_full_path() if folder.parent else "Root",
                 "created_at_formatted": timezone.localtime(folder.created_at).strftime(
                     "%Y-%m-%d %H:%M:%S"
                 ),
@@ -150,8 +153,19 @@ class SlideViewSet(viewsets.ModelViewSet):
         data = self.get_serializer(slide).data
         data.update(
             {
-                "folder_name": str(slide.folder) or "-",
-                "file_name": os.path.basename(slide.file.name),
+                "folder_name": str(slide.folder) if slide.folder else "Root",
+                "file_details": {
+                    "name": os.path.basename(slide.file.name),
+                    "size": filesizeformat(slide.file.size),
+                    "file_url": reverse("api:slide-file", kwargs={"pk": slide.pk}),
+                    "rebuild_url": reverse(
+                        "api:slide-rebuild", kwargs={"pk": slide.pk}
+                    ),
+                    "building": slide.building(),
+                },
+                "owner_group_name": (
+                    slide.get_owner_group().name if slide.get_owner_group() else "admin"
+                ),
                 "created_at_formatted": timezone.localtime(slide.created_at).strftime(
                     "%Y-%m-%d %H:%M:%S"
                 ),
@@ -170,6 +184,8 @@ class SlideViewSet(viewsets.ModelViewSet):
             )
 
         slide = self.get_object()
+        self._check_view_permission(slide)
+
         annotations = Annotation.objects.viewable(request.user, slide=slide)
         return Response(
             AnnotationSerializer(
@@ -187,15 +203,9 @@ class SlideViewSet(viewsets.ModelViewSet):
             "get_associated_image_path", "Associated image not found."
         )
 
-    def _check_edit_permissions(self, slide):
-        if not slide.user_can_edit(self.request.user):
-            raise PermissionDenied("You don't have permission to edit this slide.")
-
     def _serve_image_file(self, path_method, error_message):
         slide = self.get_object()
-
-        if not slide.user_can_view(self.request.user):
-            raise PermissionDenied("You don't have permission to view this slide.")
+        self._check_view_permission(slide)
 
         path = getattr(slide, path_method)()
 
@@ -205,12 +215,20 @@ class SlideViewSet(viewsets.ModelViewSet):
 
         return FileResponse(open(path, "rb"), content_type="image/png")
 
+    def _check_edit_permissions(self, slide):
+        if not slide.user_can_edit(self.request.user):
+            raise PermissionDenied("You don't have permission to edit this slide.")
+
+    def _check_view_permission(self, slide):
+        if not slide.user_can_view(self.request.user):
+            raise PermissionDenied("You don't have permission to view this slide.")
+
 
 class DZIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, pk):
-        slide = get_object_or_404(Slide, id=pk)
+        slide = get_object_or_404(Slide, pk=pk)
         _check_slide_view_permission(request.user, slide)
 
         path = slide.get_dzi_path()
@@ -229,7 +247,7 @@ class TileView(APIView):
         if tile_format not in {"jpeg", "png"}:
             return Response({"error": "Unsupported format"}, status=400)
 
-        slide = get_object_or_404(Slide, id=pk)
+        slide = get_object_or_404(Slide, pk=pk)
         _check_slide_view_permission(request.user, slide)
 
         tile_path = os.path.join(
@@ -243,8 +261,52 @@ class TileView(APIView):
         return FileResponse(open(tile_path, "rb"), content_type=f"image/{tile_format}")
 
 
+class SlideFileView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, pk):
+        slide = get_object_or_404(Slide, pk=pk)
+        _check_slide_view_permission(request.user, slide)
+
+        path = slide.file.path
+        if not os.path.exists(path):
+            logger.error(f"Slide file not found: {path}")
+            return Response({"error": "Slide file not found"}, status=404)
+
+        return FileResponse(slide.file, as_attachment=True)
+
+
+class RebuildView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, pk):
+        slide = get_object_or_404(Slide, pk=pk)
+        _check_slide_edit_permission(request.user, slide)
+
+        if slide.building():
+            return Response({"error": "Slide cannot be rebuilt"}, status=400)
+
+        try:
+            slide.build_status = slide.BuildStatus.PENDING
+            slide.save(update_fields=["build_status"])
+            return Response({"status": "Tiles rebuilt successfully"})
+        except Exception as e:
+            logger.error(f"Failed to rebuild tiles: {str(e)}")
+            return Response({"error": str(e)}, status=500)
+
+
 def _check_slide_view_permission(user, slide):
-    if not user.has_perm("database.view_slide"):
-        raise PermissionDenied("You don't have permission to view slides.")
-    if not slide.user_can_view(user):
+    cache_key = f"user_{user.id}_slide_{slide.id}_view_permission"
+
+    if cache.get(cache_key):
+        return
+
+    if not user.has_perm("database.view_slide") or not slide.user_can_view(user):
         raise PermissionDenied("You don't have permission to view this slide.")
+
+    cache.set(cache_key, True, timeout=10 * 60)  # 10 minutes
+
+
+def _check_slide_edit_permission(user, slide):
+    if not user.has_perm("database.change_slide") or not slide.user_can_edit(user):
+        raise PermissionDenied("You don't have permission to edit this slide.")

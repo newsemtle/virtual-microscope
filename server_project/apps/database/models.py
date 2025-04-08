@@ -65,6 +65,7 @@ class FolderManager(CTEManager):
             descendants |= self.descendants_iter(subfolder)
         return descendants
 
+    # not used..
     def descendants_cte(self, folder):
         def make_descendants_cte(cte):
             return (
@@ -246,9 +247,15 @@ class SlideManager(models.Manager):
 
 
 class Slide(models.Model):
+    class BuildStatus(models.TextChoices):
+        PENDING = ("pending", "Pending")
+        PROCESSING = ("processing", "Processing")
+        DONE = ("done", "Done")
+        FAILED = ("failed", "Failed")
+
     id = models.AutoField(primary_key=True)
     file = models.FileField(
-        upload_to="slides/",
+        upload_to="protected/slides/",
         help_text="Choose a slide file to upload.",
     )
     name = models.CharField(
@@ -270,9 +277,11 @@ class Slide(models.Model):
         default=False,
         help_text="Whether the slide is public or not.",
     )
-    processed = models.BooleanField(
-        default=False,
-        help_text="Whether the slide is completely processed or not.",
+    build_status = models.CharField(
+        max_length=10,
+        choices=BuildStatus,
+        default=BuildStatus.PENDING,
+        help_text="Status of the slide processing.",
     )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -306,7 +315,7 @@ class Slide(models.Model):
             if self.pk:
                 old_instance = Slide.objects.get(pk=self.pk)
                 if old_instance.file != self.file:
-                    self.processed = False
+                    self.build_status = self.BuildStatus.PENDING
                     old_instance.file.delete()
                     self._delete_directory(old_instance.get_image_directory())
                 if (
@@ -318,12 +327,12 @@ class Slide(models.Model):
             super().save(*args, **kwargs)
 
             if not self.image_root:
-                image_root = os.path.join("images", str(self.id))
+                image_root = os.path.join("protected/processed_images", str(self.id))
                 Slide.objects.filter(pk=self.pk).update(image_root=image_root)
                 self.image_root = image_root
 
-            if not self.processed:
-                process_slide_task.delay(self.pk)
+            if self.build_status == self.BuildStatus.PENDING:
+                build_slide_task.delay(self.pk)
 
         except Exception as e:
             raise Exception(f"Failed to save slide: {str(e)}")
@@ -338,83 +347,14 @@ class Slide(models.Model):
         except Exception as e:
             raise Exception(f"Failed to delete slide: {str(e)}")
 
-    def process_slide(self):
+    def build_slide(self):
         try:
+            self._delete_directory(self.get_image_directory())
             with OpenSlide(self.file.path) as slide:
                 self._initialize_slide(slide)
                 self._generate_tiles(slide)
         except Exception as e:
             raise Exception(f"Failed to process slide: {str(e)}")
-
-    def check_integrity(self):
-        """Check integrity of the slide's files and metadata"""
-
-        status = {
-            "needs_repair": False,
-            "file_exists": os.path.exists(self.file.path),
-            "dzi_exists": os.path.exists(self.get_dzi_path()),
-            "tiles_complete": False,
-            "thumbnail_exists": False,
-            "associated_image_exists": False,
-            "metadata_valid": False,
-        }
-
-        # Check tiles
-        try:
-            with OpenSlide(self.file.path) as slide:
-                deepzoom = DeepZoomGenerator(slide)
-                status["tiles_complete"] = self._verify_tiles(deepzoom)
-        except:
-            status["tiles_complete"] = False
-
-        status["thumbnail_exists"] = os.path.exists(self.get_thumbnail_path())
-        status["associated_image_exists"] = os.path.exists(
-            self.get_associated_image_path()
-        )
-        status["metadata_valid"] = self._verify_metadata()
-
-        status["needs_repair"] = not all(
-            [
-                status["file_exists"],
-                status["dzi_exists"],
-                status["tiles_complete"],
-                status["thumbnail_exists"],
-                status["associated_image_exists"],
-                status["metadata_valid"],
-            ]
-        )
-
-        return status
-
-    def repair(self, status):
-        """Repair any missing or corrupted components"""
-
-        status = self.check_integrity()
-
-        if not status["needs_repair"]:
-            return status
-
-        if not status["file_exists"]:
-            raise Exception("Original slide file does not exist")
-
-        try:
-            with OpenSlide(self.file.path) as slide:
-                if not (
-                    status["metadata_valid"]
-                    and status["thumbnail_exists"]
-                    and status["associated_image_exists"]
-                ):
-                    self._initialize_slide(slide)
-
-                if not (status["dzi_exists"] and status["tiles_complete"]):
-                    self._generate_tiles(slide)
-
-            return self.check_integrity()
-
-        except Exception as e:
-            raise Exception(
-                f"Failed to repair slide {self.name} (id={self.id}): {str(e)}"
-            )
 
     def update_lecture_contents(self):
         for lecture_content in self.lecture_contents.all():
@@ -453,11 +393,11 @@ class Slide(models.Model):
 
     def get_dzi_path(self):
         """Get the path to the DZI file"""
-        return os.path.join(settings.MEDIA_ROOT, self.image_root, "image.dzi")
+        return os.path.join(settings.MEDIA_ROOT, self.image_root, "deepzoom.dzi")
 
     def get_tile_directory(self):
         """Get the path to the tiles directory"""
-        return os.path.join(settings.MEDIA_ROOT, self.image_root, "image_files")
+        return os.path.join(settings.MEDIA_ROOT, self.image_root, "tiles")
 
     def get_thumbnail_path(self):
         """Get the URL of the thumbnail image"""
@@ -468,6 +408,13 @@ class Slide(models.Model):
         return os.path.join(
             settings.MEDIA_ROOT, self.image_root, "associated_image.png"
         )
+
+    def building(self):
+        if self.build_status == self.BuildStatus.PENDING:
+            return True
+        if self.build_status == self.BuildStatus.PROCESSING:
+            return True
+        return False
 
     def _initialize_slide(self, slide: OpenSlide):
         try:
@@ -584,33 +531,6 @@ class Slide(models.Model):
             )
             raise Exception(f"Failed to generate images: {str(e)}")
 
-    def _verify_tiles(self, deepzoom):
-        """Verify all expected tiles exist"""
-
-        for level in range(deepzoom.level_count):
-            level_dir = os.path.join(self.get_tile_directory(), str(level))
-            if not os.path.exists(level_dir):
-                return False
-
-            cols, rows = deepzoom.level_tiles[level]
-            expected_tiles = set(
-                f"{col}_{row}.jpeg" for col in range(cols) for row in range(rows)
-            )
-            existing_tiles = set(os.listdir(level_dir))
-            if not expected_tiles.issubset(existing_tiles):
-                return False
-
-        return True
-
-    def _verify_metadata(self):
-        """Verify metadata is complete"""
-
-        if not self.metadata:
-            return False
-
-        required_fields = {"mpp-x", "mpp-y", "sourceLens", "created"}
-        return required_fields.issubset(self.metadata.keys())
-
     @staticmethod
     def _delete_directory(image_directory):
         try:
@@ -648,8 +568,19 @@ class Tag(models.Model):
 
 
 @shared_task
-def process_slide_task(slide_id):
-    slide = Slide.objects.get(pk=slide_id)
-    slide.process_slide()
-    slide.processed = True
-    slide.save(update_fields=["processed"])
+def build_slide_task(slide_id):
+    try:
+        slide = Slide.objects.get(pk=slide_id)
+        slide.build_status = slide.BuildStatus.PROCESSING
+        slide.save(update_fields=["build_status"])
+        slide.build_slide()
+        slide.build_status = Slide.BuildStatus.DONE
+        slide.save(update_fields=["build_status"])
+    except Exception as e:
+        try:
+            slide = Slide.objects.get(pk=slide_id)
+            slide.build_status = Slide.BuildStatus.FAILED
+            slide.save(update_fields=["build_status"])
+            raise Exception(f"Failed to process slide {slide_id}: {str(e)}")
+        except Slide.DoesNotExist:
+            return

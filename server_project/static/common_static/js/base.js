@@ -278,7 +278,7 @@ function createTree(data, itemId, type) {
     if (!["folder", "file"].includes(type)) return;
 
     const ul = document.createElement('ul');
-    ul.className = 'list-unstyled';
+    ul.className = 'list-unstyled mb-0';
 
     data.forEach(item => {
         let selectable = type === "folder" ? item.id.toString() !== itemId : true;

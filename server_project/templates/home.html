@@ -28,12 +28,14 @@
                                 <div class="d-grid grid gap-3 d-sm-flex justify-content-sm-center">
                                     <div class="d-grid gap-3 d-sm-flex justify-content-sm-center">
                                         <h4 class="fs-6 fw-normal text-white mb-2">Username: {{ user.username }}</h4>
-                                        <h4 class="fs-6 fw-normal text-white mb-2">Group: {{ user.groups.all|join:", "|default:"-" }}</h4>
+                                        <h4 class="fs-6 fw-normal text-white mb-2">
+                                            Group: {{ user.groups.all|join:", "|default:"-" }}</h4>
                                     </div>
                                 </div>
                                 <div class="d-grid grid gap-3 d-sm-flex justify-content-sm-center">
                                     <div class="d-grid gap-3 d-sm-flex justify-content-sm-center">
-                                        <h4 class="fs-6 fw-normal text-white mb-2">Last login: {{ user.last_login|date:"Y-m-d H:i" }}</h4>
+                                        <h4 class="fs-6 fw-normal text-white mb-2">Last
+                                            login: {{ user.last_login|date:"Y-m-d H:i" }}</h4>
                                     </div>
                                 </div>
                             </div>
@@ -42,7 +44,7 @@
                 </div>
             </div>
 
-            <div class="py-5 border-bottom" id="features">
+            <div class="py-5" id="features">
                 <div class="container px-5 my-5">
                     <div class="row gx-5">
                         {% if show_database %}
@@ -50,10 +52,10 @@
                                 <div class="feature bg-primary bg-gradient text-white rounded-3 mb-3"><i
                                         class="bi bi-folder"></i>
                                 </div>
-                                <h2 class="h4 fw-bolder">DB/Slide</h2>
-                                <p>Navigate all uploaded files in folder structure</p>
+                                <h2 class="h4 fw-bolder">DB/Image</h2>
+                                <p>Navigate all uploaded images in folder structure</p>
                                 <a class="text-decoration-none stretched-link" href="{% url 'database:database' %}">
-                                    View DB/Slide
+                                    View DB/Image
                                     <i class="bi bi-arrow-right"></i>
                                 </a>
                             </div>
@@ -63,10 +65,11 @@
                                 <div class="feature bg-primary bg-gradient text-white rounded-3 mb-3"><i
                                         class="bi bi-folder"></i>
                                 </div>
-                                <h2 class="h4 fw-bolder">DB/lecture</h2>
+                                <h2 class="h4 fw-bolder">DB/Lecture</h2>
                                 <p>Navigate all your lectures in folder structure.</p>
-                                <a class="text-decoration-none stretched-link" href="{% url 'lectures:lecture-database' %}">
-                                    View DB/lecture
+                                <a class="text-decoration-none stretched-link"
+                                   href="{% url 'lectures:lecture-database' %}">
+                                    View DB/Lecture
                                     <i class="bi bi-arrow-right"></i>
                                 </a>
                             </div>
@@ -77,7 +80,8 @@
                             </div>
                             <h2 class="h4 fw-bolder">Lectures</h2>
                             <p>View all lectures that you can explore.</p>
-                            <a class="text-decoration-none stretched-link" href="{% url 'lectures:lecture-bulletins' %}">
+                            <a class="text-decoration-none stretched-link"
+                               href="{% url 'lectures:lecture-bulletins' %}">
                                 View Lectures
                                 <i class="bi bi-arrow-right"></i>
                             </a>
