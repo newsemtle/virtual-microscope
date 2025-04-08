@@ -188,7 +188,7 @@ class User(AbstractBaseUser, PermissionsMixin):
                 self.base_lecture_folder.save(update_fields=["name"])
             if old_instance.profile_image != self.profile_image:
                 if old_instance.profile_image:
-                    old_instance.profile_image.delete()
+                    old_instance.profile_image.delete(False)
 
         super().save(*args, **kwargs)
 
@@ -204,7 +204,7 @@ class User(AbstractBaseUser, PermissionsMixin):
             if self.base_lecture_folder:
                 self.base_lecture_folder.delete()
             if self.profile_image:
-                self.profile_image.delete()
+                self.profile_image.delete(False)
         except:
             pass
         super().delete(*args, **kwargs)
