@@ -281,6 +281,13 @@ footer {
     resize: none; /* 사용자가 크기 조절하지 못하도록 설정 */
     overflow: auto;
 }
+
+.a9s-annotationlayer {
+    z-index: 10 !important;
+    pointer-events: auto !important;
+  }
+  
+
 #overlay {
     display: none;
     position: fixed;
@@ -365,4 +372,10 @@ footer {
     background: rgba(255, 255, 255, 0.8);
     padding: 10px;
     border-radius: 5px;
+}
+
+.filter-value {
+    display: inline-block;
+    width: 3ch; 
+    text-align: center; 
 }
