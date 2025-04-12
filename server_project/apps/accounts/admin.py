@@ -27,7 +27,7 @@ class GroupTypeFilter(admin.SimpleListFilter):
     parameter_name = "type"
 
     def lookups(self, request, model_admin):
-        types = GroupProfile.TypeChoices.choices
+        types = GroupProfile.Type.choices
         return [(value, display) for value, display in types]
 
     def queryset(self, request, queryset):
@@ -66,7 +66,7 @@ class UserAdmin(BaseUserAdmin):
         ),
         (
             "Personal info",
-            {"fields": ("first_name", "last_name", "email")},
+            {"fields": ("first_name", "last_name", "email", "profile_image")},
         ),
         (
             "Permissions",
@@ -89,6 +89,7 @@ class UserAdmin(BaseUserAdmin):
                     "email",
                     "first_name",
                     "last_name",
+                    "profile_image",
                     "password1",
                     "password2",
                     "groups",

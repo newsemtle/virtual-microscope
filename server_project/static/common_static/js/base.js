@@ -1,3 +1,21 @@
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            // Does this cookie string begin with the name we want?
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+const CSRF_TOKEN = getCookie('csrftoken');
+
 document.addEventListener('DOMContentLoaded', () => {
     activateTooltips();
 
@@ -9,6 +27,60 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         localStorage.removeItem("feedbackData");
+    }
+
+    const timeLeftElement = document.getElementById('time-left')
+    let lastFetchTime = 0;
+    const throttleDuration = 2000;
+
+    timeLeftElement.addEventListener("click", function (event) {
+        const now = Date.now();
+        if (now - lastFetchTime < throttleDuration) {
+            return;
+        }
+        lastFetchTime = now;
+
+        fetchData({
+            url: this.dataset.url,
+            method: "POST",
+            onSuccess: (data) => {
+                startTimer(new Date(data.expire) - Date.now())
+            },
+            onError: (error) => {
+                showFeedback(`Failed to fetch session time: ${error}`, "danger")
+            }
+        });
+    });
+    timeLeftElement.click();
+
+    let timer;
+
+    function startTimer(timeInMs) {
+        const timeLeftElement = document.getElementById('time-left');
+
+        if (timer) {
+            clearInterval(timer);
+        }
+
+        function updateTimer() {
+            if (timeInMs < 0) {
+                clearInterval(interval);
+                return;
+            }
+
+            const timeLeftInSeconds = Math.floor(timeInMs / 1000);
+
+            const hoursLeft = Math.floor(timeLeftInSeconds / 3600);
+            const minutesLeft = Math.floor((timeLeftInSeconds % 3600) / 60);
+            const secondsLeft = Math.floor(timeLeftInSeconds % 60);
+
+            timeLeftElement.textContent = `${hoursLeft.toString().padStart(2, '0')}:${minutesLeft.toString().padStart(2, '0')}:${secondsLeft.toString().padStart(2, '0')}`;
+
+            timeInMs -= 1000;
+        }
+
+        updateTimer();
+        timer = setInterval(updateTimer, 1000);
     }
 });
 
@@ -206,7 +278,7 @@ function createTree(data, itemId, type) {
     if (!["folder", "file"].includes(type)) return;
 
     const ul = document.createElement('ul');
-    ul.className = 'list-unstyled';
+    ul.className = 'list-unstyled mb-0';
 
     data.forEach(item => {
         let selectable = type === "folder" ? item.id.toString() !== itemId : true;

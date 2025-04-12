@@ -1,14 +1,15 @@
+from django.contrib.auth import user_logged_out
 from django.contrib.auth.models import (
     AbstractBaseUser,
     BaseUserManager,
     PermissionsMixin,
     Permission,
 )
-from django.contrib.auth.models import Group
 from django.contrib.auth.validators import UnicodeUsernameValidator
+from django.core.cache import cache
 from django.db import models
 from django.db.models import Q
-from django.db.models.signals import post_delete
+from django.db.models.signals import m2m_changed
 from django.dispatch import receiver
 from django.utils import timezone
 
@@ -17,7 +18,7 @@ from apps.lectures.models import LectureFolder
 
 
 class GroupProfile(models.Model):
-    class TypeChoices(models.TextChoices):
+    class Type(models.TextChoices):
         PUBLISHER = ("1", "Publisher")
         VIEWER = ("2", "Viewer")
 
@@ -27,7 +28,7 @@ class GroupProfile(models.Model):
     )
     type = models.CharField(
         max_length=10,
-        choices=TypeChoices,
+        choices=Type,
         blank=False,
         help_text="Type of the group.",
     )
@@ -59,6 +60,8 @@ class GroupProfile(models.Model):
 
     def delete(self, *args, **kwargs):
         try:
+            if self.group:
+                self.group.delete()
             if self.base_folder:
                 self.base_folder.delete()
         except:
@@ -79,18 +82,10 @@ class GroupProfile(models.Model):
             self.group.permissions.set(Permission.objects.filter(q))
 
     def is_publisher_group(self):
-        return self.type == self.TypeChoices.PUBLISHER
+        return self.type == self.Type.PUBLISHER
 
     def is_viewer_group(self):
-        return self.type == self.TypeChoices.VIEWER
-
-
-@receiver(post_delete, sender=GroupProfile)
-def delete_base_folder(sender, instance, **kwargs):
-    if instance.group:
-        instance.group.delete()
-    if instance.base_folder:
-        instance.base_folder.delete()
+        return self.type == self.Type.VIEWER
 
 
 class UserManager(BaseUserManager):
@@ -148,8 +143,14 @@ class User(AbstractBaseUser, PermissionsMixin):
         },
     )
     email = models.EmailField("email address", max_length=255, blank=True, null=True)
-    first_name = models.CharField("first name", max_length=255, blank=True)
-    last_name = models.CharField("last name", max_length=255, blank=True)
+    first_name = models.CharField("first name", max_length=255, blank=False)
+    last_name = models.CharField("last name", max_length=255, blank=False)
+    profile_image = models.ImageField(
+        "profile image",
+        upload_to="public/profile_images",
+        blank=True,
+        null=True,
+    )
     base_lecture_folder = models.OneToOneField(
         "lectures.LectureFolder",
         on_delete=models.SET_NULL,
@@ -180,12 +181,15 @@ class User(AbstractBaseUser, PermissionsMixin):
     def save(self, *args, **kwargs):
         if self.pk:
             old_instance = User.objects.get(pk=self.pk)
-            if old_instance.username != self.username:
+            if old_instance.username != self.username and self.base_lecture_folder:
                 self.base_lecture_folder.name = self.username.title()
                 self.base_lecture_folder.save(update_fields=["name"])
+            if old_instance.profile_image != self.profile_image:
+                if old_instance.profile_image:
+                    old_instance.profile_image.delete(False)
 
         super().save(*args, **kwargs)
-        
+
         if self.is_publisher() and not self.base_lecture_folder:
             self.base_lecture_folder = LectureFolder.objects.create(
                 name=self.username.title(),
@@ -197,6 +201,8 @@ class User(AbstractBaseUser, PermissionsMixin):
         try:
             if self.base_lecture_folder:
                 self.base_lecture_folder.delete()
+            if self.profile_image:
+                self.profile_image.delete(False)
         except:
             pass
         super().delete(*args, **kwargs)
@@ -215,11 +221,23 @@ class User(AbstractBaseUser, PermissionsMixin):
         return self.is_staff
 
     def is_publisher(self):
-        return self.groups.filter(
-            profile__type=GroupProfile.TypeChoices.PUBLISHER
-        ).exists()
+        return self.groups.filter(profile__type=GroupProfile.Type.PUBLISHER).exists()
 
     def is_viewer(self):
-        return self.groups.filter(
-            profile__type=GroupProfile.TypeChoices.VIEWER
-        ).exists()
+        return self.groups.filter(profile__type=GroupProfile.Type.VIEWER).exists()
+
+
+@receiver(m2m_changed, sender=User.groups.through)
+def create_lecture_folder_on_publisher_add(sender, instance, action, **kwargs):
+    if action in ["post_add"]:
+        if instance.is_publisher() and not instance.base_lecture_folder:
+            instance.base_lecture_folder = LectureFolder.objects.create(
+                name=instance.username.title(),
+                author=User.objects.filter(is_superuser=True).first(),
+            )
+            instance.save(update_fields=["base_lecture_folder"])
+
+
+@receiver(user_logged_out)
+def clear_user_cache(sender, request, user, **kwargs):
+    cache.delete_pattern(f"user_{user.id}_*")  # works with django_redis

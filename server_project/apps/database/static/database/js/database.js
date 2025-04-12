@@ -9,15 +9,34 @@ document.querySelectorAll(".slide-upload-progress").forEach((progress) => {
     };
     socket.onmessage = function (event) {
         const data = JSON.parse(event.data);
-        if (data.event === "slide_initialized") {
-            showFeedback(`Slide '${data.slide_name}' initialized successfully.\nRefresh to see changes.`, 'success')
+        if (data.event === "slide_initialize") {
+            const progresstext = document.getElementById(`slide-${data.slide_id}-progress-text`);
+            progresstext.innerText = "Initializing..";
+            if (data.completed) {
+                showFeedback(`Slide '${data.slide_name}' initialized successfully.\nRefresh to see changes.`, 'success')
+            }
         } else if (data.event === "progress_update") {
-            const progress = document.getElementById(`slide-${data.slide_id}-progress`);
-            progress.value = data.progress;
+            progress.ariaValueNow = data.progress;
+            const progressbar = document.getElementById(`slide-${data.slide_id}-progress-bar`);
+            const progresstext = document.getElementById(`slide-${data.slide_id}-progress-text`);
+            progressbar.style.width = `${data.progress}%`;
+            progresstext.innerText = "Building..";
             if (data.progress === 100) {
-                progress.remove();
+                progressbar.classList.remove("progress-bar-animated");
+                progressbar.classList.remove("progress-bar-striped");
+                progressbar.classList.add("bg-success");
+                progresstext.innerText = "Completed";
+                setTimeout(() => {
+                    progress.remove();
+                }, 2000)
                 socket.close();
                 showFeedback(`Slide '${data.slide_name}' finished processing.`, 'success')
+            } else if (data.progress === -1) {
+                progress.classList.remove("bg-secondary");
+                progress.classList.add("bg-danger");
+                progresstext.innerText = "Failed";
+                socket.close();
+                showFeedback(`Slide '${data.slide_name}' failed to process.`, 'danger')
             }
         }
     };
@@ -51,7 +70,7 @@ document.getElementById("image-edit-modal").addEventListener("show.bs.modal", fu
         onSuccess: (data) => {
             document.getElementById("image-edit-name").value = data.name;
             document.getElementById("image-edit-information").value = data.information;
-            document.getElementById("image-edit-visibility").value = data.is_public;
+            document.getElementById("image-edit-access-level").value = data.is_public;
         },
         onError: (error) => {
             showFeedback('Error fetching image infos: ' + error.message, 'danger');
@@ -71,7 +90,7 @@ document.getElementById("folder-detail-modal").addEventListener("show.bs.modal",
             listElement.innerHTML = '';
             const details = {
                 "Name": data.name || '-',
-                "Contents": `${data.subfolders_count || 0} subfolders, ${data.lectures_count || 0} lectures`,
+                "Contents": `${data.subfolders_count || 0} subfolders, ${data.slides_count || 0} slides in this folder`,
                 "Author": data.author || '-',
                 "Parent": data.parent_path || '-',
                 "Created": data.created_at_formatted || '-',
@@ -93,20 +112,51 @@ document.getElementById("image-detail-modal").addEventListener("show.bs.modal", 
         url: button.dataset.url,
         onSuccess: (data) => {
             listElement.innerHTML = '';
+
+            const fileDl = document.createElement('dl');
+            fileDl.className = 'row';
+            const downloadLink = document.createElement('a');
+            downloadLink.href = data.file_details.file_url;
+            downloadLink.className = 'text-decoration-none';
+            downloadLink.innerHTML = 'Original <i class="bi bi-download"></i>';
+            const repairButton = document.createElement('span');
+            repairButton.role = 'button';
+            repairButton.className = 'text-warning';
+            repairButton.dataset.bsToggle = 'modal';
+            repairButton.dataset.bsTarget = '#image-rebuild-modal';
+            repairButton.dataset.url = data.file_details.rebuild_url;
+            repairButton.innerHTML = 'Repair <i class="bi bi-wrench"></i>';
+            if (data.file_details.building) {
+                repairButton.ariaDisabled = true;
+                repairButton.className = 'text-muted';
+                repairButton.tabIndex = -1;
+                repairButton.style.pointerEvents = 'none';
+            }
+            const fileDetails = {
+                "Name": data.file_details.name || '-',
+                "Size": data.file_details.size || '-',
+                "Download": downloadLink.outerHTML,
+                "Repair": repairButton.outerHTML,
+            };
+            createDetailList(fileDl, fileDetails);
+
+            const metadataDl = document.createElement('dl');
+            metadataDl.className = 'row';
+            const metadataDetails = {
+                "Created": data.metadata.created || '-',
+                "SourceLens": data.metadata.sourceLens || '-',
+            };
+            createDetailList(metadataDl, metadataDetails);
+
             const details = {
                 "Name": data.name || '-',
                 "Information": data.information || '-',
                 "Author": data.author || '-',
                 "Folder": data.folder_name || '-',
-                "Metadata": (() => {
-                    const dl = document.createElement('dl');
-                    dl.className = 'row';
-                    createDetailList(dl, data.metadata)
-                    return dl.outerHTML;
-                })(),
+                "File": fileDl.outerHTML,
                 "Associated Image": `<img src="${data.associated_image || ''}" class="img-fluid" alt="">`,
-                "File": data.file_name || '-',
-                "Visibility": data.is_public ? 'Public' : 'Private',
+                "Metadata": metadataDl.outerHTML,
+                "Access Level": data.is_public ? 'Public' : `Private (${data.owner_group_name})`,
                 "Created": data.created_at_formatted || '-',
                 "Updated": data.updated_at_formatted || '-'
             }
@@ -122,6 +172,7 @@ handleModalShow("folder-rename-modal", "folder-rename-form");
 handleModalShow("folder-delete-modal", "folder-delete-form");
 handleModalShow("image-edit-modal", "image-edit-form");
 handleModalShow("image-delete-modal", "image-delete-form");
+handleModalShow("image-rebuild-modal", "image-rebuild-form");
 
 handleMoveModalShow("folder-move-modal", "folder-move-form", "folder");
 handleMoveModalShow("image-move-modal", "image-move-form", "file");
@@ -270,6 +321,20 @@ document.getElementById("image-move-form").addEventListener("submit", function (
 document.getElementById("image-delete-form").addEventListener("submit", function (event) {
     event.preventDefault();
     submitModalForm(this, "DELETE");
+});
+document.getElementById("image-rebuild-form").addEventListener("submit", function (event) {
+    event.preventDefault();
+    fetchData({
+        url: this.dataset.url,
+        method: "POST",
+        onSuccess: (data) => {
+            location.reload();
+        },
+        onError: (error) => {
+            showFeedback(error.message, 'danger');
+            $(this).closest('.modal').modal('hide');
+        }
+    });
 });
 document.getElementById("annotation-rename-form").addEventListener("submit", function (event) {
     event.preventDefault();

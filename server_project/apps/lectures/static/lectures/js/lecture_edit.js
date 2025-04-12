@@ -1,6 +1,7 @@
 document.addEventListener("DOMContentLoaded", function () {
+    updateSelectedImages();
+
     const lectureForm = document.getElementById("lecture-form");
-    const databaseList = document.getElementById("database-list");
 
     lectureForm.addEventListener("submit", function (event) {
         event.preventDefault();
@@ -20,6 +21,12 @@ document.addEventListener("DOMContentLoaded", function () {
         } else if (action === "remove") {
             event.preventDefault();
             removeContent(listItem);
+        } else if (action === "add") {
+            event.preventDefault();
+            addContent(listItem);
+        } else if (action === "collapse") {
+            event.preventDefault();
+            collapseFolder(listItem);
         }
     });
 
@@ -32,22 +39,6 @@ document.addEventListener("DOMContentLoaded", function () {
             actionElement.disabled = true;
             loadSlideAnnotations(actionElement);
             actionElement.disabled = false;
-        }
-    });
-
-    databaseList.addEventListener("click", function (event) {
-        const actionElement = event.target.closest("[data-action]");
-        if (!actionElement) return;
-
-        const action = actionElement.dataset.action;
-        const listItem = actionElement.closest("li");
-
-        if (action === "add") {
-            event.preventDefault();
-            addContent(listItem);
-        } else if (action === "collapse") {
-            event.preventDefault();
-            collapseFolder(listItem);
         }
     });
 });
@@ -68,6 +59,7 @@ function moveContent(listItem, direction) {
 function removeContent(listItem) {
     if (!listItem) return;
     listItem.remove();
+    updateSelectedImages();
 }
 
 function loadSlideAnnotations(selectItem) {
@@ -175,7 +167,7 @@ function collapseFolder(listItem) {
 
                     const text = document.createElement('a')
                     text.href = item.view_url;
-                    text.classList.add('text-decoration-none');
+                    text.className = 'text-decoration-none text-body';
                     text.textContent = item.name;
                     text.target = '_blank';
                     text.rel = 'noopener noreferrer nofollow';
@@ -190,6 +182,8 @@ function collapseFolder(listItem) {
 
             activateTooltips();
             $(ulChildContainer).collapse('show');
+
+            updateSelectedImages();
         },
         onError: (error) => {
             showFeedback("Error loading folder content: " + error.message, "danger");
@@ -240,7 +234,7 @@ function addContent(listItem) {
 
     const slideText = document.createElement('a');
     slideText.href = listItem.querySelector('a').href;
-    slideText.classList.add('text-decoration-none');
+    slideText.className = 'text-decoration-none text-body';
     slideText.textContent = slideName;
     slideText.target = '_blank';
     slideText.rel = 'noopener noreferrer nofollow';
@@ -278,6 +272,8 @@ function addContent(listItem) {
     removeBtn.appendChild(removeIcon);
     content.append(slideInput, moveContainer, img, slideText, annotationContainer, removeBtn);
     contentList.appendChild(content);
+
+    updateSelectedImages();
 }
 
 function submitChanges(formItem) {
@@ -318,4 +314,24 @@ function submitChanges(formItem) {
             showFeedback("Error updating lecture: " + error.message, "danger");
         }
     })
+}
+
+function updateSelectedImages() {
+    const contentList = Array.from(document.getElementById('content-list').querySelectorAll('li'));
+    const selectedImages = contentList.map(item => parseInt(item.dataset.slideId, 10));
+
+    const databaseList = Array.from(document.getElementById('database-list').querySelectorAll('li'));
+    databaseList.forEach(item => {
+        if (item.dataset.slideId === undefined) return;
+
+        const slideId = parseInt(item.dataset.slideId, 10);
+
+        if (selectedImages.includes(slideId)) {
+            item.classList.add('opacity-50')
+            item.classList.add('bg-secondary-subtle')
+        } else {
+            item.classList.remove('opacity-50');
+            item.classList.remove('bg-secondary-subtle');
+        }
+    });
 }

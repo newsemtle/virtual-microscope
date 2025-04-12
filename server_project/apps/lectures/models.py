@@ -52,6 +52,7 @@ class LectureFolderManager(CTEManager):
             descendants |= self.descendants_iter(subfolder)
         return descendants
 
+    # not used..
     def descendants_cte(self, folder):
         def make_descendants_cte(cte):
             return (
