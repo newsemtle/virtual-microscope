@@ -3,7 +3,7 @@ import os
 from django.urls import reverse
 from rest_framework import serializers
 
-from ..models import Slide, Folder
+from ..models import Slide, Folder, Tag
 
 
 class FolderSerializer(serializers.ModelSerializer):
@@ -44,11 +44,27 @@ class FolderSerializer(serializers.ModelSerializer):
         return reverse("api:folder-items", kwargs={"pk": obj.pk})
 
 
+class TagSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Tag
+        fields = [
+            "id",
+            "name",
+            "created_at",
+            "updated_at",
+            "created_by",
+        ]
+
+    def to_representation(self, instance):
+        return instance.tag.name
+
+
 class SlideSerializer(serializers.ModelSerializer):
     name = serializers.CharField(required=False, allow_blank=True)
     author = serializers.CharField(source="author.username", default=None)
     thumbnail = serializers.SerializerMethodField()
     associated_image = serializers.SerializerMethodField()
+    tags = TagSerializer(many=True, read_only=True)
     url = serializers.SerializerMethodField()
     view_url = serializers.SerializerMethodField()
     annotations_url = serializers.SerializerMethodField()
@@ -67,6 +83,7 @@ class SlideSerializer(serializers.ModelSerializer):
             "associated_image",
             "metadata",
             "is_public",
+            "tags",
             "build_status",
             "created_at",
             "updated_at",

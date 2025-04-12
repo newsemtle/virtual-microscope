@@ -251,6 +251,12 @@ function fetchData({
         });
 }
 
+function getQueryParam(url, key) {
+    if (!url) return null;
+    const urlObj = new URL(url, window.location.origin);
+    return urlObj.searchParams.get(key);
+}
+
 /**
  * dictionary 를 전달하면 그에 맞는 `<dl>` (description list) element 의 내부 데이터를 생성합니다.
  *

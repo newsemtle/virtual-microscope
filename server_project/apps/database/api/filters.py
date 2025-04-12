@@ -1,7 +1,7 @@
 import django_filters
 from django.contrib.auth import get_user_model
 
-from .models import Tag, Slide
+from apps.database.models import Slide
 
 User = get_user_model()
 
@@ -13,8 +13,7 @@ class SlideFilter(django_filters.FilterSet):
         to_field_name="username",
         queryset=User.objects.all(),
     )
-    tags = django_filters.ModelMultipleChoiceFilter(queryset=Tag.objects.all())
 
     class Meta:
         model = Slide
-        fields = ["name", "author", "tags"]
+        fields = ["name", "author"]
