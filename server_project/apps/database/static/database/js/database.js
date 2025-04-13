@@ -324,17 +324,7 @@ document.getElementById("image-delete-form").addEventListener("submit", function
 });
 document.getElementById("image-rebuild-form").addEventListener("submit", function (event) {
     event.preventDefault();
-    fetchData({
-        url: this.dataset.url,
-        method: "POST",
-        onSuccess: (data) => {
-            location.reload();
-        },
-        onError: (error) => {
-            showFeedback(error.message, 'danger');
-            $(this).closest('.modal').modal('hide');
-        }
-    });
+    submitModalForm(this, "POST");
 });
 document.getElementById("annotation-rename-form").addEventListener("submit", function (event) {
     event.preventDefault();
@@ -344,3 +334,95 @@ document.getElementById("annotation-delete-form").addEventListener("submit", fun
     event.preventDefault();
     submitAnnotationModalForm(this, "DELETE");
 });
+
+document.getElementById("image-search-form").addEventListener("submit", function (event) {
+    event.preventDefault();
+    const query = document.getElementById("image-search-input").value;
+    if (!query) {
+        return;
+    }
+    const url = this.dataset.url + `?search=${encodeURIComponent(query)}`;
+    fetchResults(url);
+});
+
+function fetchResults(url) {
+    fetchData({
+        url: url,
+        onSuccess: (data) => {
+            const imageList = document.getElementById("image-search-result");
+            const imageInfo = document.getElementById("image-search-info");
+            const pagination = document.querySelector("#image-search-pagination ul");
+
+            imageList.innerHTML = "";
+            pagination.innerHTML = "";
+
+            if (data.results.length === 0) {
+                imageInfo.textContent = "No results found.";
+                return;
+            }
+
+            let currentPage = parseInt(getQueryParam(url, 'page'));
+            if (!currentPage) {
+                currentPage = 1;
+            }
+
+            if (imageInfo.dataset.pageSize < data.results.length) {
+                imageInfo.dataset.pageSize = data.results.length;
+            }
+            const pageSize = imageInfo.dataset.pageSize;
+            const start = (currentPage - 1) * pageSize + 1;
+            const end = Math.min(currentPage * pageSize, data.count);
+            const totalPages = Math.ceil(data.count / pageSize);
+
+            imageInfo.textContent = `Total: ${data.count} | Showing ${start}-${end} | Page ${currentPage} of ${totalPages}`;
+
+            data.results.forEach(image => {
+                const listItem = document.createElement("li");
+                listItem.className = "list-group-item d-flex justify-content-between align-items-center";
+                listItem.innerHTML = `
+                    <div class="d-flex align-items-center">
+                        <img src="${image.thumbnail}" height=40 class="me-2" alt="">
+                        <a href="${image.view_url}" class="d-inline-block text-truncate text-decoration-none text-body"
+                           style="max-width: 200px;" target="_blank" rel="noopener noreferrer nofollow">
+                           ${image.name}
+                        </a>
+                    </div>
+                    <div class="btn-group btn-group-sm">
+                        <a type="button" class="btn btn-outline-warning"
+                           href="/database/?folder=${image.folder}"
+                           target="_blank" rel="noopener noreferrer nofollow">
+                           DB
+                        </a>
+                    </div>
+                `;
+                imageList.appendChild(listItem);
+            });
+
+            // Pagination buttons
+            if (data.previous) {
+                const prevBtn = document.createElement("li");
+                prevBtn.className = "page-item";
+                prevBtn.innerHTML = `<a class="page-link" href="#">Previous</a>`;
+                prevBtn.addEventListener("click", function (e) {
+                    e.preventDefault();
+                    fetchResults(data.previous);
+                });
+                pagination.appendChild(prevBtn);
+            }
+
+            if (data.next) {
+                const nextBtn = document.createElement("li");
+                nextBtn.className = "page-item";
+                nextBtn.innerHTML = `<a class="page-link" href="#">Next</a>`;
+                nextBtn.addEventListener("click", function (e) {
+                    e.preventDefault();
+                    fetchResults(data.next);
+                });
+                pagination.appendChild(nextBtn);
+            }
+        },
+        onError: (error) => {
+            showFeedback('Error fetching images: ' + error.message, 'danger');
+        }
+    });
+}

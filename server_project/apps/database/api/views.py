@@ -7,7 +7,7 @@ from django.shortcuts import get_object_or_404
 from django.template.defaultfilters import filesizeformat
 from django.urls import reverse
 from django.utils import timezone
-from rest_framework import viewsets
+from rest_framework import viewsets, filters
 from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.permissions import IsAuthenticated, DjangoModelPermissions
@@ -57,7 +57,9 @@ class FolderViewSet(viewsets.ModelViewSet):
         data = self.get_serializer(folder).data
         data.update(
             {
-                "parent_path": folder.parent.get_full_path() if folder.parent else "Root",
+                "parent_path": (
+                    folder.parent.get_full_path() if folder.parent else "Root"
+                ),
                 "created_at_formatted": timezone.localtime(folder.created_at).strftime(
                     "%Y-%m-%d %H:%M:%S"
                 ),
@@ -124,6 +126,10 @@ class FolderViewSet(viewsets.ModelViewSet):
 class SlideViewSet(viewsets.ModelViewSet):
     serializer_class = SlideSerializer
     permission_classes = [IsAuthenticated, DjangoModelPermissions]
+    # filterset_class = SlideFilter
+    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
+    search_fields = ["name", "=author__username"]
+    ordering = ["-created_at"]
 
     def get_queryset(self):
         return Slide.objects.viewable(self.request.user)

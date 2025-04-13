@@ -155,7 +155,20 @@ class LectureViewSet(viewsets.ModelViewSet):
         )
 
     @action(detail=True, methods=["post"])
-    def copy(self, request, *args, **kwargs):
+    def duplicate(self, request, *args, **kwargs):
+        lecture = self.get_object()
+        self._check_edit_permissions(lecture)
+
+        lecture.pk = None
+        lecture.name = f"{lecture.name} (copy)"
+        lecture.author = lecture.folder.get_owner()
+        lecture.save()
+
+        logger.info(f"Lecture '{lecture.name}' duplicated by {self.request.user}")
+        return Response({"message": "Lecture duplicated successfully."})
+
+    @action(detail=True, methods=["post"])
+    def send(self, request, *args, **kwargs):
         user = request.user
         lecture = self.get_object()
         target_id = request.data.get("target")

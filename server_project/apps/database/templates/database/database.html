@@ -44,18 +44,24 @@
                         DB/Image
                     {% endif %}
                 </h4>
-                <div class="btn-group">
+                <div>
+                    <button class="btn btn-primary btn-sm" type="button" data-bs-toggle="offcanvas"
+                            data-bs-target="#slide-search-sidebar">
+                        <i class="bi bi-search"></i> Search
+                    </button>
                     {% if editable %}
-                        {% if current_folder %}
-                            <button type="button" class="btn btn-warning btn-sm" data-bs-toggle="modal"
-                                    data-bs-target="#folder-create-modal">
-                                <i class="bi bi-folder-plus"></i> New Folder
+                        <div class="btn-group">
+                            {% if current_folder %}
+                                <button type="button" class="btn btn-warning btn-sm" data-bs-toggle="modal"
+                                        data-bs-target="#folder-create-modal">
+                                    <i class="bi bi-folder-plus"></i> New Folder
+                                </button>
+                            {% endif %}
+                            <button type="button" class="btn btn-success btn-sm" data-bs-toggle="modal"
+                                    data-bs-target="#image-upload-modal">
+                                <i class="bi bi-upload"></i> New Image
                             </button>
-                        {% endif %}
-                        <button type="button" class="btn btn-success btn-sm" data-bs-toggle="modal"
-                                data-bs-target="#image-upload-modal">
-                            <i class="bi bi-upload"></i> New Image
-                        </button>
+                        </div>
                     {% endif %}
                 </div>
             </div>
@@ -274,6 +280,27 @@
             </div>
         {% endfor %}
     {% endif %}
+    <div class="offcanvas offcanvas-start" data-bs-scroll="true" tabindex="-1" id="slide-search-sidebar">
+        <div class="offcanvas-header">
+            <h5 class="offcanvas-title">DB/Image Search</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
+        </div>
+        <div class="offcanvas-body">
+            <form id="image-search-form" data-url="{% url 'api:slide-list' %}">
+                <label for="image-search-input" class="form-label">Search</label>
+                <div class="input-group">
+                    <input type="text" class="form-control" id="image-search-input" placeholder="name, author"
+                           name="search">
+                    <button type="submit" class="btn btn-outline-secondary"><i class="bi bi-search"></i></button>
+                </div>
+                <div id="image-search-info" class="mt-3 text-muted" data-page-size="0"></div>
+                <ul class="list-group mt-2" id="image-search-result"></ul>
+                <nav id="image-search-pagination" class="d-flex justify-content-end mt-2">
+                    <ul class="pagination mb-0"></ul>
+                </nav>
+            </form>
+        </div>
+    </div>
 {% endblock content %}
 
 
@@ -331,7 +358,7 @@
                 </div>
                 <form id="folder-move-form" data-url="">
                     <div class="modal-body">
-                        <div class="border p-3 folder-tree-container"
+                        <div class="border rounded p-3 folder-tree-container"
                              style="max-height: 300px; overflow-y: auto;"></div>
                     </div>
                     <div class="modal-footer">
@@ -470,7 +497,7 @@
                 </div>
                 <form id="image-move-form" data-url="">
                     <div class="modal-body">
-                        <div class="border p-3 folder-tree-container"
+                        <div class="border rounded p-3 folder-tree-container"
                              style="max-height: 300px; overflow-y: auto;"></div>
                     </div>
                     <div class="modal-footer">

@@ -41,6 +41,21 @@ document.addEventListener("DOMContentLoaded", function () {
             actionElement.disabled = false;
         }
     });
+
+    const searchForm = document.getElementById("image-search-form");
+
+    searchForm.addEventListener("click", function (event) {
+        const actionElement = event.target.closest("[data-action]");
+        if (!actionElement) return;
+        const action = actionElement.dataset.action;
+
+        const listItem = actionElement.closest("li");
+
+        if (action === "add") {
+            event.preventDefault();
+            addContent(listItem);
+        }
+    });
 });
 
 function moveContent(listItem, direction) {
@@ -306,9 +321,8 @@ function submitChanges(formItem) {
         method: 'PATCH',
         data: data,
         onSuccess: (data) => {
-            sendFeedback(`Lecture '${data.name}' updated successfully!`, "success")
-            localStorage.setItem("refreshPage", "true");
-            window.close();
+            sendFeedback(`Lecture '${data.name}' updated successfully!`, "success");
+            window.location.href = data.folder_url;
         },
         onError: (error) => {
             showFeedback("Error updating lecture: " + error.message, "danger");
@@ -332,6 +346,105 @@ function updateSelectedImages() {
         } else {
             item.classList.remove('opacity-50');
             item.classList.remove('bg-secondary-subtle');
+        }
+    });
+}
+
+document.getElementById("image-search-form").addEventListener("submit", function (event) {
+    event.preventDefault();
+    const query = document.getElementById("image-search-input").value;
+    if (!query) {
+        return;
+    }
+    const url = this.dataset.url + `?search=${encodeURIComponent(query)}`;
+    fetchResults(url);
+});
+
+function fetchResults(url) {
+    fetchData({
+        url: url,
+        onSuccess: (data) => {
+            const imageList = document.getElementById("image-search-result");
+            const imageInfo = document.getElementById("image-search-info");
+            const pagination = document.querySelector("#image-search-pagination ul");
+
+            imageList.innerHTML = "";
+            pagination.innerHTML = "";
+
+            if (data.results.length === 0) {
+                imageInfo.textContent = "No results found.";
+                return;
+            }
+
+            let currentPage = parseInt(getQueryParam(url, 'page'));
+            if (!currentPage) {
+                currentPage = 1;
+            }
+
+            if (imageInfo.dataset.pageSize < data.results.length) {
+                imageInfo.dataset.pageSize = data.results.length;
+            }
+            const pageSize = imageInfo.dataset.pageSize;
+            const start = (currentPage - 1) * pageSize + 1;
+            const end = Math.min(currentPage * pageSize, data.count);
+            const totalPages = Math.ceil(data.count / pageSize);
+
+            imageInfo.textContent = `Total: ${data.count} | Showing ${start}-${end} | Page ${currentPage} of ${totalPages}`;
+
+            data.results.forEach(image => {
+                const listItem = document.createElement("li");
+                listItem.className = "list-group-item d-flex justify-content-between align-items-center";
+                listItem.dataset.slideId = image.id;
+                listItem.dataset.slideName = image.name;
+                listItem.dataset.annotationsUrl = image.annotations_url;
+                listItem.innerHTML = `
+                    <div class="d-flex align-items-center">
+                        <img src="${image.thumbnail}" height=40 class="me-2" alt="">
+                        <a href="${image.view_url}" class="d-inline-block text-truncate text-decoration-none text-body"
+                           style="max-width: 200px;" target="_blank" rel="noopener noreferrer nofollow">
+                           ${image.name}
+                        </a>
+                    </div>
+                    <div class="btn-group btn-group-sm">
+                        <a type="button" class="btn btn-outline-warning"
+                           href="/database/?folder=${image.folder}"
+                           target="_blank" rel="noopener noreferrer nofollow">
+                           DB
+                        </a>
+                        <button class="btn btn-outline-secondary" data-bs-tooltip="tooltip" title="Add" data-action="add">
+                            <i class="bi bi-plus-circle"></i>
+                        </button>
+                    </div>
+                `;
+                imageList.appendChild(listItem);
+            });
+            activateTooltips();
+
+            // Pagination buttons
+            if (data.previous) {
+                const prevBtn = document.createElement("li");
+                prevBtn.className = "page-item";
+                prevBtn.innerHTML = `<a class="page-link" href="#">Previous</a>`;
+                prevBtn.addEventListener("click", function (e) {
+                    e.preventDefault();
+                    fetchResults(data.previous);
+                });
+                pagination.appendChild(prevBtn);
+            }
+
+            if (data.next) {
+                const nextBtn = document.createElement("li");
+                nextBtn.className = "page-item";
+                nextBtn.innerHTML = `<a class="page-link" href="#">Next</a>`;
+                nextBtn.addEventListener("click", function (e) {
+                    e.preventDefault();
+                    fetchResults(data.next);
+                });
+                pagination.appendChild(nextBtn);
+            }
+        },
+        onError: (error) => {
+            showFeedback('Error fetching images: ' + error.message, 'danger');
         }
     });
 }

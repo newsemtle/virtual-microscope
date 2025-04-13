@@ -177,9 +177,8 @@
                                 <div class="btn-group-vertical btn-group-sm">
                                     <!-- detail 버튼 -->
                                     <button type="button" class="btn btn-outline-dark btn-sm rounded-0"
-                                            data-bs-toggle="modal"
-                                            data-bs-target="#lecture-detail-modal" data-bs-tooltip="tooltip"
-                                            title="Details"
+                                            data-bs-toggle="modal" data-bs-target="#lecture-detail-modal"
+                                            data-bs-tooltip="tooltip" title="Details"
                                             data-url="{% url 'api:lecture-detail' pk=item.id %}">
                                         Details
                                     </button>
@@ -187,24 +186,21 @@
                                         <!-- edit 버튼 -->
                                         <a type="button" class="btn btn-outline-dark btn-sm rounded-0"
                                            href="{% url 'lectures:lecture-edit' lecture_id=item.id %}"
-                                           data-bs-tooltip="tooltip"
-                                           title="Edit" target="_blank" rel="noopener noreferrer nofollow">
+                                           data-bs-tooltip="tooltip" title="Edit">
                                             Edit
                                         </a>
                                         <!-- move 버튼 -->
                                         <button type="button" class="btn btn-outline-dark btn-sm rounded-0"
-                                                data-bs-toggle="modal"
-                                                data-bs-target="#lecture-move-modal" data-bs-tooltip="tooltip"
-                                                title="Move"
+                                                data-bs-toggle="modal" data-bs-target="#lecture-move-modal"
+                                                data-bs-tooltip="tooltip" title="Move"
                                                 data-url="{% url 'api:lecture-detail' pk=item.id %}"
                                                 data-url-tree="{% url 'api:lecture-folder-tree' %}">
                                             Move
                                         </button>
                                         <!-- delete 버튼 -->
                                         <button type="button" class="btn btn-outline-dark btn-sm rounded-0"
-                                                data-bs-toggle="modal"
-                                                data-bs-target="#lecture-delete-modal" data-bs-tooltip="tooltip"
-                                                title="Delete"
+                                                data-bs-toggle="modal" data-bs-target="#lecture-delete-modal"
+                                                data-bs-tooltip="tooltip" title="Delete"
                                                 data-url="{% url 'api:lecture-detail' pk=item.id %}">
                                             Delete
                                         </button>
@@ -225,7 +221,8 @@
                                 <button type="button" class="btn btn-sm btn-outline-dark"
                                         data-bs-toggle="modal" data-bs-target="#lecture-copy-modal"
                                         data-bs-tooltip="tooltip" title="Copy"
-                                        data-url="{% url 'api:lecture-copy' pk=item.id %}"
+                                        data-duplicate-url="{% url 'api:lecture-duplicate' pk=item.id %}"
+                                        data-send-url="{% url 'api:lecture-send' pk=item.id %}"
                                         data-url-users="{% url 'api:publishers' %}">
                                     Copy
                                 </button>
@@ -293,7 +290,7 @@
                 </div>
                 <form id="folder-move-form" data-url="">
                     <div class="modal-body">
-                        <div class="border p-3 folder-tree-container"
+                        <div class="border rounded p-3 folder-tree-container"
                              style="max-height: 300px; overflow-y: auto;"></div>
                     </div>
                     <div class="modal-footer">
@@ -375,7 +372,7 @@
                 </div>
                 <form id="lecture-move-form" data-url="">
                     <div class="modal-body">
-                        <div class="border p-3 folder-tree-container"
+                        <div class="border rounded p-3 folder-tree-container"
                              style="max-height: 300px; overflow-y: auto;"></div>
                     </div>
                     <div class="modal-footer">
@@ -388,27 +385,58 @@
     </div>
     <!-- Lecture Copy Modal -->
     <div class="modal fade" id="lecture-copy-modal" tabindex="-1">
-        <div class="modal-dialog modal-dialog-scrollable">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title">Copy Lecture</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
-                <form id="lecture-copy-form" data-url="">
-                    <div class="modal-body">
-                        <p class="text-danger">
-                            <i class="bi bi-exclamation-triangle"></i>
-                            다른 그룹에게 전달하는 경우 주의 해주세요.
-                        </p>
-                        <div class="border p-3 users-container"
-                             style="max-height: 300px; overflow-y: auto;"></div>
-                        <p class="mt-2">상대방이 볼 수 없는 슬라이드가 강의에 포함되어있는 경우, 해당 항목은 제거된 채로 전달됩니다.</p>
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <form id="lecture-duplicate-form" data-url="">
+                                <div class="card h-100">
+                                    <div class="card-header">
+                                        <h5>복제</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <p>현재 폴더에 복제본을 생성할까요?</p>
+                                    </div>
+                                    <div class="card-footer">
+                                        <div class="d-flex justify-content-end">
+                                            <button type="submit" class="btn btn-primary">Duplicate</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                        <div class="col-md-6">
+                            <form id="lecture-send-form" data-url="" data-owner-id="{{ current_folder.get_owner.id }}">
+                                <div class="card h-100">
+                                    <div class="card-header">
+                                        <h5>복사본 보내기</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <p class="text-danger">
+                                            <i class="bi bi-exclamation-triangle"></i>
+                                            다른 그룹에게 전달하는 경우 주의 해주세요.
+                                        </p>
+                                        <div class="border rounded p-3 users-container"
+                                             style="max-height: 300px; overflow-y: auto;"></div>
+                                        <p class="text-muted mt-2">*상대방이 볼 수 없는 슬라이드가 포함되어있는 경우, 해당 항목은 제거된 채로
+                                            전달됩니다.</p>
+                                        <p class="text-muted mt-2">*상대방의 최상위 폴더로 전달됩니다.</p>
+                                    </div>
+                                    <div class="card-footer">
+                                        <div class="d-flex justify-content-end">
+                                            <button type="submit" class="btn btn-warning">Send</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
                     </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                        <button type="submit" class="btn btn-warning">Copy</button>
-                    </div>
-                </form>
+                </div>
             </div>
         </div>
     </div>

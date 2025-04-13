@@ -204,7 +204,9 @@ function fetchData({
 
     if (data) {
         if (data instanceof FormData) {
-            options.body = data;
+            if ([...data.entries()].length !== 0) {
+                options.body = data;
+            }
         } else if (typeof data === 'object') {
             // Assume JSON data
             options.body = JSON.stringify(data);
@@ -247,6 +249,12 @@ function fetchData({
             console.error('Fetch error:', error.message);
             onError(error);
         });
+}
+
+function getQueryParam(url, key) {
+    if (!url) return null;
+    const urlObj = new URL(url, window.location.origin);
+    return urlObj.searchParams.get(key);
 }
 
 /**

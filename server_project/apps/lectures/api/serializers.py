@@ -47,6 +47,7 @@ class LectureSerializer(serializers.ModelSerializer):
     author = serializers.CharField(source="author.username", default=None)
     contents = LectureContentSerializer(many=True, required=False)
     edit_url = serializers.SerializerMethodField()
+    folder_url = serializers.SerializerMethodField()
 
     class Meta:
         model = Lecture
@@ -62,6 +63,7 @@ class LectureSerializer(serializers.ModelSerializer):
             "created_at",
             "updated_at",
             "edit_url",
+            "folder_url",
         ]
         read_only_fields = ["author"]
 
@@ -115,3 +117,6 @@ class LectureSerializer(serializers.ModelSerializer):
 
     def get_edit_url(self, obj):
         return reverse("lectures:lecture-edit", kwargs={"lecture_id": obj.pk})
+
+    def get_folder_url(self, obj):
+        return reverse("lectures:lecture-database") + f"?folder={obj.folder.id}"
