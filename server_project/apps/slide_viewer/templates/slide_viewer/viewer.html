@@ -11,6 +11,14 @@
     <!-- annotorious JS -->
     <script src="{% static 'annotorious/js/annotorious-openseadragon.js' %}"></script>
     <script src="https://cdn.jsdelivr.net/npm/@annotorious/plugin-tools@1.0.2/dist/annotorious-plugin-tools.js"></script>
+    <!-- OSDMeasure 플러그인 -->
+    <script src="{% static 'OSDMeasure/dexie.min.js' %}"></script>
+    <script src="{% static 'OSDMeasure/fabricjs.min.js' %}"></script>
+    <script src="{% static 'OSDMeasure/openseadragon-fabricjs-overlay.js' %}"></script>
+    <script src="{% static 'OSDMeasure/OSDMeasure.js' %}"></script>
+    <!-- screenshot 플러그인 -->
+    <script src="{% static 'screenshot/FileSaver.js' %}"></script>
+    <script src="{% static 'screenshot/openseadragonScreenshot.js' %}"></script>
 {% endblock extra_head %}
 
 
@@ -68,14 +76,6 @@
                                 </button>
                             {% endif %}
                         </li>
-                        <!-- 업로드 버튼 -->
-                        <li>
-                            <button class="dropdown-item" title="Upload"
-                                    onclick="document.getElementById('load-file').click()">
-                                <i class="bi bi-file-earmark-arrow-up"></i> Upload
-                            </button>
-                            <input type="file" id="load-file" class="d-none" title="Upload"/>
-                        </li>
                         <li>
                             <hr class="dropdown-divider" style="--bs-dropdown-divider-margin-y: 0">
                         </li>
@@ -116,9 +116,11 @@
                         <!-- Brightness Control -->
                         <li class="dropdown-item">
                             <label for="brightness">밝기:</label>
+
                             <input type="range" id="brightness" min="0" max="2" step="0.01" value="1"
                                    oninput="updateFilters()">
-                            <span id="brightness-value">1.00</span>
+                            <span id="brightness-value" class="filter-value">1.00</span>
+
                             <button type="button" onclick="resetBrightness()">Reset</button>
                         </li>
                         <!-- Contrast Control -->
@@ -126,7 +128,7 @@
                             <label for="contrast">대비:</label>
                             <input type="range" id="contrast" min="0" max="2" step="0.01" value="1"
                                    oninput="updateFilters()">
-                            <span id="contrast-value">1.00</span>
+                            <span id="contrast-value" class="filter-value">1.00</span>
                             <button type="button" onclick="resetContrast()">Reset</button>
                         </li>
                     </ul>
@@ -183,9 +185,6 @@
                     <ul class="dropdown-menu" aria-labelledby="btnGroupDrop_annotation">
                         <!-- Annotation 버튼-->
                         <li>
-                            <button class="dropdown-item"><i class="bi bi-arrow-up-left"></i> Pointer</button>
-                        </li>
-                        <li>
                             <button class="dropdown-item" onclick="setDrawingTool('ellipse')"><i
                                     class="bi bi-circle"></i> Circle
                             </button>
@@ -196,11 +195,18 @@
                             </button>
                         </li>
                         <li>
+                            <button class="dropdown-item" onclick="setDrawingTool('polygon')"><i
+                                    class="bi bi-pentagon"></i> Polygon
+                            </button>
+                        </li>
+                        <li>
                             <hr class="dropdown-divider" style="--bs-dropdown-divider-margin-y: 0">
                         </li>
                         <!-- Measure 버튼-->
                         <li>
-                            <button class="dropdown-item"><i class="bi bi-rulers"></i> Linear Measure</button>
+                            <button class="dropdown-item" onclick="plugin.setMeasureMode(true)"><i
+                                    class="bi bi-rulers"></i> Linear Measure
+                            </button>
                         </li>
                         <li>
                             <hr class="dropdown-divider" style="--bs-dropdown-divider-margin-y: 0">
@@ -237,16 +243,6 @@
                         </li>
                     </ul>
                 </div>
-                <!-- 뒤로가기(취소) 버튼 -->
-                <button class="btn btn btn-outline-light custom-button" onclick="anno.undo()"
-                        title="Undo" style="background-color: rgb(243, 88, 83);">
-                    <i class="bi bi-arrow-counterclockwise"></i>
-                </button>
-                <!-- 앞으로가기 버튼 -->
-                <button class="btn btn btn-outline-light custom-button" onclick="anno.redo()"
-                        title="Redo" style="background-color: rgb(243, 88, 83);">
-                    <i class="bi bi-arrow-clockwise"></i>
-                </button>
                 <!-- 숨기기 버튼 -->
                 <button class="btn btn btn-outline-light custom-button" id="invisible-btn"
                         title="Hide Annotation" style="background-color: rgb(243, 88, 83);">
@@ -340,7 +336,7 @@
             <label for="comment">Comment:</label><br>
             <textarea id="comment" name="comment" required></textarea><br><br>
             <button type="submit">Save</button>
-            <button type="button" onclick="closePopup()">Cancel</button>
+            <button type="button" onclick="cancelPopup()">Cancel</button>
         </form>
     </div>
 
@@ -472,6 +468,8 @@
 
         }
 
+        let plugin = null;
+
         // 최대 zoom level 설정
         viewer.addHandler("open", function () {
             // 100배에 필요한 zoom factor를 미리 구해본 뒤
@@ -479,6 +477,15 @@
 
             // 그 값을 maxZoomLevel에 설정
             viewer.viewport.maxZoomLevel = zoomFactorAt100x;
+
+            const contentFactor = viewer.world._contentFactor;
+
+            plugin = new OSDMeasure(viewer, {
+                conversionFactor: slide_metadata.mpp_x,
+                units: "um",
+                fontSize: contentFactor / 40,
+                selectedColor: selectedColor
+            });
         });
 
         //현재 zoom을 추적, 버튼 업데이트 함수
@@ -524,10 +531,10 @@
 
         // Add keyboard controls
         document.addEventListener('keydown', function (event) {
-            if (event.ctrlKey && event.key.toLowerCase() === 'z') {
-                event.preventDefault(); // 기본 Ctrl+C 동작(복사) 방지
-                anno.undo();
-                return;
+
+            const activeEl = document.activeElement;
+            if (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA') {
+                return; // 입력창에 포커스 있을 땐 키 막기
             }
 
             switch (event.key) {
@@ -544,6 +551,8 @@
                 case '0':
                     viewer.viewport.goHome(); //reset view
                     break;
+                //case 'p':
+                //    viewer.screenshotInstance.takeScreenshot();
                 // case 'r':
                 // case 'R':
                 //     viewer.viewport.setRotation(90); //90도 회전 : 제대로 안됨. 보류
@@ -598,13 +607,51 @@
         //     console.log("Image Zoom:", imageZoom);
         // });
 
+        OpenSeadragon.setString("Tooltips.ScreenshotToggle", "스크린샷 저장");
+
+        viewer.screenshotInstance = viewer.screenshot({
+            showOptions: false,
+            keyboardShortcut: 'p',
+            showScreenshotControl: false
+        });
+
+        window.getScreenshotFilename = function () {
+            function getFormattedTime() {
+                const now = new Date();
+                const yyyy = now.getFullYear();
+                const mm = String(now.getMonth() + 1).padStart(2, '0');
+                const dd = String(now.getDate()).padStart(2, '0');
+                const hh = String(now.getHours()).padStart(2, '0');
+                const min = String(now.getMinutes()).padStart(2, '0');
+                const ss = String(now.getSeconds()).padStart(2, '0');
+                return `${yyyy}${mm}${dd}-${hh}${min}${ss}`;
+            }
+
+            const userId = "{{ user.username }}";
+            const slideTitle = "{{ slide.name|slice:':15' }}".replace(/\s+/g, '_');
+            const timeStr = getFormattedTime();
+            return `${userId}_${timeStr}_${slideTitle}`;
+        };
+
+
         // Annotorious 초기화
         let anno;
         let selectedColor = '#ff0000'
+        let editMode = false;
         document.getElementById("ink").style.color = selectedColor;
-        let count = 0;
-        anno = AnnotoriousOSD.createOSDAnnotator(viewer);
-        AnnotoriousTools.mountPlugin(anno);
+        anno = AnnotoriousOSD.createOSDAnnotator(viewer, {
+            userSelectAction: "{% if can_edit_annotation %}EDIT{% else %}NONE{% endif %}"
+        });
+
+        {% if can_edit_annotation %}
+            const activeAnno = anno;
+        {% else %}
+            anno2 = AnnotoriousOSD.createOSDAnnotator(viewer);
+            const activeAnno = anno2;
+        {% endif %}
+
+        AnnotoriousTools.mountPlugin(activeAnno);
+
 
         const slideId = {{ slide.id }};
 
@@ -629,25 +676,25 @@
 
         // 그리기 모드 변경 핸들러
         function setDrawingTool(tool) {
-            if (!anno) return console.error('Annotorious is not initialized');
-            anno.setDrawingEnabled(true);
-            anno.setDrawingTool(tool);
+            if (!activeAnno) return console.error('Annotorious is not initialized');
+            activeAnno.setDrawingEnabled(true);
+            activeAnno.setDrawingTool(tool);
             viewer.setMouseNavEnabled(false);
             //document.getElementById('openseadragon-viewer').classList.add('cursor-crosshair');
         }
 
-        anno.on('createAnnotation', (annotation) => {
-            anno.setDrawingEnabled(false);
+        activeAnno.on('createAnnotation', (annotation) => {
+            activeAnno.setDrawingEnabled(false);
             viewer.setMouseNavEnabled(true);
             annotation["motivation"] = selectedColor;
-
+            editMode = false;
 
             openPopup(annotation)
         });
 
 
         //주석 선택 후 지우개 버튼 클릭하면 -> 지우기
-        anno.on('selectionChanged', (annotation) => {
+        activeAnno.on('selectionChanged', (annotation) => {
             let deleteBtn = document.getElementById('erase-btn');
             let editBtn = document.getElementById('edit-btn');
 
@@ -655,7 +702,7 @@
                 let selectedAnnotation = annotation[0]; // 현재 선택된 주석 저장
                 // 기존 이벤트를 덮어쓰는 방식으로 클릭 이벤트 설정
                 deleteBtn.onclick = () => {
-                    anno.removeAnnotation(selectedAnnotation.id);
+                    activeAnno.removeAnnotation(selectedAnnotation.id);
 
                     // article-header와 article-body에서 해당 annotation의 요소 제거
                     let bodyElem = document.getElementById('annotation-combined-' + selectedAnnotation.id);
@@ -681,15 +728,46 @@
             }
         });
 
+        //OSDMeasure 삭제 버튼 띄우기
+        window.addEventListener('measurement-selected', e => {
+            const m = e.detail.measurement;
+
+            // 원하는 정보 띄우기
+            document.getElementById('erase-btn').style.display = 'block';
+
+            // 삭제 버튼에 해당 측정 저장
+            document.getElementById('erase-btn').onclick = () => {
+                plugin.deleteSelectedMeasurement(m);
+                document.getElementById('erase-btn').style.display = 'none';
+            };
+        });
+
+        window.addEventListener('measurement-deselected', () => {
+            console.log("deselected");
+            document.getElementById('erase-btn').style.display = 'none';
+        });
+
         // 색상 선택
         document.querySelectorAll('.color-option').forEach(item => {
             item.addEventListener('click', function () {
                 selectedColor = this.dataset.color;
                 document.getElementById("ink").style.color = selectedColor;
+
+                plugin.setMeasurementColor(selectedColor);
             });
         });
 
+        //annotorious 주석 색 지정
         anno.setStyle((annotation, state) => {
+            const color = annotation["motivation"];
+            return {
+                fillOpacity: 0,
+                stroke: color,
+                strokeOpacity: 1,
+                strokeWidth: 3
+            }
+        });
+        anno2.setStyle((annotation, state) => {
             const color = annotation["motivation"];
             return {
                 fillOpacity: 0,
@@ -720,7 +798,9 @@
                     annotation["name"] = title;
                     annotation["description"] = comment;
 
-                    updateAnnotationDisplay(annotation);
+                    {% if can_edit_annotation %}
+                        updateAnnotationDisplay(annotation);
+                    {% endif %}
 
                     closePopup();
 
@@ -733,6 +813,13 @@
         function closePopup() {
             document.getElementById('overlay').style.display = 'none';
             document.getElementById('annotation-popup').style.display = 'none';
+        }
+
+        function cancelPopup() {
+            if (!editMode) {
+                activeAnno.removeAnnotation(activeAnno.getSelected()[0]);
+            }
+            closePopup();
         }
 
         function updateAnnotationDisplay(annotation) {
@@ -774,6 +861,7 @@
 
         // 주석 수정 함수
         function openEditPopup(annotation) {
+            editMode = true;
             // 기존 값으로 입력 필드 미리 채우기
             document.getElementById('title').value = annotation["name"] || '';
             document.getElementById('comment').value = annotation["description"] || '';
@@ -792,11 +880,14 @@
                 annotation["name"] = newTitle;
                 annotation["description"] = newComment;
 
-                anno.updateAnnotation(annotation);
 
-                let bodyElem = document.getElementById('annotation-combined-' + annotation.id);
-                if (bodyElem) bodyElem.remove();
-                updateAnnotationDisplay(annotation);
+                activeAnno.updateAnnotation(annotation);
+
+                {% if can_edit_annotation %}
+                    let bodyElem = document.getElementById('annotation-combined-' + annotation.id);
+                    if (bodyElem) bodyElem.remove();
+                    updateAnnotationDisplay(annotation);
+                {% endif %}
 
                 closePopup();
             };
@@ -807,10 +898,18 @@
             const icon = this.querySelector('i');
             // 현재 아이콘이 eye-slash이면 보이는 상태 => 숨기기
             if (icon.classList.contains('bi-eye-slash')) {
+                anno.cancelSelected();
                 anno.setVisible(false); // 주석 숨기기
                 icon.classList.remove('bi-eye-slash');
                 icon.classList.add('bi-eye');
                 this.title = "Show Annotation";
+                plugin.measurements.forEach(m => {
+                    if (m.line) m.line.visible = false;
+                    if (m.textObject) m.textObject.visible = false;
+                    if (m.p1?.fabricObject) m.p1.fabricObject.visible = false;
+                    if (m.p2?.fabricObject) m.p2.fabricObject.visible = false;
+                });
+                plugin.fabricCanvas.renderAll();
 
             } else {
                 // 현재 아이콘이 eye이면 안 보이는 상태 => 보이기
@@ -818,6 +917,15 @@
                 icon.classList.remove('bi-eye');
                 icon.classList.add('bi-eye-slash');
                 this.title = "Hide Annotation";
+
+                plugin.measurements.forEach(m => {
+                    if (m.line) m.line.visible = true;
+                    if (m.textObject) m.textObject.visible = true;
+                    if (m.p1?.fabricObject) m.p1.fabricObject.visible = true;
+                    if (m.p2?.fabricObject) m.p2.fabricObject.visible = true;
+                });
+                plugin.fabricCanvas.renderAll();
+
             }
         });
 
