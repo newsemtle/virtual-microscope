@@ -117,21 +117,18 @@
                         <li class="dropdown-item">
                             <label for="brightness">밝기:</label>
 
-                            <input type="range" id="brightness" min="0" max="2" step="0.01" value="1" oninput="updateFilters()">
+                            <input type="range" id="brightness" min="0" max="2" step="0.01" value="1"
+                                   oninput="updateFilters()">
                             <span id="brightness-value" class="filter-value">1.00</span>
 
                             <button type="button" onclick="resetBrightness()">Reset</button>
                         </li>
-
                         <!-- Contrast Control -->
                         <li class="dropdown-item">
                             <label for="contrast">대비:</label>
-
-                            <input type="range" id="contrast" min="0" max="2" step="0.01" value="1" oninput="updateFilters()">
+                            <input type="range" id="contrast" min="0" max="2" step="0.01" value="1"
+                                   oninput="updateFilters()">
                             <span id="contrast-value" class="filter-value">1.00</span>
-
-
-
                             <button type="button" onclick="resetContrast()">Reset</button>
                         </li>
                     </ul>
@@ -207,7 +204,9 @@
                         </li>
                         <!-- Measure 버튼-->
                         <li>
-                            <button class="dropdown-item" onclick="plugin.setMeasureMode(true)"><i class="bi bi-rulers"></i> Linear Measure</button>
+                            <button class="dropdown-item" onclick="plugin.setMeasureMode(true)"><i
+                                    class="bi bi-rulers"></i> Linear Measure
+                            </button>
                         </li>
                         <li>
                             <hr class="dropdown-divider" style="--bs-dropdown-divider-margin-y: 0">
@@ -244,7 +243,6 @@
                         </li>
                     </ul>
                 </div>
-
                 <!-- 숨기기 버튼 -->
                 <button class="btn btn btn-outline-light custom-button" id="invisible-btn"
                         title="Hide Annotation" style="background-color: rgb(243, 88, 83);">
@@ -411,7 +409,7 @@
             mpp_x: parseFloat(raw_metadata["mpp-x"]).toFixed(3), // toFixed(3)를 사용하여 소수점 3자리 문자열로 만들 수도 있음
             sourceLens: parseInt(raw_metadata.sourceLens)
         };
-    
+
         //Scalebar 추가
         viewer.scalebar({
             type: OpenSeadragon.ScalebarType.MICROSCOPY,
@@ -483,9 +481,9 @@
             const contentFactor = viewer.world._contentFactor;
 
             plugin = new OSDMeasure(viewer, {
-                conversionFactor:slide_metadata.mpp_x, 
-                units:"um",
-                fontSize: contentFactor/40,
+                conversionFactor: slide_metadata.mpp_x,
+                units: "um",
+                fontSize: contentFactor / 40,
                 selectedColor: selectedColor
             });
         });
@@ -538,7 +536,7 @@
             if (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA') {
                 return; // 입력창에 포커스 있을 땐 키 막기
             }
-            
+
             switch (event.key) {
                 case 'n':
                 case 'N':
@@ -617,7 +615,7 @@
             showScreenshotControl: false
         });
 
-        window.getScreenshotFilename = function() {
+        window.getScreenshotFilename = function () {
             function getFormattedTime() {
                 const now = new Date();
                 const yyyy = now.getFullYear();
@@ -628,28 +626,28 @@
                 const ss = String(now.getSeconds()).padStart(2, '0');
                 return `${yyyy}${mm}${dd}-${hh}${min}${ss}`;
             }
-    
+
             const userId = "{{ user.username }}";
             const slideTitle = "{{ slide.name|slice:':15' }}".replace(/\s+/g, '_');
             const timeStr = getFormattedTime();
             return `${userId}_${timeStr}_${slideTitle}`;
         };
-        
+
 
         // Annotorious 초기화
         let anno;
         let selectedColor = '#ff0000'
         let editMode = false;
         document.getElementById("ink").style.color = selectedColor;
-        anno = AnnotoriousOSD.createOSDAnnotator(viewer,{
+        anno = AnnotoriousOSD.createOSDAnnotator(viewer, {
             userSelectAction: "{% if can_edit_annotation %}EDIT{% else %}NONE{% endif %}"
         });
 
         {% if can_edit_annotation %}
-        const activeAnno = anno;
+            const activeAnno = anno;
         {% else %}
-        anno2 = AnnotoriousOSD.createOSDAnnotator(viewer);
-        const activeAnno = anno2;
+            anno2 = AnnotoriousOSD.createOSDAnnotator(viewer);
+            const activeAnno = anno2;
         {% endif %}
 
         AnnotoriousTools.mountPlugin(activeAnno);
@@ -733,10 +731,10 @@
         //OSDMeasure 삭제 버튼 띄우기
         window.addEventListener('measurement-selected', e => {
             const m = e.detail.measurement;
-        
+
             // 원하는 정보 띄우기
             document.getElementById('erase-btn').style.display = 'block';
-        
+
             // 삭제 버튼에 해당 측정 저장
             document.getElementById('erase-btn').onclick = () => {
                 plugin.deleteSelectedMeasurement(m);
@@ -778,7 +776,6 @@
                 strokeWidth: 3
             }
         });
-        
 
 
         function openPopup(annotation) {
@@ -802,7 +799,7 @@
                     annotation["description"] = comment;
 
                     {% if can_edit_annotation %}
-                    updateAnnotationDisplay(annotation);
+                        updateAnnotationDisplay(annotation);
                     {% endif %}
 
                     closePopup();
@@ -819,7 +816,7 @@
         }
 
         function cancelPopup() {
-            if (!editMode){
+            if (!editMode) {
                 activeAnno.removeAnnotation(activeAnno.getSelected()[0]);
             }
             closePopup();
@@ -883,13 +880,13 @@
                 annotation["name"] = newTitle;
                 annotation["description"] = newComment;
 
-                
+
                 activeAnno.updateAnnotation(annotation);
 
                 {% if can_edit_annotation %}
-                let bodyElem = document.getElementById('annotation-combined-' + annotation.id);
-                if (bodyElem) bodyElem.remove();
-                updateAnnotationDisplay(annotation);
+                    let bodyElem = document.getElementById('annotation-combined-' + annotation.id);
+                    if (bodyElem) bodyElem.remove();
+                    updateAnnotationDisplay(annotation);
                 {% endif %}
 
                 closePopup();
@@ -928,7 +925,7 @@
                     if (m.p2?.fabricObject) m.p2.fabricObject.visible = true;
                 });
                 plugin.fabricCanvas.renderAll();
-                
+
             }
         });
 
