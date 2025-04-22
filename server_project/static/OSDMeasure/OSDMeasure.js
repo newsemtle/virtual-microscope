@@ -659,10 +659,27 @@ class Measurement {
     adjustToZoom(zoom) {
         this.p1.adjustToZoom(zoom);
         this.p2.adjustToZoom(zoom);
-        this.line.strokeWidth = this.plugin.fontSize *0.2 / zoom;
+        this.line.strokeWidth = this.plugin.fontSize *0.3 / zoom;
         this.textObject.fontSize = this.plugin.fontSize / zoom;
         // adjust distance between right-most point and text
         this.textObject.left = Math.max(this.p1.x, this.p2.x) + 100 / zoom;
+
+        if (this.outlineLine){
+            this.outlineLine.strokeWidth = this.plugin.fontSize * 0.7 / zoom;}
+        if (this.highlightLine){
+            this.highlightLine.strokeWidth = this.plugin.fontSize * 0.45 / zoom;}
+        if (this.outerCircle1){
+            this.outerCircle1.setRadius(this.plugin.fontSize*0.7 / (zoom * 1.5));} 
+        if (this.outerCircle2){
+            this.outerCircle2.setRadius(this.plugin.fontSize*0.7 / (zoom * 1.5));}       
+        if (this.innerCircle1){
+            this.innerCircle1.setRadius(this.plugin.fontSize*0.5 / (zoom * 1.5));} 
+        if (this.innerCircle2){
+            this.innerCircle2.setRadius(this.plugin.fontSize*0.5 / (zoom * 1.5));}             
+            
+            
+            
+            
     }
 
     /**
@@ -690,13 +707,13 @@ class Measurement {
             originX: 'center',
             originY: 'center',
             stroke: this.color,
-            strokeWidth: this.plugin.fontSize*0.2 / zoom
+            strokeWidth: this.plugin.fontSize*0.3 / zoom
         });
 
         this.fabricCanvas.add(this.line);
 
         // create text object to display measurement
-        let text = (this.distance).toFixed(3) + " " + this.units;
+        let text = (this.distance).toFixed(0) + " " + this.units;
         this.textObject = new fabric.Text(text, {
             left: Math.max(this.p1.x, this.p2.x) + 100 / zoom,
             top: this.p1.x > this.p2.x ? this.p1.y : this.p2.y,
@@ -707,21 +724,126 @@ class Measurement {
     }
         // Add methods to select and deselect the measurement
         select() {
-            this.line.set({
-                stroke: "grey"
+            const zoom = this.plugin.viewer.viewport.getZoom();
+            //const baseWidth = this.plugin.fontSize * 0.2 / zoom;
+            
+            // 주석 색이 흰색일시 중간색 검정으로 설정
+            let innerColor;
+            if(this.color!='#ffffff'){
+                innerColor = 'white'
+            } else{
+                innerColor = 'black'
+            }
+            // 검정 외곽선 (가장 바깥)
+            this.outlineLine = new fabric.Line(
+                [this.p1.x, this.p1.y, this.p2.x, this.p2.y], 
+                {
+                originX: 'center',
+                originY: 'center',
+                stroke: this.color,
+                strokeWidth: this.plugin.fontSize * 0.7 / zoom,
+                selectable: false,
+                evented: false
             });
-            // Highlight both points with a grey fill
-            this.p1.fabricObject.set({ fill: "grey" });
-            this.p2.fabricObject.set({ fill: "grey" });
 
-            this.textObject.set({ fill: "grey" });
+            // 흰색 외곽선 (중간)
+            this.highlightLine = new fabric.Line(
+                [this.p1.x, this.p1.y, this.p2.x, this.p2.y],
+                {
+                    originX: 'center',
+                    originY: 'center',
+                    stroke: innerColor,
+                    strokeWidth: this.plugin.fontSize * 0.45 / zoom,
+                    selectable: false,
+                    evented: false
+                }
+            );
+            
+            // highlightLine을 원래 선 뒤로 보냄
+
+            //this.fabricCanvas.sendToBack(this.highlightLine);
+
+            
+            // 바깥쪽 원 (겉 선 역할)
+            this.outerCircle1 = new fabric.Circle({
+                left: this.p1.x,
+                top: this.p1.y,
+                radius: this.plugin.fontSize*0.7 / (zoom * 1.5),
+                fill: this.color, // 외곽선 색상
+                originX: 'center',
+                originY: 'center',
+                selectable: false,
+                evented: false
+            });
+
+            this.outerCircle2 = new fabric.Circle({
+                left: this.p2.x,
+                top: this.p2.y,
+                radius: this.plugin.fontSize*0.7 / (zoom * 1.5),
+                fill: this.color, // 외곽선 색상
+                originX: 'center',
+                originY: 'center',
+                selectable: false,
+                evented: false
+            });
+            
+            // 안쪽 원 (중간 겉 선 역할)
+
+            this.innerCircle1 = new fabric.Circle({
+                left: this.p1.x,
+                top: this.p1.y,
+                radius: this.plugin.fontSize*0.5 / (zoom * 1.5),
+                fill: innerColor, 
+                originX: 'center',
+                originY: 'center',
+                selectable: false,
+            });
+
+            this.innerCircle2 = new fabric.Circle({
+                left: this.p2.x,
+                top: this.p2.y,
+                radius: this.plugin.fontSize*0.5 / (zoom * 1.5),
+                fill: innerColor, // 원래 색상
+                originX: 'center',
+                originY: 'center',
+                selectable: false,
+            });
+            
+            // canvas에 추가
+            this.fabricCanvas.add(this.outerCircle1);
+            this.fabricCanvas.add(this.outerCircle2);
+            this.fabricCanvas.add(this.outlineLine);
+            this.fabricCanvas.add(this.innerCircle1);
+            this.fabricCanvas.add(this.innerCircle2);
+            this.fabricCanvas.add(this.highlightLine);
+
+            this.fabricCanvas.bringToFront(this.line);
+            this.fabricCanvas.bringToFront(this.p1.fabricObject); 
+            this.fabricCanvas.bringToFront(this.p2.fabricObject); // 원래 점,선은 위로
+            // Highlight both points with a grey fill
+            //this.p1.fabricObject.set({ fill: "grey" });
+            //this.p2.fabricObject.set({ fill: "grey" });
+            //this.textObject.set({ fill: "grey" });
             this.fabricCanvas.renderAll();
         }
 
         deselect() {
-            this.line.set({
-                stroke: this.color
-            });
+            const zoom = this.plugin.viewer.viewport.getZoom();
+            if (this.highlightLine) {
+                this.fabricCanvas.remove(this.highlightLine);
+                this.highlightLine = null;
+            }
+            if (this.outlineLine) {
+                this.fabricCanvas.remove(this.outlineLine);
+                this.outlineLine = null;
+            }
+            
+            this.fabricCanvas.remove(
+                this.innerCircle1,
+                this.outerCircle1,
+                this.innerCircle2,
+                this.outerCircle2
+              );
             this.p1.fabricObject.set({ fill: this.color });
             this.p2.fabricObject.set({ fill: this.color });
 
@@ -798,6 +920,7 @@ class Point {
      */
     adjustToZoom(zoom) {
         this.fabricObject.setRadius(this.plugin.fontSize*0.4 / (zoom * 1.5));
+
     }
 
     /**

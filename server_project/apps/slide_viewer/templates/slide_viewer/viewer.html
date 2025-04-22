@@ -35,8 +35,6 @@
 <!-- slide_name part in header block -->
 {% block slide_name %}
     {{ slide.name }}
-    <!-- 임시로 현재 annotation 정보 표시 -->
-    {% if annotation %}[{{ annotation.name }}({{ annotation.author }})]{% endif %}
 {% endblock slide_name %}
 
 
@@ -131,6 +129,15 @@
                             <span id="contrast-value" class="filter-value">1.00</span>
                             <button type="button" onclick="resetContrast()">Reset</button>
                         </li>
+                        <!-- Saturate Control -->
+                        <li class="dropdown-item">
+                            <label for="saturate">채도:</label>
+                            <input type="range" id="saturate" min="0" max="2" step="0.01" value="1"
+                                oninput="updateFilters()">
+                            <span id="saturate-value" class="filter-value">1.00</span>
+                            <button type="button" onclick="resetSaturate()">Reset</button>
+                        </li>
+
                     </ul>
                 </div>
                 <!-- 배율 드롭다운 버튼 -->
@@ -283,7 +290,22 @@
 
 <!-- aside block -->
 {% block aside_content %}
-    Description
+
+    <div class="text-center flex-grow-1">
+        {% if annotation %}
+        {{ annotation.name|slice:':20' }}
+        {% else %}
+        Description
+        {% endif %}
+    </div>
+    <!-- 오른쪽 버튼 그룹들 -->
+    <div class="btn-group ms-auto nav-media-query" role="group">
+        <!-- 저장 버튼 -->
+        <button class="btn btn btn-outline-light custom-button" title="Save">
+            <i class="bi bi-floppy"></i>
+        </button>
+    </div>
+
 {% endblock aside_content %}
 
 <!-- article block -->
@@ -483,7 +505,7 @@
             plugin = new OSDMeasure(viewer, {
                 conversionFactor: slide_metadata.mpp_x,
                 units: "um",
-                fontSize: contentFactor / 40,
+                fontSize: contentFactor / 50,
                 selectedColor: selectedColor
             });
         });
@@ -636,14 +658,16 @@
 
         // Annotorious 초기화
         let anno;
+        let anno2;
         let selectedColor = '#ff0000'
         let editMode = false;
         document.getElementById("ink").style.color = selectedColor;
         anno = AnnotoriousOSD.createOSDAnnotator(viewer, {
-            userSelectAction: "{% if can_edit_annotation %}EDIT{% else %}NONE{% endif %}"
+            userSelectAction: "{% if can_create_annotation %}EDIT{% else %}NONE{% endif %}"
         });
 
-        {% if can_edit_annotation %}
+
+        {% if can_create_annotation %}
             const activeAnno = anno;
         {% else %}
             anno2 = AnnotoriousOSD.createOSDAnnotator(viewer);
@@ -767,16 +791,17 @@
                 strokeWidth: 3
             }
         });
-        anno2.setStyle((annotation, state) => {
-            const color = annotation["motivation"];
-            return {
-                fillOpacity: 0,
-                stroke: color,
-                strokeOpacity: 1,
-                strokeWidth: 3
-            }
-        });
-
+        if(anno2){
+            anno2.setStyle((annotation, state) => {
+                const color = annotation["motivation"];
+                return {
+                    fillOpacity: 0,
+                    stroke: color,
+                    strokeOpacity: 1,
+                    strokeWidth: 3
+                }
+            });
+        }
 
         function openPopup(annotation) {
             return new Promise((resolve, reject) => {
@@ -798,7 +823,7 @@
                     annotation["name"] = title;
                     annotation["description"] = comment;
 
-                    {% if can_edit_annotation %}
+                    {% if can_create_annotation %}
                         updateAnnotationDisplay(annotation);
                     {% endif %}
 
@@ -883,7 +908,7 @@
 
                 activeAnno.updateAnnotation(annotation);
 
-                {% if can_edit_annotation %}
+                {% if can_create_annotation %}
                     let bodyElem = document.getElementById('annotation-combined-' + annotation.id);
                     if (bodyElem) bodyElem.remove();
                     updateAnnotationDisplay(annotation);
@@ -898,11 +923,14 @@
             const icon = this.querySelector('i');
             // 현재 아이콘이 eye-slash이면 보이는 상태 => 숨기기
             if (icon.classList.contains('bi-eye-slash')) {
-                anno.cancelSelected();
-                anno.setVisible(false); // 주석 숨기기
+                console.log('invisible');
+                activeAnno.cancelSelected();
+                activeAnno.setVisible(false); // 주석 숨기기
                 icon.classList.remove('bi-eye-slash');
                 icon.classList.add('bi-eye');
                 this.title = "Show Annotation";
+
+                plugin.deselectMeasurement();
                 plugin.measurements.forEach(m => {
                     if (m.line) m.line.visible = false;
                     if (m.textObject) m.textObject.visible = false;
@@ -963,20 +991,20 @@
         const csrftoken = getCookie('csrftoken');
 
 
-        // 주석 생성 이벤트 처리: 주석이 만들어지면 서버에 저장
-
 
         // Function to update filters based on slider values
         function updateFilters() {
             const brightness = document.getElementById('brightness').value;
             const contrast = document.getElementById('contrast').value;
+            const saturate = document.getElementById('saturate').value;
 
             // Update the displayed values
             document.getElementById('brightness-value').textContent = Math.round((parseFloat(brightness) * 100 - 100));
             document.getElementById('contrast-value').textContent = Math.round((parseFloat(contrast) * 100 - 100));
+            document.getElementById('saturate-value').textContent = Math.round((parseFloat(saturate) * 100 - 100));
 
             // Apply CSS filters to the OpenSeadragon viewer
-            document.querySelector('.openseadragon-canvas').style.filter = `brightness(${brightness}) contrast(${contrast})`;
+            document.querySelector('#openseadragon-container canvas').style.filter = `brightness(${brightness}) contrast(${contrast}) saturate(${saturate})`;
         }
 
         // Function to reset brightness to default
@@ -990,6 +1018,12 @@
         function resetContrast() {
             const contrastSlider = document.getElementById('contrast');
             contrastSlider.value = 1;
+            updateFilters();
+        }
+
+        function resetSaturate() {
+            const saturateSlider = document.getElementById('saturate');
+            saturateSlider.value = 1;
             updateFilters();
         }
 
