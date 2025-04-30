@@ -23,15 +23,20 @@ class ImageDatabaseView(LoginRequiredMixin, PermissionRequiredMixin, ListView):
         if not current:
             current = "root"
         children = (
-            ImageFolder.objects.viewable(self.request.user, folder=current)
+            ImageFolder.objects.viewable(self.request.user, parent=current)
             .annotate(type=Value("folder", CharField()))
             .order_by("name")
         )
         slides = (
-            Slide.objects.viewable(self.request.user, folder=current)
+            Slide.objects.viewable(
+                self.request.user, folder=current, include_lecture=False
+            )
             .annotate(type=Value("slide", CharField()))
             .order_by("name")
         )
+
+        for child in children:
+            child.file_count = child.file_count(cumulative=True)
 
         return list(children) + list(slides)
 
@@ -42,7 +47,9 @@ class ImageDatabaseView(LoginRequiredMixin, PermissionRequiredMixin, ListView):
 
         context["current_folder"] = current
         context["breadcrumbs"] = self._generate_breadcrumbs(current)
-        context["editable"] = current.is_owner(user) if current else user.is_admin()
+        context["editable"] = (
+            current.is_managed_by(user) if current else user.is_admin()
+        )
         return context
 
     def _generate_breadcrumbs(self, folder):

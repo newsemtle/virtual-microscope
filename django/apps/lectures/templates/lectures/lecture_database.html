@@ -40,33 +40,41 @@
                  style="background-color:#edf1f5;">
                 <div class="d-flex align-items-center">
                     <input class="form-check-input m-0 me-2" type="checkbox" id="item-checkbox-all">
-                    <h4 class="m-0 me-4">
+                    <div class="dropdown me-2">
+                        <i class="dropdown-toggle" type="button" data-bs-toggle="dropdown"
+                           aria-expanded="false"></i>
+                        <ul class="dropdown-menu p-0" style="min-width: 0;">
+                            <li>
+                                <button class="dropdown-item" data-bs-toggle="modal"
+                                        data-bs-target="#bulk-move-modal" data-type="move">Move
+                                </button>
+                            </li>
+                            <li>
+                                <button class="dropdown-item" data-bs-toggle="modal"
+                                        data-bs-target="#confirmation-modal" data-type="delete">Delete
+                                </button>
+                            </li>
+                        </ul>
+                    </div>
+                    <h4 class="m-0">
                         {% if current_folder and current_folder != user.base_lecture_folder %}
                             {{ current_folder.name }}
                         {% else %}
                             DB/Lecture
                         {% endif %}
                     </h4>
-                    <div class="btn-group btn-group-sm">
-                        <button type="button" class="btn btn-warning" data-bs-toggle="modal"
-                                data-bs-target="#item-list-modal" data-type="move">
-                            Move
-                        </button>
-                        <button type="button" class="btn btn-danger" data-bs-toggle="modal"
-                                data-bs-target="#item-list-modal" data-type="delete">
-                            Delete
-                        </button>
-                    </div>
                 </div>
-                <div class="btn-group">
+                <div class="btn-group btn-group-sm">
                     {% if current_folder %}
-                        <button type="button" class="btn btn-warning btn-sm" data-bs-toggle="modal"
+                        <button type="button" class="btn btn-warning" data-bs-toggle="modal"
                                 data-bs-target="#folder-create-modal">
-                            <i class="bi bi-folder-plus"></i> New Folder
+                            <i class="bi bi-folder-plus"></i>
+                            <span class="d-none d-sm-inline">New Folder</span>
                         </button>
-                        <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal"
+                        <button type="button" class="btn btn-primary" data-bs-toggle="modal"
                                 data-bs-target="#lecture-create-modal">
-                            <i class="bi bi-journal-plus"></i> New Lecture
+                            <i class="bi bi-journal-plus"></i>
+                            <span class="d-none d-sm-inline">New Lecture</span>
                         </button>
                     {% endif %}
                 </div>
@@ -130,9 +138,13 @@
                                        style="text-decoration: none; color: inherit;"
                                        class="stretched-link">{{ item.name }}</a>
                                 </h3>
+                                <h6 class="mb-0 text-secondary">
+                                    <i class="bi bi-journal-text"></i>
+                                    {{ item.file_count }} Lectures
+                                </h6>
                             {% else %}
                                 <h3 class="mb-0 name-truncate">
-                                    <a href="{% url 'lectures:lecture-view' lecture_id=item.id %}"
+                                    <a href="{% url 'lectures:lecture-edit' lecture_id=item.id %}"
                                        style="text-decoration: none; color: inherit;"
                                        class="stretched-link">{{ item.name }}</a>
                                 </h3>
@@ -184,6 +196,8 @@
                                                 data-item-id="{{ item.id }}">
                                             Move
                                         </button>
+                                    {% endif %}
+                                    {% if item.is_deletable %}
                                         <button type="button" class="btn btn-outline-dark btn-sm rounded-0"
                                                 data-bs-toggle="modal"
                                                 data-bs-target="#folder-delete-modal" data-bs-tooltip="tooltip"
@@ -203,11 +217,11 @@
                                         Details
                                     </button>
                                     {% if item.is_editable %}
-                                        <!-- edit 버튼 -->
+                                        <!-- preview 버튼 -->
                                         <a type="button" class="btn btn-outline-dark btn-sm rounded-0"
-                                           href="{% url 'lectures:lecture-edit' lecture_id=item.id %}"
-                                           data-bs-tooltip="tooltip" title="Edit">
-                                            Edit
+                                           href="{% url 'lectures:lecture-view' lecture_id=item.id %}"
+                                           data-bs-tooltip="tooltip" title="Preview">
+                                            Preview
                                         </a>
                                         <!-- move 버튼 -->
                                         <button type="button" class="btn btn-outline-dark btn-sm rounded-0"
@@ -217,6 +231,8 @@
                                                 data-url-tree="{% url 'api:lecture-folder-tree' %}">
                                             Move
                                         </button>
+                                    {% endif %}
+                                    {% if item.is_deletable %}
                                         <!-- delete 버튼 -->
                                         <button type="button" class="btn btn-outline-dark btn-sm rounded-0"
                                                 data-bs-toggle="modal" data-bs-target="#lecture-delete-modal"
@@ -450,7 +466,7 @@
                         </div>
                         <div class="col-md-6">
                             <form id="lecture-send-form" data-url="" data-method="POST"
-                                  data-owner-id="{{ current_folder.get_owner.id }}">
+                                  data-manager-id="{{ current_folder.manager.id }}">
                                 <div class="card h-100">
                                     <div class="card-header">
                                         <h5>복사본 보내기</h5>
@@ -519,44 +535,40 @@
             </div>
         </div>
     </div>
-    <!-- Item List Modal -->
-    <div class="modal fade" id="item-list-modal" tabindex="-1">
+    <!-- Bulk Move Modal -->
+    <div class="modal fade" id="bulk-move-modal" tabindex="-1">
         <div class="modal-dialog modal-dialog-scrollable">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">선택 항목</h5>
+                    <h5 class="modal-title">선택 항목 이동</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <ul id="item-selected-list" class="list-group overflow-scroll" style="max-height: 320px"></ul>
+                    <div class="border rounded p-3 mb-2 tree-container"></div>
+                    <div class="align-items-center text-danger d-none" data-type="message"></div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">닫기</button>
-                    <button type="button" class="btn btn-primary continue" data-type="" data-bs-toggle="modal"
-                            data-bs-target="#bulk-action-modal">
+                    <button type="button" class="btn btn-primary continue" data-type="">
                         다음
                     </button>
                 </div>
             </div>
         </div>
     </div>
-    <!-- Bulk Action Modal -->
-    <div class="modal fade" id="bulk-action-modal" tabindex="-1">
+    <!-- Confirmation Modal -->
+    <div class="modal fade" id="confirmation-modal" tabindex="-1">
         <div class="modal-dialog modal-dialog-scrollable">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title"></h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
-                <div class="modal-body">
-                    <div class="mb-2 info-container"></div>
-                </div>
+                <div class="modal-body"></div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">닫기</button>
                     <button type="button" class="btn continue" data-type="" data-bs-toggle="modal"
-                            data-bs-target="#action-progress-modal" data-destination="">
-                        확인
-                    </button>
+                            data-bs-target="#action-progress-modal" data-destination=""></button>
                 </div>
             </div>
         </div>

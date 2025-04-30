@@ -1,20 +1,25 @@
+import logging
+
 from django.contrib.auth import user_logged_out
 from django.contrib.auth.models import (
     AbstractBaseUser,
     BaseUserManager,
     PermissionsMixin,
     Permission,
+    Group,
 )
 from django.contrib.auth.validators import UnicodeUsernameValidator
 from django.core.cache import cache
 from django.db import models
 from django.db.models import Q
-from django.db.models.signals import m2m_changed
+from django.db.models.signals import m2m_changed, post_save
 from django.dispatch import receiver
 from django.utils import timezone
 
 from apps.images.models import ImageFolder
 from apps.lectures.models import LectureFolder
+
+logger = logging.getLogger("django")
 
 
 class GroupProfile(models.Model):
@@ -28,7 +33,7 @@ class GroupProfile(models.Model):
     )
     type = models.CharField(
         max_length=10,
-        choices=Type,
+        choices=Type.choices,
         blank=False,
         help_text="Type of the group.",
     )
@@ -42,16 +47,10 @@ class GroupProfile(models.Model):
     )
 
     def __str__(self):
-        return f"Profile for {self.group.name} group"
+        return f"Profile for '{self.group.name}' group"
 
     def save(self, *args, **kwargs):
         created = False if self.pk else True
-
-        if self.is_publisher_group() and not self.base_folder:
-            self.base_folder = ImageFolder.objects.create(
-                name=self.group.name.title(),
-                author=User.objects.filter(is_superuser=True).first(),
-            )
 
         super().save(*args, **kwargs)
 
@@ -62,10 +61,15 @@ class GroupProfile(models.Model):
         try:
             if self.group:
                 self.group.delete()
+        except Exception as e:
+            logger.error(f"Failed to delete group: {str(e)}")
+
+        try:
             if self.base_folder:
                 self.base_folder.delete()
-        except:
-            pass
+        except Exception as e:
+            logger.error(f"Failed to delete base folder: {str(e)}")
+
         super().delete(*args, **kwargs)
 
     def set_default_permission(self):
@@ -75,10 +79,10 @@ class GroupProfile(models.Model):
             q |= Q(content_type__model="annotation")
             self.group.permissions.set(Permission.objects.filter(q))
         elif self.is_viewer_group():
-            q = Q(content_type__model="slide") & Q(codename__contains="view")
-            q |= Q(content_type__model="lecture") & Q(codename__contains="view")
-            q |= Q(content_type__model="lecturecontent") & Q(codename__contains="view")
-            q |= Q(content_type__model="annotation") & Q(codename__contains="view")
+            q = Q(content_type__model="slide", codename__contains="view")
+            q |= Q(content_type__model="lecture", codename__contains="view")
+            q |= Q(content_type__model="lecturecontent", codename__contains="view")
+            q |= Q(content_type__model="annotation", codename__contains="view")
             self.group.permissions.set(Permission.objects.filter(q))
 
     def is_publisher_group(self):
@@ -86,6 +90,23 @@ class GroupProfile(models.Model):
 
     def is_viewer_group(self):
         return self.type == self.Type.VIEWER
+
+
+@receiver(post_save, sender=Group)
+def update_group_profile(sender, instance, created, **kwargs):
+    profile = instance.profile
+    if profile and profile.is_publisher_group():
+        if profile.base_folder:
+            base_folder = profile.base_folder
+            if base_folder.name != instance.name.title():
+                base_folder.name = instance.name.title()
+                base_folder.save(update_fields=["name"])
+        else:
+            profile.base_folder = ImageFolder.objects.create(
+                name=instance.name.title(),
+                author=User.objects.filter(is_superuser=True).first(),
+                manager_group=instance,
+            )
 
 
 class UserManager(BaseUserManager):
@@ -180,7 +201,7 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     def save(self, *args, **kwargs):
         if self.pk:
-            old_instance = User.objects.get(pk=self.pk)
+            old_instance = self.__class__.objects.get(pk=self.pk)
             if old_instance.username != self.username and self.base_lecture_folder:
                 self.base_lecture_folder.name = self.username.title()
                 self.base_lecture_folder.save(update_fields=["name"])
@@ -193,18 +214,26 @@ class User(AbstractBaseUser, PermissionsMixin):
         if self.is_publisher() and not self.base_lecture_folder:
             self.base_lecture_folder = LectureFolder.objects.create(
                 name=self.username.title(),
-                author=User.objects.filter(is_superuser=True).first(),
+                author=self.__class__.objects.filter(is_superuser=True).first(),
+                manager=self,
             )
-            self.save(update_fields=["base_lecture_folder"])
+            self.__class__.objects.filter(pk=self.pk).update(
+                base_lecture_folder=self.base_lecture_folder
+            )
 
     def delete(self, *args, **kwargs):
         try:
             if self.base_lecture_folder:
                 self.base_lecture_folder.delete()
+        except Exception as e:
+            logger.error(f"Failed to delete base lecture folder: {str(e)}")
+
+        try:
             if self.profile_image:
                 self.profile_image.delete(False)
-        except:
-            pass
+        except Exception as e:
+            logger.error(f"Failed to delete profile image: {str(e)}")
+
         super().delete(*args, **kwargs)
 
     def clean(self):
@@ -221,9 +250,13 @@ class User(AbstractBaseUser, PermissionsMixin):
         return self.is_staff
 
     def is_publisher(self):
+        if self.is_admin():
+            return False
         return self.groups.filter(profile__type=GroupProfile.Type.PUBLISHER).exists()
 
     def is_viewer(self):
+        if self.is_admin() or self.is_publisher():
+            return False
         return self.groups.filter(profile__type=GroupProfile.Type.VIEWER).exists()
 
 
@@ -234,6 +267,7 @@ def create_lecture_folder_on_publisher_add(sender, instance, action, **kwargs):
             instance.base_lecture_folder = LectureFolder.objects.create(
                 name=instance.username.title(),
                 author=User.objects.filter(is_superuser=True).first(),
+                manager=instance,
             )
             instance.save(update_fields=["base_lecture_folder"])
 

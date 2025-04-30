@@ -6,6 +6,7 @@ from apps.lectures.models import Lecture, LectureContent, LectureFolder
 
 class LectureFolderSerializer(serializers.ModelSerializer):
     author = serializers.CharField(source="author.username", default=None)
+    manager = serializers.CharField(source="manager.username", default=None)
 
     class Meta:
         model = LectureFolder
@@ -13,11 +14,12 @@ class LectureFolderSerializer(serializers.ModelSerializer):
             "id",
             "name",
             "author",
+            "manager",
             "parent",
             "created_at",
             "updated_at",
         ]
-        read_only_fields = ["author"]
+        read_only_fields = ["author", "manager"]
         validators = [
             serializers.UniqueTogetherValidator(
                 queryset=LectureFolder.objects.all(),
@@ -30,11 +32,14 @@ class LectureFolderSerializer(serializers.ModelSerializer):
         user = self.context["request"].user
         errors = {}
 
+        parent_is_sent = "parent" in self.initial_data
         parent = attrs.get("parent")
-        if not parent:
-            errors["parent"] = "This field is required."
-        if parent and not parent.is_owner(user):
-            errors["parent"] = "You don't have permission to edit this folder."
+
+        if parent_is_sent:
+            if not parent and not user.is_admin():
+                errors["detail"] = "You can't place folder at the root location."
+            elif parent and not parent.is_managed_by(user):
+                errors["detail"] = "You don't have permission to edit this folder."
 
         if errors:
             raise serializers.ValidationError(errors)
@@ -54,6 +59,7 @@ class LectureContentSerializer(serializers.ModelSerializer):
 
 class LectureSerializer(serializers.ModelSerializer):
     author = serializers.CharField(source="author.username", default=None)
+    manager = serializers.CharField(source="manager.username", default=None)
     contents = LectureContentSerializer(many=True, required=False)
     edit_url = serializers.SerializerMethodField()
     folder_url = serializers.SerializerMethodField()
@@ -65,36 +71,42 @@ class LectureSerializer(serializers.ModelSerializer):
             "name",
             "description",
             "author",
+            "manager",
             "folder",
             "contents",
-            "groups",
+            "viewer_groups",
             "is_active",
             "created_at",
             "updated_at",
             "edit_url",
             "folder_url",
         ]
-        read_only_fields = ["author"]
+        read_only_fields = ["author", "manager"]
 
     def validate(self, attrs):
         user = self.context["request"].user
         errors = {}
 
+        folder_is_sent = "folder" in self.initial_data
         folder = attrs.get("folder")
-        if folder and not folder.is_owner(user):
-            errors["folder"] = "You don't have permission to edit this folder."
+
+        if folder_is_sent:
+            if not folder and not user.is_admin():
+                errors["detail"] = "You can't place lecture at the root location."
+            elif folder and not folder.is_managed_by(user):
+                errors["detail"] = "You don't have permission to edit this lecture."
 
         contents = attrs.get("contents", [])
         for index, content in enumerate(contents):
             slide = content.get("slide")
             annotation = content.get("annotation")
-            if slide and not slide.user_can_view(user):
-                errors[f"contents[{index}].slide"] = (
-                    "You don't have permission to view this slide."
+            if slide and not slide.is_viewable_by(user):
+                errors[f"detail"] = (
+                    f"You don't have permission to view slide '{slide.name}'."
                 )
-            if annotation and not annotation.user_can_view(user):
-                errors[f"contents[{index}].annotation"] = (
-                    "You don't have permission to view this annotation."
+            if annotation and not annotation.is_viewable_by(user):
+                errors[f"detail"] = (
+                    f"You don't have permission to view annotation '{annotation.name}'."
                 )
 
         if errors:
@@ -109,7 +121,7 @@ class LectureSerializer(serializers.ModelSerializer):
         lecture = super().create(validated_data)
 
         for content in contents_data:
-            LectureContent.objects.create(lecture=lecture, **content)
+            lecture.contents.create(**content)
 
         return lecture
 
@@ -119,7 +131,7 @@ class LectureSerializer(serializers.ModelSerializer):
 
         lecture.contents.all().delete()
         for content in contents_data:
-            LectureContent.objects.create(lecture=lecture, **content)
+            lecture.contents.create(**content)
 
         lecture.save()
         return lecture

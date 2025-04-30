@@ -32,7 +32,7 @@ class LectureBulletinsView(LoginRequiredMixin, PermissionRequiredMixin, ListView
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         for lecture in context["lectures"]:
-            lecture.is_editable = lecture.user_can_edit(self.request.user)
+            lecture.is_editable_by = lecture.is_editable_by(self.request.user)
         return context
 
 
@@ -53,7 +53,7 @@ class LectureDatabaseView(
         user = self.request.user
         current = self.get_folder()
         if current:
-            return current.user_can_view(user)
+            return current.is_viewable_by(user)
         return user.is_admin()
 
     def handle_no_permission(self):
@@ -76,7 +76,7 @@ class LectureDatabaseView(
         if not current:
             current = "root"
         children = (
-            LectureFolder.objects.viewable(user, folder=current)
+            LectureFolder.objects.viewable(user, parent=current)
             .annotate(type=Value("folder", CharField()))
             .order_by("name")
         )
@@ -85,6 +85,9 @@ class LectureDatabaseView(
             .annotate(type=Value("lecture", CharField()))
             .order_by("name")
         )
+
+        for child in children:
+            child.file_count = child.file_count(cumulative=True)
 
         return list(children) + list(lectures)
 
@@ -130,7 +133,7 @@ class LectureView(
 
     def test_func(self):
         lecture = self.get_lecture()
-        return lecture.user_can_view(self.request.user)
+        return lecture.is_viewable_by(self.request.user)
 
     def get_queryset(self):
         contents = self.get_lecture().contents.all().order_by("order")
@@ -139,7 +142,7 @@ class LectureView(
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["lecture"] = self.get_lecture()
-        context["editable"] = self.get_lecture().user_can_edit(self.request.user)
+        context["editable"] = self.get_lecture().is_editable_by(self.request.user)
         return context
 
 
@@ -156,7 +159,7 @@ class LectureEditView(
 
     def test_func(self):
         lecture = self.get_lecture()
-        return lecture.user_can_edit(self.request.user)
+        return lecture.is_editable_by(self.request.user)
 
     def get_queryset(self):
         contents = self.get_lecture().contents.all().order_by("order")
@@ -173,7 +176,7 @@ class LectureEditView(
         )
 
         base_folders = (
-            ImageFolder.objects.viewable(self.request.user, folder="root")
+            ImageFolder.objects.viewable(self.request.user, parent="root")
             .annotate(type=Value("folder", CharField()))
             .order_by("name")
         )

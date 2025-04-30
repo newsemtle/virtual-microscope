@@ -10,6 +10,7 @@ from django.utils import timezone
 from rest_framework import viewsets, filters
 from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied
+from rest_framework.generics import ListAPIView
 from rest_framework.permissions import IsAuthenticated, DjangoModelPermissions
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -43,7 +44,7 @@ class ImageFolderViewSet(viewsets.ModelViewSet):
         logger.info(f"Folder '{folder.name}' updated by {self.request.user}")
 
     def perform_destroy(self, instance):
-        self._check_edit_permissions(instance)
+        self._check_delete_permissions(instance)
 
         if instance.file_count() > 0:
             raise PermissionDenied("Folder is not empty. Cannot delete.")
@@ -75,23 +76,14 @@ class ImageFolderViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=["get"])
     def tree(self, request):
-        if not request.user.has_perm("images.view_imagefolder"):
+        user = request.user
+        if not user.has_perm("images.view_imagefolder"):
             raise PermissionDenied("You don't have permission to view folders.")
 
-        if request.user.is_admin():
-            root_folders = ImageFolder.objects.viewable(request.user, folder="root")
-            tree = [
-                {
-                    "id": None,
-                    "name": "Root",
-                    "children": [
-                        self._get_tree_structure(folder) for folder in root_folders
-                    ],
-                }
-            ]
-        else:
-            root_folders = ImageFolder.objects.user_base_folders(request.user)
-            tree = [self._get_tree_structure(folder) for folder in root_folders]
+        root_folders = ImageFolder.objects.user_root_folders(user)
+        tree = [self._serialize_folders(folder) for folder in root_folders]
+        if user.is_admin():
+            tree = [{"id": None, "name": "Root", "children": tree}]
 
         return Response(tree)
 
@@ -101,7 +93,7 @@ class ImageFolderViewSet(viewsets.ModelViewSet):
             raise PermissionDenied("You don't have permission to view folder items.")
 
         folder = self.get_object()
-        children = ImageFolder.objects.viewable(request.user, folder=folder)
+        children = ImageFolder.objects.viewable(request.user, parent=folder)
         slides = Slide.objects.viewable(request.user, folder=folder)
         return Response(
             {
@@ -110,27 +102,25 @@ class ImageFolderViewSet(viewsets.ModelViewSet):
             }
         )
 
+    def _check_delete_permissions(self, folder):
+        if not folder.is_deletable_by(self.request.user):
+            raise PermissionDenied("You don't have permission to delete this folder.")
+
     def _check_edit_permissions(self, folder):
-        if not folder.user_can_edit(self.request.user):
+        if not folder.is_editable_by(self.request.user):
             raise PermissionDenied("You don't have permission to edit this folder.")
 
-    def _get_tree_structure(self, folder):
+    def _serialize_folders(self, folder):
         return {
             "id": folder.id,
             "name": folder.name,
-            "children": [
-                self._get_tree_structure(sub) for sub in folder.children.all()
-            ],
+            "children": [self._serialize_folders(sub) for sub in folder.children.all()],
         }
 
 
 class SlideViewSet(viewsets.ModelViewSet):
     serializer_class = SlideSerializer
     permission_classes = [IsAuthenticated, DjangoModelPermissions]
-    # filterset_class = SlideFilter
-    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
-    search_fields = ["name", "=author__username"]
-    ordering = ["-created_at"]
 
     def get_queryset(self):
         return Slide.objects.viewable(self.request.user)
@@ -149,7 +139,7 @@ class SlideViewSet(viewsets.ModelViewSet):
         logger.info(f"Slide '{slide.name}' updated by {self.request.user}")
 
     def perform_destroy(self, instance):
-        self._check_edit_permissions(instance)
+        self._check_delete_permissions(instance)
 
         name = instance.name
         instance.delete()
@@ -170,9 +160,6 @@ class SlideViewSet(viewsets.ModelViewSet):
                     ),
                     "building": slide.building(),
                 },
-                "owner_group_name": (
-                    slide.get_owner_group().name if slide.get_owner_group() else "admin"
-                ),
                 "created_at_formatted": timezone.localtime(slide.created_at).strftime(
                     "%Y-%m-%d %H:%M:%S"
                 ),
@@ -222,16 +209,32 @@ class SlideViewSet(viewsets.ModelViewSet):
 
         return FileResponse(open(path, "rb"), content_type="image/png")
 
+    def _check_delete_permissions(self, slide):
+        if not slide.is_deletable_by(self.request.user):
+            raise PermissionDenied("You don't have permission to delete this slide.")
+
     def _check_edit_permissions(self, slide):
-        if not slide.user_can_edit(self.request.user):
+        if not slide.is_editable_by(self.request.user):
             raise PermissionDenied("You don't have permission to edit this slide.")
 
     def _check_view_permission(self, slide):
-        if not slide.user_can_view(self.request.user):
+        if not slide.is_viewable_by(self.request.user):
             raise PermissionDenied("You don't have permission to view this slide.")
 
 
-class DZIAPIView(APIView):
+class SlideDBSearchAPIView(ListAPIView):
+    serializer_class = SlideSerializer
+    permission_classes = [IsAuthenticated]
+    # filterset_class = SlideFilter
+    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
+    search_fields = ["name", "=manager_group__name"]
+    ordering = ["-created_at"]
+
+    def get_queryset(self):
+        return Slide.objects.viewable(self.request.user, include_lecture=False)
+
+
+class SlideDZIAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, pk):
@@ -247,7 +250,7 @@ class DZIAPIView(APIView):
         return FileResponse(open(path, "rb"), content_type="application/xml")
 
 
-class TileAPIView(APIView):
+class SlideTileAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, pk, level, col, row, tile_format):
@@ -284,7 +287,7 @@ class SlideFileAPIView(APIView):
         return FileResponse(slide.file, as_attachment=True)
 
 
-class RebuildAPIView(APIView):
+class SlideRebuildAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request, pk):
@@ -309,12 +312,12 @@ def _check_slide_view_permission(user, slide):
     if cache.get(cache_key):
         return
 
-    if not user.has_perm("images.view_slide") or not slide.user_can_view(user):
+    if not user.has_perm("images.view_slide") or not slide.is_viewable_by(user):
         raise PermissionDenied("You don't have permission to view this slide.")
 
     cache.set(cache_key, True, timeout=60 * 10)  # 10 minutes
 
 
 def _check_slide_edit_permission(user, slide):
-    if not user.has_perm("images.change_slide") or not slide.user_can_edit(user):
+    if not user.has_perm("images.change_slide") or not slide.is_editable_by(user):
         raise PermissionDenied("You don't have permission to edit this slide.")

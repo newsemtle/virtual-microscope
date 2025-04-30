@@ -20,7 +20,7 @@ class SlideConsumer(AsyncWebsocketConsumer):
         self.slide = await sync_to_async(Slide.objects.get)(id=slide_id)
 
         if not self.user.is_authenticated or not await sync_to_async(
-            self.slide.user_can_view
+            self.slide.is_viewable_by
         )(self.user):
             await self.close()
             return

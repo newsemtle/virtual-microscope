@@ -45,7 +45,7 @@ class GroupAdmin(admin.ModelAdmin):
     list_filter = (GroupTypeFilter,)
     search_fields = ("name",)
     ordering = ("name",)
-    filter_horizontal = ("permissions",)
+    fieldsets = [(None, {"fields": ("name",)})]
 
     inlines = [GroupProfileInline]
 
@@ -101,24 +101,10 @@ class UserAdmin(ImportExportMixin, BaseUserAdmin):
     list_display = ("username", "first_name", "last_name", "is_staff")
     list_filter = ("groups",)
     fieldsets = [
-        (
-            None,
-            {"fields": ("username", "password")},
-        ),
-        (
-            "Personal info",
-            {"fields": ("first_name", "last_name", "email", "profile_image")},
-        ),
-        (
-            "Permissions",
-            {
-                "fields": ("groups", "base_lecture_folder"),
-            },
-        ),
-        (
-            "Advanced Settings",
-            {"fields": ("is_active", "is_staff", "is_superuser")},
-        ),
+        (None, {"fields": ("username", "password")}),
+        ("Info", {"fields": ("first_name", "last_name", "email", "profile_image")}),
+        ("Permissions", {"fields": ("groups", "base_lecture_folder")}),
+        ("Advanced Settings", {"fields": ("is_active", "is_staff", "is_superuser")}),
     ]
     add_fieldsets = [
         (
@@ -127,12 +113,11 @@ class UserAdmin(ImportExportMixin, BaseUserAdmin):
                 "classes": ("wide",),
                 "fields": (
                     "username",
-                    "email",
-                    "first_name",
-                    "last_name",
-                    "profile_image",
                     "password1",
                     "password2",
+                    "first_name",
+                    "last_name",
+                    "email",
                     "groups",
                 ),
             },
@@ -142,6 +127,18 @@ class UserAdmin(ImportExportMixin, BaseUserAdmin):
     ordering = ["username"]
     filter_horizontal = ("groups",)
     readonly_fields = ("base_lecture_folder",)
+
+    def get_fieldsets(self, request, obj=None):
+        if obj is None:
+            return self.add_fieldsets
+        else:
+            if obj.is_admin():
+                return [
+                    (name, data)
+                    for name, data in self.fieldsets
+                    if name != "Permissions"
+                ]
+            return self.fieldsets
 
     def generate_log_entries(self, result, request):
         pass

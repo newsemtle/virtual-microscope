@@ -1,202 +1,208 @@
+import logging
+
 from django.conf import settings
 from django.db import models
-from django.db.models import Q, Value, BooleanField
+from django.db.models import Q, Value, BooleanField, Case, When, F
+
+from apps.common.models import (
+    ManagerPermissionMixin,
+    AbstractFolder,
+    ModelPermissionMixin,
+    BaseFolderManager,
+)
+
+logger = logging.getLogger("django")
 
 
-class LectureFolderManager(models.Manager):
-    def editable(self, user, *, folder=None):
-        if folder == "root":
-            return self.none()
-
+class LectureFolderManager(ManagerPermissionMixin, BaseFolderManager):
+    def deletable(self, user, *, parent=None):
         if user.is_admin():
-            if folder:
-                return self.filter(parent=folder)
-            return self.all().filter(parent__isnull=False)
+            qs = self.filter(parent__isnull=False)
         elif user.is_publisher():
-            if folder:
-                if folder.is_owner(user):
-                    return self.filter(parent=folder)
-                else:
-                    return self.none()
-            return self.descendants_iter(user.base_lecture_folder)
-
-        return self.none()
-
-    def viewable(self, user, *, folder=None):
-        extra_viewable = self.none()
-
-        if user.is_admin():
-            if folder == "root" or not folder:
-                extra_viewable |= self.filter(parent__isnull=True)
-        elif user.is_publisher():
-            if folder == "root" or not folder:
-                extra_viewable |= LectureFolder.objects.filter(
-                    pk=user.base_lecture_folder.pk
-                )
+            qs = self.filter(parent__isnull=False, manager=user)
         else:
-            return self.none()
+            qs = self.none()
 
-        editable = self.editable(user, folder=folder).annotate(
-            is_editable=Value(True, BooleanField())
+        # add filter by parent
+        if parent:
+            if parent == "root":
+                qs = qs.filter(parent__isnull=True)
+            else:
+                qs = qs.filter(parent=parent)
+
+        return qs.distinct()
+
+    def editable(self, user, *, parent=None):
+        return self.deletable(user, parent=parent)
+
+    def viewable(self, user, *, parent=None):
+        if user.is_admin() or user.is_publisher():
+            qs = self.all()
+        else:
+            qs = self.none()
+
+        # add filter by parent
+        if parent:
+            if parent == "root":
+                qs = qs.filter(parent__isnull=True)
+            else:
+                qs = qs.filter(parent=parent)
+
+        if user.is_admin():
+            is_deletable = Case(
+                When(condition=Q(parent__isnull=False), then=Value(True)),
+                default=Value(False),
+                output_field=BooleanField(),
+            )
+        else:
+            is_deletable = Case(
+                When(
+                    condition=Q(parent__isnull=False, manager=user),
+                    then=Value(True),
+                ),
+                default=Value(False),
+                output_field=BooleanField(),
+            )
+
+        return qs.distinct().annotate(
+            is_deletable=is_deletable, is_editable=F("is_deletable")
         )
-        extra_viewable = extra_viewable.annotate(
-            is_editable=Value(False, BooleanField())
-        )
-        return (editable | extra_viewable).distinct()
 
-    def descendants_iter(self, folder):
-        descendants = folder.children.all()
-        for subfolder in descendants:
-            descendants |= self.descendants_iter(subfolder)
-        return descendants
+    def user_root_folders(self, user):
+        result = self.root_nodes()
+        if not user.is_admin():
+            result = result.filter(user=user)
+        return result
 
 
-class LectureFolder(models.Model):
-    id = models.AutoField(primary_key=True)
-    name = models.CharField(max_length=250)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    author = models.ForeignKey(
+class LectureFolder(ModelPermissionMixin, AbstractFolder):
+    manager = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
-        db_column="created_by",
-        related_name="lecture_folders",
-        blank=True,
-        null=True,
-    )
-    parent = models.ForeignKey(
-        "self",
-        on_delete=models.CASCADE,
-        related_name="children",
+        related_name="managing_lecturefolders",
         blank=True,
         null=True,
     )
 
     objects = LectureFolderManager()
 
-    class Meta:
-        unique_together = ("name", "parent")
-        ordering = ("name",)
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
 
-    def __str__(self):
-        return self.get_full_path()
+        if not self.is_root_node():
+            if self.manager != self.parent.manager:
+                self.manager = self.parent.manager
+                self.__class__.objects.filter(pk=self.pk).update(manager=self.manager)
 
-    def delete(self, *args, **kwargs):
-        if not self.is_empty():
-            raise Exception("Folder is not empty. Cannot delete.")
-        super().delete(*args, **kwargs)
+    def file_count(self, cumulative=False):
+        if cumulative:
+            return Lecture.objects.filter(
+                folder__in=self.get_descendants(include_self=True)
+            ).count()
+        return self.lectures.count()
 
-    def get_full_path(self):
-        if self.parent:
-            return f"{self.parent.get_full_path()}/{self.name}"
-        return self.name
-
-    def is_base_folder(self):
-        return self.parent is None
-
-    def get_base_folder(self):
-        current_folder = self
-        while current_folder.parent:
-            current_folder = current_folder.parent
-        return current_folder
-
-    def get_owner(self):
-        return self.get_base_folder().user
-
-    def is_owner(self, user):
-        if user.is_admin():
-            return True
-        return self.get_owner() == user
-
-    def user_can_edit(self, user):
-        if self.is_base_folder():
+    def is_deletable_by(self, user):
+        if self.is_root_node():
             return False
+        return self.is_managed_by(user)
+
+    def is_editable_by(self, user):
+        return self.is_deletable_by(user)
+
+    def is_viewable_by(self, user):
+        return self.is_managed_by(user)
+
+    def is_managed_by(self, user):
         if user.is_admin():
             return True
-        return self.get_owner() == user
+        return self.manager == user
 
-    def user_can_view(self, user):
+
+class LectureManager(ManagerPermissionMixin, models.Manager):
+    def deletable(self, user, *, folder=None):
         if user.is_admin():
-            return True
+            qs = self.all()
         elif user.is_publisher():
-            return self.get_owner() == user
-        return False
-
-    def is_empty(self):
-        if self.lectures.exists():
-            return False
-        for subfolder in self.children.all():
-            if not subfolder.is_empty():
-                return False
-        return True
-
-    def is_children(self, folder):
-        current_folder = folder.parent
-        while current_folder:
-            if current_folder == self:
-                return True
-            current_folder = current_folder.parent
-        return False
-
-
-class LectureManager(models.Manager):
-    def editable(self, user, *, folder=None):
-        q = Q()
-
-        if user.is_admin():
-            pass
-        elif user.is_publisher():
-            q &= Q(author=user)
+            qs = self.filter(author=user)
         else:
-            return self.none()
+            qs = self.none()
 
+        # add filter by folder
         if folder:
             if folder == "root":
-                q &= Q(folder__isnull=True)
+                qs = qs.filter(folder__isnull=True)
             else:
-                q &= Q(folder=folder)
+                qs = qs.filter(folder=folder)
 
-        return self.filter(q)
+        return qs.distinct()
+
+    def editable(self, user, *, folder=None):
+        if user.is_admin():
+            qs = self.all()
+        elif user.is_publisher():
+            qs = self.filter(Q(author=user) | Q(manager=user))
+        else:
+            qs = self.none()
+
+        # add filter by folder
+        if folder:
+            if folder == "root":
+                qs = qs.filter(folder__isnull=True)
+            else:
+                qs = qs.filter(folder=folder)
+
+        return qs.distinct()
 
     def viewable(self, user, *, folder=None):
-        q = Q()
-
         if user.is_admin():
-            pass
-        elif user.is_publisher() or user.is_viewer():
-            q &= Q(groups__in=user.groups.all()) & Q(is_active=True)
+            qs = self.all()
+        elif user.is_publisher():
+            qs = self.filter(
+                Q(manager=user) | Q(viewer_groups__in=user.groups.all(), is_active=True)
+            )
+        elif user.is_viewer():
+            qs = self.filter(viewer_groups__in=user.groups.all(), is_active=True)
         else:
-            return self.none()
+            qs = self.none()
 
+        # add filter by folder
         if folder:
             if folder == "root":
-                q &= Q(folder__isnull=True)
+                qs = qs.filter(folder__isnull=True)
             else:
-                q &= Q(folder=folder)
+                qs = qs.filter(folder=folder)
 
-        editable = self.editable(user, folder=folder).annotate(
-            is_editable=Value(True, BooleanField())
+        if user.is_admin():
+            is_deletable = Value(True, BooleanField())
+            is_editable = Value(True, BooleanField())
+        else:
+            is_deletable = Case(
+                When(condition=Q(author=user), then=Value(True)),
+                default=Value(False),
+                output_field=BooleanField(),
+            )
+            is_editable = Case(
+                When(condition=Q(author=user) | Q(manager=user), then=Value(True)),
+                default=Value(False),
+                output_field=BooleanField(),
+            )
+
+        return qs.distinct().annotate(
+            is_deletable=is_deletable, is_editable=is_editable
         )
-        extra_viewable = self.filter(q).annotate(
-            is_editable=Value(False, BooleanField())
-        )
-
-        return (editable | extra_viewable).distinct()
 
 
-class Lecture(models.Model):
+class Lecture(ModelPermissionMixin, models.Model):
     id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=100)
-    description = models.TextField(
-        blank=True,
-        null=True,
-    )
+    description = models.TextField(blank=True, null=True)
+    is_active = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     author = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
-        db_column="created_by",
         related_name="lectures",
         blank=True,
         null=True,
@@ -208,14 +214,18 @@ class Lecture(models.Model):
         blank=False,
         null=False,
     )
-    groups = models.ManyToManyField(
+    manager = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        related_name="managing_lectures",
+        blank=True,
+        null=True,
+    )
+    viewer_groups = models.ManyToManyField(
         "auth.Group",
         related_name="lectures",
         blank=True,
     )
-    is_active = models.BooleanField(default=False)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
 
     objects = LectureManager()
 
@@ -227,39 +237,47 @@ class Lecture(models.Model):
 
     def save(self, *args, **kwargs):
         if self.pk:
-            old_instance = Lecture.objects.get(pk=self.pk)
-            if old_instance.author != self.author:
-                self.update_lecture_contents()
+            old_instance = self.__class__.objects.get(pk=self.pk)
+            if old_instance.manager != self.manager:
+                for content in self.contents.all():
+                    content.handle_non_viewable()
 
         super().save(*args, **kwargs)
 
-    def user_can_edit(self, user):
+        if self.folder:
+            if self.manager != self.folder.manager:
+                self.manager = self.folder.manager
+                self.__class__.objects.filter(pk=self.pk).update(manager=self.manager)
+
+    def is_deletable_by(self, user):
         if user.is_admin():
             return True
         return self.author == user
 
+    def is_editable_by(self, user):
+        if self.is_deletable_by(user):
+            return True
+
+        return self.is_managed_by(user)
+
+    def is_viewable_by(self, user):
+        if self.is_editable_by(user):
+            return True
+
+        return self.user_is_enrolled(user) and self.is_active
+
+    def is_managed_by(self, user):
+        if user.is_admin():
+            return True
+        return self.manager == user
+
     def user_is_enrolled(self, user):
-        for group in self.groups.all():
-            if group in user.groups.all():
-                return True
-        return False
-
-    def user_can_view(self, user):
-        return self.user_can_edit(user) or (
-            self.user_is_enrolled(user) and self.is_active
-        )
-
-    def get_slides(self):
-        from apps.images.models import Slide
-
-        return Slide.objects.filter(Q(id__in=self.contents.values("slide")))
-
-    def update_lecture_contents(self):
-        for lecture_content in self.contents.all():
-            lecture_content.update()
+        return self.viewer_groups.filter(
+            pk__in=user.groups.values_list("id", flat=True)
+        ).exists()
 
 
-class LectureContent(models.Model):
+class LectureContent(ModelPermissionMixin, models.Model):
     id = models.AutoField(primary_key=True)
     order = models.PositiveSmallIntegerField(help_text="Order inside the lecture")
     created_at = models.DateTimeField(auto_now_add=True)
@@ -273,8 +291,6 @@ class LectureContent(models.Model):
         "images.Slide",
         on_delete=models.CASCADE,
         related_name="lecture_contents",
-        blank=True,
-        null=True,
     )
     annotation = models.ForeignKey(
         "viewer.Annotation",
@@ -289,24 +305,27 @@ class LectureContent(models.Model):
         ordering = ("created_at",)
 
     def __str__(self):
-        return f"{self.order} of {self.lecture}"
+        return f"Item {self.order} of '{self.lecture}'"
 
     def save(self, *args, **kwargs):
-        if not self.slide.user_can_view(self.lecture.author):
+        if not self.slide.is_viewable_by(self.lecture.manager):
+            logger.warning(
+                f"Lecture Manager '{self.lecture.manager}' cannot view slide '{self.slide}'"
+            )
             return
 
         if self.annotation:
             if (
                 self.annotation.slide != self.slide
-                or not self.annotation.user_can_view(self.lecture.author)
+                or not self.annotation.is_viewable_by(self.lecture.manager)
             ):
                 self.annotation = None
 
         super().save(*args, **kwargs)
 
-    def user_can_view(self, user):
-        return self.lecture.user_can_view(user)
+    def is_viewable_by(self, user):
+        return self.lecture.is_viewable_by(user)
 
-    def update(self):
-        if not self.slide.user_can_view(self.lecture.author):
+    def handle_non_viewable(self):
+        if not self.slide.is_viewable_by(self.lecture.manager):
             self.delete()

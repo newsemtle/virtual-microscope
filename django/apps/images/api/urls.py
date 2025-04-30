@@ -4,10 +4,11 @@ from rest_framework.routers import DefaultRouter
 from .views import (
     ImageFolderViewSet,
     SlideViewSet,
-    TileAPIView,
-    DZIAPIView,
+    SlideTileAPIView,
+    SlideDZIAPIView,
     SlideFileAPIView,
-    RebuildAPIView,
+    SlideRebuildAPIView,
+    SlideDBSearchAPIView,
 )
 
 router = DefaultRouter()
@@ -15,13 +16,16 @@ router.register(r"folders", ImageFolderViewSet, basename="image-folder")
 router.register(r"slides", SlideViewSet, basename="slide")
 
 urlpatterns = [
-    path("", include(router.urls)),
-    path("slide/<int:pk>.dzi/", DZIAPIView.as_view(), name="slide-dzi"),
+    path("slides/<int:pk>.dzi/", SlideDZIAPIView.as_view(), name="slide-dzi"),
     path(
-        "slide/<int:pk>_files/<int:level>/<int:col>_<int:row>.<str:tile_format>/",
-        TileAPIView.as_view(),
+        "slides/<int:pk>_files/<int:level>/<int:col>_<int:row>.<str:tile_format>/",
+        SlideTileAPIView.as_view(),
         name="slide-tiles",
     ),
-    path("slide/file/<int:pk>/", SlideFileAPIView.as_view(), name="slide-file"),
-    path("slide/<int:pk>/rebuild/", RebuildAPIView.as_view(), name="slide-rebuild"),
+    path("slides/<int:pk>/file/", SlideFileAPIView.as_view(), name="slide-file"),
+    path(
+        "slides/<int:pk>/rebuild/", SlideRebuildAPIView.as_view(), name="slide-rebuild"
+    ),
+    path("slides/dbsearch/", SlideDBSearchAPIView.as_view(), name="slide-dbsearch"),
+    path("", include(router.urls)),
 ]

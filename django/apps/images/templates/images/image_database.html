@@ -39,40 +39,49 @@
                  style="background-color:#edf1f5;">
                 <div class="d-flex align-items-center">
                     <input class="form-check-input m-0 me-2" type="checkbox" id="item-checkbox-all">
-                    <h4 class="m-0 me-4">
+                    <div class="dropdown me-2">
+                        <i class="dropdown-toggle" type="button" data-bs-toggle="dropdown"
+                           aria-expanded="false"></i>
+                        <ul class="dropdown-menu p-0" style="min-width: 0;">
+                            <li>
+                                <button class="dropdown-item" data-bs-toggle="modal"
+                                        data-bs-target="#bulk-move-modal" data-type="move">Move
+                                </button>
+                            </li>
+                            <li>
+                                <button class="dropdown-item" data-bs-toggle="modal"
+                                        data-bs-target="#confirmation-modal" data-type="delete">Delete
+                                </button>
+                            </li>
+                        </ul>
+                    </div>
+                    <h4 class="m-0">
                         {% if current_folder %}
                             {{ current_folder.name }}
                         {% else %}
                             DB/Image
                         {% endif %}
                     </h4>
-                    <div class="btn-group btn-group-sm">
-                        <button type="button" class="btn btn-warning" data-bs-toggle="modal"
-                                data-bs-target="#item-list-modal" data-type="move">
-                            Move
-                        </button>
-                        <button type="button" class="btn btn-danger" data-bs-toggle="modal"
-                                data-bs-target="#item-list-modal" data-type="delete">
-                            Delete
-                        </button>
-                    </div>
                 </div>
-                <div>
-                    <button class="btn btn-primary btn-sm" type="button" data-bs-toggle="offcanvas"
+                <div class="d-flex align-items-center">
+                    <button class="btn btn-primary btn-sm me-1" type="button" data-bs-toggle="offcanvas"
                             data-bs-target="#slide-search-sidebar">
-                        <i class="bi bi-search"></i> Search
+                        <i class="bi bi-search"></i>
+                        <span class="d-none d-sm-inline">Search</span>
                     </button>
                     {% if editable %}
-                        <div class="btn-group">
+                        <div class="btn-group btn-group-sm">
                             {% if current_folder %}
-                                <button type="button" class="btn btn-warning btn-sm" data-bs-toggle="modal"
+                                <button type="button" class="btn btn-warning" data-bs-toggle="modal"
                                         data-bs-target="#folder-create-modal">
-                                    <i class="bi bi-folder-plus"></i> New Folder
+                                    <i class="bi bi-folder-plus"></i>
+                                    <span class="d-none d-sm-inline">New Folder</span>
                                 </button>
                             {% endif %}
-                            <button type="button" class="btn btn-success btn-sm" data-bs-toggle="modal"
+                            <button type="button" class="btn btn-success" data-bs-toggle="modal"
                                     data-bs-target="#image-upload-modal">
-                                <i class="bi bi-upload"></i> New Image
+                                <i class="bi bi-upload"></i>
+                                <span class="d-none d-sm-inline">New Image</span>
                             </button>
                         </div>
                     {% endif %}
@@ -127,7 +136,10 @@
                                 <i class="bi bi-folder fs-3 text-warning"></i>
                             {% else %}
                                 <!-- 슬라이드 썸네일 -->
-                                <img src="{% url 'api:slide-thumbnail' pk=item.id %}" class="img-fluid" alt="">
+                                <object class="img-fluid" data="{% url 'api:slide-thumbnail' pk=item.id %}"
+                                        type="image/png">
+                                    <i class="bi bi-image fs-3 text-secondary"></i>
+                                </object>
                             {% endif %}
                         </div>
                         <!-- 2영역 이름 /flex-item-name / 55% -->
@@ -139,6 +151,10 @@
                                        style="text-decoration: none; color: inherit;"
                                        class="stretched-link">{{ item.name }}</a>
                                 </h3>
+                                <h6 class="mb-0 text-secondary">
+                                    <i class="bi bi-image"></i>
+                                    {{ item.file_count }} Images
+                                </h6>
                             {% else %}
                                 <div class="flex-fill">
                                     <h3 class="mb-0 name-truncate">
@@ -158,7 +174,7 @@
                                     class="bi bi-person-fill-up fs-5"></i> {{ item.author|title }}</p>
                             <p class="mb-0" style="font-size: 15px">created: {{ item.created_at|date:"Y-m-d H:i" }}</p>
                             <p class="mb-0" style="font-size: 15px">updated: {{ item.updated_at|date:"Y-m-d H:i" }}</p>
-                            <!-- accessability 표시-->
+                            <!-- accessibility 표시-->
                             {% if item.type != "folder" %}
                                 {% if item.is_public %}
                                     <p class="mb-0" style="font-size: 15px"><span
@@ -234,6 +250,8 @@
                                                 data-item-id="{{ item.id }}">
                                             Move
                                         </button>
+                                    {% endif %}
+                                    {% if item.is_deletable %}
                                         <button type="button" class="btn btn-outline-dark btn-sm rounded-0"
                                                 data-bs-toggle="modal"
                                                 data-bs-target="#folder-delete-modal" data-bs-tooltip="tooltip"
@@ -272,6 +290,8 @@
                                                 data-url-tree="{% url 'api:image-folder-tree' %}">
                                             Move
                                         </button>
+                                    {% endif %}
+                                    {% if item.is_deletable %}
                                         <!-- delete 버튼 -->
                                         <button type="button" class="btn btn-outline-dark btn-sm rounded-0"
                                                 data-bs-toggle="modal"
@@ -306,7 +326,7 @@
             <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
         </div>
         <div class="offcanvas-body">
-            <form id="image-search-form" data-url="{% url 'api:slide-list' %}">
+            <form id="image-search-form" data-url="{% url 'api:slide-dbsearch' %}">
                 <div class="mb-2">
                     <label for="image-search-input" class="form-label">Search</label>
                     <div class="input-group">
@@ -471,15 +491,15 @@
                         </div>
                         <div class="mb-2">
                             <label for="image-upload-file" class="form-label mt-2">Select Image</label>
-                            <input type="file" class="form-control" id="image-upload-file" name="file" accept=".ndpi"
-                                   required>
+                            <input type="file" class="form-control" id="image-upload-file" name="file"
+                                   accept=".ndpi, .svs" required>
                             <div class="invalid-feedback" id="file-feedback"></div>
                         </div>
                         <div class="mb-2">
                             <label for="image-upload-access-level" class="form-label mt-2">Access Level</label>
                             <select class="form-select" id="image-upload-access-level" name="is_public" required>
                                 {% if current_folder %}
-                                    <option value="false" selected>Private ({{ current_folder.get_owner_group.name }})
+                                    <option value="false" selected>Private ({{ current_folder.manager_group.name }})
                                     </option>
                                 {% else %}
                                     <option value="false" selected>Private (admin)</option>
@@ -522,7 +542,7 @@
                             <label for="image-edit-access-level" class="form-label mt-2">Access Level</label>
                             <select class="form-select" id="image-edit-access-level" name="is_public" required>
                                 {% if current_folder %}
-                                    <option value="false">Private ({{ current_folder.get_owner_group.name }})
+                                    <option value="false">Private ({{ current_folder.manager_group.name }})
                                     </option>
                                 {% else %}
                                     <option value="false">Private (admin)
@@ -687,44 +707,40 @@
             </div>
         </div>
     </div>
-    <!-- Item List Modal -->
-    <div class="modal fade" id="item-list-modal" tabindex="-1">
+    <!-- Bulk Move Modal -->
+    <div class="modal fade" id="bulk-move-modal" tabindex="-1">
         <div class="modal-dialog modal-dialog-scrollable">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">선택 항목</h5>
+                    <h5 class="modal-title">선택 항목 이동</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <ul id="item-selected-list" class="list-group overflow-scroll" style="max-height: 320px"></ul>
+                    <div class="border rounded p-3 mb-2 tree-container"></div>
+                    <div class="align-items-center text-danger d-none" data-type="message"></div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">닫기</button>
-                    <button type="button" class="btn btn-primary continue" data-type="" data-bs-toggle="modal"
-                            data-bs-target="#bulk-action-modal">
+                    <button type="button" class="btn btn-primary continue" data-type="">
                         다음
                     </button>
                 </div>
             </div>
         </div>
     </div>
-    <!-- Bulk Action Modal -->
-    <div class="modal fade" id="bulk-action-modal" tabindex="-1">
+    <!-- Confirmation Modal -->
+    <div class="modal fade" id="confirmation-modal" tabindex="-1">
         <div class="modal-dialog modal-dialog-scrollable">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title"></h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
-                <div class="modal-body">
-                    <div class="mb-2 info-container"></div>
-                </div>
+                <div class="modal-body"></div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">닫기</button>
                     <button type="button" class="btn continue" data-type="" data-bs-toggle="modal"
-                            data-bs-target="#action-progress-modal" data-destination="">
-                        확인
-                    </button>
+                            data-bs-target="#action-progress-modal"></button>
                 </div>
             </div>
         </div>

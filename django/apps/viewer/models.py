@@ -1,43 +1,68 @@
 from django.conf import settings
 from django.db import models
-from django.db.models import Value, BooleanField
+from django.db.models import Value, BooleanField, Q, Case, When, F
 
+from apps.common.models import ManagerPermissionMixin, ModelPermissionMixin
 from apps.images.models import Slide
+from apps.lectures.models import Lecture
 
 
-class AnnotationManager(models.Manager):
-    def editable(self, user, *, slide=None):
+class AnnotationManager(ManagerPermissionMixin, models.Manager):
+    def deletable(self, user, *, slide=None):
         if user.is_admin():
-            if slide:
-                return self.filter(slide=slide)
-            return self.all()
+            qs = self.all()
         elif user.is_publisher():
-            if slide:
-                return self.filter(author=user, slide=slide)
-            return self.filter(author=user)
+            qs = self.filter(author=user)
+        else:
+            qs = self.none()
 
-        return self.none()
+        # add filter by slide
+        if slide:
+            qs = qs.filter(slide=slide)
 
-    def viewable(self, user, *, slide=None):
-        extra_viewable = self.none()
+        return qs.distinct()
 
-        if user.is_publisher():
-            if slide:
-                extra_viewable |= self.filter(slide=slide)
-            else:
-                for slide in Slide.objects.viewable(user):
-                    extra_viewable |= slide.annotations.all()
+    def editable(self, user, *, slide=None):
+        return self.deletable(user, slide=slide)
 
-        editable = self.editable(user, slide=slide).annotate(
-            is_editable=Value(True, BooleanField())
+    def viewable(self, user, *, slide=None, include_lecture=True):
+        if user.is_admin():
+            qs = self.all()
+        elif user.is_publisher():
+            qs = self.filter(
+                slide_id__in=Slide.objects.viewable(
+                    user, include_lecture=False
+                ).values_list("pk", flat=True)
+            )
+        else:
+            qs = self.none()
+
+        if include_lecture and (user.is_publisher() or user.is_viewer()):
+            qs |= self.filter(
+                lecture_contents__lecture_id__in=Lecture.objects.viewable(
+                    user
+                ).values_list("id", flat=True)
+            )
+
+        # add filter by slide
+        if slide:
+            qs = qs.filter(slide=slide)
+
+        if user.is_admin():
+            is_deletable = Value(True, BooleanField())
+        else:
+            is_deletable = Case(
+                When(condition=Q(author=user), then=Value(True)),
+                default=Value(False),
+                output_field=BooleanField(),
+            )
+
+        return qs.distinct().annotate(
+            is_deletable=is_deletable, is_editable=F("is_deletable")
         )
-        extra_viewable = extra_viewable.annotate(
-            is_editable=Value(False, BooleanField())
-        )
-        return (editable | extra_viewable).distinct()
 
 
-class Annotation(models.Model):
+class Annotation(ModelPermissionMixin, models.Model):
     id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=100, null=True)
     description = models.TextField(
@@ -51,7 +76,6 @@ class Annotation(models.Model):
 
     author = models.ForeignKey(
         settings.AUTH_USER_MODEL,
-        db_column="created_by",
         on_delete=models.CASCADE,
         related_name="annotations",
         blank=True,
@@ -72,19 +96,27 @@ class Annotation(models.Model):
     def __str__(self):
         return f"{self.name} ({self.author}) | {self.slide}"
 
-    def user_can_edit(self, user):
+    def is_deletable_by(self, user):
         if user.is_admin():
             return True
         return self.author == user
 
-    def user_can_view(self, user):
+    def is_editable_by(self, user):
+        return self.is_deletable_by(user)
+
+    def is_viewable_by(self, user, *, include_lecture=True):
+        if self.is_editable_by(user):
+            return True
+
         if user.is_admin():
             return True
         elif user.is_publisher():
-            return self.user_can_edit(user) or self.slide.user_can_view(user)
-        elif user.is_viewer():
-            for content in self.slide.lecture_contents.all():
-                if content.user_can_view(user):
-                    return True
-            return False
+            if self.slide.is_viewable_by(user):
+                return True
+
+        if include_lecture and (user.is_publisher() or user.is_viewer()):
+            return any(
+                content.is_viewable_by(user) for content in self.lecture_contents.all()
+            )
+
         return False

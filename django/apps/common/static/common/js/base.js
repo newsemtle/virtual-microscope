@@ -12,10 +12,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 window.location.href = '/';
             },
             onError: (error) => {
-                showFeedback(`Failed to logout: ${error}`, "danger")
+                showFeedback(`Failed to logout: ${error}`, "danger");
             }
-        })
-    })
+        });
+    });
 
     const sessionTimeElement = document.getElementById('session-time')
     if (sessionTimeElement) {
@@ -32,35 +32,35 @@ document.addEventListener('DOMContentLoaded', () => {
                 url: this.dataset.url,
                 method: "POST",
                 onSuccess: (data) => {
-                    timer.start(new Date(data.expire) - Date.now())
+                    timer.start(new Date(data.expire) - Date.now());
                 },
                 onError: (error) => {
-                    showFeedback(`Failed to fetch session time: ${error}`, "danger")
+                    showFeedback(`Failed to fetch session time: ${error}`, "danger");
                 }
             });
         });
         sessionTimeElement.click();
     }
 
-    document.querySelectorAll('.modal').forEach(modalElement => {
+    document.querySelectorAll('.modal')?.forEach(modalElement => {
         modalElement.addEventListener('hidden.bs.modal', () => {
             unfreezeModal(modalElement);
-            const form = modalElement.querySelector('form');
-            if (form) {
+            const forms = modalElement.querySelectorAll('form');
+            [...forms].forEach(form => {
                 form.reset();
                 clearFormErrors(form);
-            }
+            });
         });
     });
 
-    document.getElementById('item-checkbox-all').addEventListener('click', function (event) {
+    document.getElementById('item-checkbox-all')?.addEventListener('click', function (event) {
         const checkboxes = document.querySelectorAll('[name="item-checkbox"]');
         checkboxes.forEach(checkbox => {
             checkbox.checked = this.checked;
         });
     })
 
-    document.querySelectorAll('[name="item-checkbox"]').forEach((checkbox) => {
+    document.querySelectorAll('[name="item-checkbox"]')?.forEach((checkbox) => {
         checkbox.addEventListener('click', function (event) {
             const checkboxes = document.querySelectorAll('[name="item-checkbox"]');
             document.getElementById('item-checkbox-all').checked = [...checkboxes].every(checkbox => checkbox.checked);
@@ -138,7 +138,7 @@ function getQueryParam(key, url = window.location.href) {
 function activateTooltips(element = null) {
     let tooltipTriggerList;
     if (element) {
-        tooltipTriggerList = element;
+        tooltipTriggerList = [element];
     } else {
         tooltipTriggerList = document.querySelectorAll('[data-bs-tooltip="tooltip"]');
     }
@@ -158,7 +158,7 @@ function loadFeedback() {
 }
 
 function freezeModal(modalElement) {
-    const modal = bootstrap.Modal.getInstance(modalElement);
+    const modal = bootstrap.Modal.getOrCreateInstance(modalElement);
     modal._config.keyboard = false;
     modal._config.backdrop = 'static';
 
@@ -168,7 +168,7 @@ function freezeModal(modalElement) {
 }
 
 function unfreezeModal(modalElement) {
-    const modal = bootstrap.Modal.getInstance(modalElement);
+    const modal = bootstrap.Modal.getOrCreateInstance(modalElement);
     modal._config.keyboard = true;
     modal._config.backdrop = true;
 
@@ -209,6 +209,7 @@ function clearFormErrors(formElement) {
         feedback.textContent = '';
     });
     formElement.querySelectorAll('[data-type="message"]').forEach((message) => {
+        message.classList.add('d-none');
         message.innerHTML = '';
     });
 }
@@ -471,6 +472,7 @@ function createMoveTree(data, itemType, movingFolderIds = []) {
 
         const icon = document.createElement('i');
         icon.className = 'bi bi-chevron-right me-2 text-muted';
+        icon.type = 'button';
 
         const label = document.createElement('label');
         label.className = 'form-check-label';

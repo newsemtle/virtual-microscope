@@ -28,6 +28,6 @@ class LectureAdmin(admin.ModelAdmin):
     list_filter = ("author", "is_active")
     search_fields = ("name", "author__username")
     ordering = ("-updated_at",)
-    filter_horizontal = ("groups",)
+    filter_horizontal = ("viewer_groups",)
 
     inlines = [LectureContentInline]

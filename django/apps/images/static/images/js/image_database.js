@@ -91,12 +91,13 @@ document.addEventListener("DOMContentLoaded", function () {
             onSuccess: (data) => {
                 listElement.innerHTML = '';
                 const details = {
-                    "Name": data.name || '-',
-                    "Contents": `${data.child_count || 0} folders, ${data.file_count || 0} slides in this folder`,
-                    "Author": data.author || '-',
-                    "Parent": data.parent_path || '-',
-                    "Created": data.created_at_formatted || '-',
-                    "Updated": data.updated_at_formatted || '-'
+                    "이름": data.name || '-',
+                    "내용": `${data.child_count || 0} 폴더, ${data.file_count || 0} 이미지`,
+                    "작성자": data.author || '-',
+                    "관리자그룹": data.manager_group || '-',
+                    "상위폴더": data.parent_path || '-',
+                    "생성일": data.created_at_formatted || '-',
+                    "수정일": data.updated_at_formatted || '-'
                 }
                 createDetailList(listElement, details);
             },
@@ -135,32 +136,33 @@ document.addEventListener("DOMContentLoaded", function () {
                     repairButton.style.pointerEvents = 'none';
                 }
                 const fileDetails = {
-                    "Name": data.file_details.name || '-',
-                    "Size": data.file_details.size || '-',
-                    "Download": downloadLink.outerHTML,
-                    "Repair": repairButton.outerHTML,
+                    "이름": data.file_details.name || '-',
+                    "용량": data.file_details.size || '-',
+                    "다운로드": downloadLink.outerHTML,
+                    "복구": repairButton.outerHTML,
                 };
                 createDetailList(fileDl, fileDetails);
 
                 const metadataDl = document.createElement('dl');
                 metadataDl.className = 'row';
                 const metadataDetails = {
-                    "Created": data.metadata.created || '-',
-                    "SourceLens": data.metadata.sourceLens || '-',
+                    "생성일": data.metadata.created || '-',
+                    "촬영 배율": data.metadata.sourceLens || '-',
                 };
                 createDetailList(metadataDl, metadataDetails);
 
                 const details = {
-                    "Name": data.name || '-',
-                    "Information": data.information || '-',
-                    "Author": data.author || '-',
-                    "Folder": data.folder_name || '-',
-                    "File": fileDl.outerHTML,
-                    "Associated Image": `<img src="${data.associated_image || ''}" class="img-fluid" alt="">`,
-                    "Metadata": metadataDl.outerHTML,
-                    "Access Level": data.is_public ? 'Public' : `Private (${data.owner_group_name})`,
-                    "Created": data.created_at_formatted || '-',
-                    "Updated": data.updated_at_formatted || '-'
+                    "이름": data.name || '-',
+                    "정보": data.information || '-',
+                    "작성자": data.author || '-',
+                    "관리자그룹": data.manager_group || '-',
+                    "폴더": data.folder_name || '-',
+                    "원본 파일": fileDl.outerHTML,
+                    "연관이미지": `<img src="${data.associated_image || ''}" class="img-fluid" alt="">`,
+                    "메타데이터": metadataDl.outerHTML,
+                    "공개 범위": data.is_public ? 'Public' : `Private (${data.manager_group_name})`,
+                    "생성일": data.created_at_formatted || '-',
+                    "수정일": data.updated_at_formatted || '-'
                 }
                 createDetailList(listElement, details);
             },
@@ -271,115 +273,117 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     });
 
-    let selectedItems = [];
-
-    document.getElementById('item-list-modal').addEventListener('show.bs.modal', function (event) {
+    document.getElementById('bulk-move-modal').addEventListener('show.bs.modal', function (event) {
         let button = event.relatedTarget;
+
+        const message = this.querySelector('[data-type="message"]');
+        message.classList.add('d-none');
 
         const continueButton = this.querySelector('.continue');
         continueButton.dataset.type = button.dataset.type;
 
-        selectedItems = [];
-        document.querySelectorAll('[name="item-checkbox"]').forEach((item) => {
-            if (item.checked) {
-                selectedItems.push({
-                    type: item.dataset.type,
-                    id: item.value,
-                    name: item.dataset.name,
-                });
-            }
-        })
+        const treeContainer = this.querySelector('.tree-container');
+        treeContainer.innerHTML = '';
 
-        const itemListElement = document.getElementById('item-selected-list');
-        itemListElement.innerHTML = '';
-        if (selectedItems.length === 0) {
-            itemListElement.innerHTML = '<div class="alert alert-warning">선택된 항목이 없습니다.</div>';
-            continueButton.disabled = true;
-            return;
-        }
-        selectedItems.forEach(item => {
-            const listItem = document.createElement('li');
-            listItem.className = 'list-group-item d-flex align-items-center';
-
+        let itemType = "file";
+        let foldersToMove = [];
+        for (const item of getSelectedItems()) {
             if (item.type === 'folder') {
-                const icon = document.createElement('i');
-                icon.className = 'bi bi-folder text-warning ps-1 me-2';
-                icon.style.width = '25px';
-                listItem.append(icon);
-            } else {
-                const thumbnail = document.createElement('img');
-                thumbnail.src = API_ROUTES.slideDetail(item.id) + 'thumbnail/';
-                thumbnail.className = 'me-2';
-                thumbnail.style.height = '25px';
-                thumbnail.alt = "";
-                listItem.append(thumbnail);
+                itemType = "folder";
+                foldersToMove.push(item.id);
             }
+        }
 
-            const listItemName = document.createElement('span');
-            listItemName.textContent = item.name;
-            listItem.append(listItemName);
-
-            itemListElement.appendChild(listItem);
+        drfRequest({
+            url: API_ROUTES.imageFolders + 'tree/',
+            onSuccess: (data) => {
+                renderMoveTree(treeContainer, data, itemType, foldersToMove);
+            },
+            onError: (error) => {
+                message.textContent = error.message;
+                message.classList.remove('d-none');
+            }
         });
     });
 
-    document.getElementById('bulk-action-modal').addEventListener('show.bs.modal', function (event) {
-        const button = event.relatedTarget;
+    document.getElementById('bulk-move-modal').querySelector('.continue').addEventListener('click', function (event) {
+        const modal = this.closest('.modal');
+        const treeContainer = modal.querySelector('.tree-container');
+        const message = modal.querySelector('[data-type="message"]');
+        let destination;
+        treeContainer.querySelectorAll('input[type="radio"]').forEach(radio => {
+            if (radio.checked) {
+                destination = radio.value;
+            }
+        });
+        if (destination === undefined) {
+            message.textContent = 'Please select a destination folder.';
+            message.classList.remove('d-none');
+            return;
+        }
+
+        const confirmationModal = document.getElementById('confirmation-modal');
+        const confirmButton = confirmationModal.querySelector('.continue');
+        confirmButton.dataset.type = this.dataset.type;
+        confirmButton.dataset.destination = destination;
+
+        bootstrap.Modal.getOrCreateInstance(modal).hide();
+        bootstrap.Modal.getOrCreateInstance(confirmationModal).show();
+    });
+
+    document.getElementById('confirmation-modal').addEventListener('show.bs.modal', function (event) {
 
         const continueButton = this.querySelector('.continue');
-        continueButton.dataset.type = button.dataset.type;
         continueButton.classList.remove('btn-warning', 'btn-danger');
 
-        const title = this.querySelector('.modal-title');
-        const infoContainer = this.querySelector('.info-container');
-        infoContainer.innerHTML = '';
+        const button = event.relatedTarget;
+        if (button) {
+            continueButton.dataset.type = button.dataset.type;
+        }
 
-        if (button.dataset.type === 'move') {
+        const title = this.querySelector('.modal-title');
+        const body = this.querySelector('.modal-body');
+        body.innerHTML = '';
+
+        const selectedItems = getSelectedItems();
+
+        if (selectedItems.length === 0) {
+            title.textContent = '선택 항목';
+            continueButton.classList.add('btn-secondary');
+            continueButton.textContent = '다음';
+            continueButton.disabled = true;
+            const info = document.createElement('div');
+            info.className = 'alert alert-warning mt-3';
+            info.role = 'alert';
+            info.textContent = '선택 항목이 없습니다.';
+            body.appendChild(info);
+            return;
+        }
+
+        if (continueButton.dataset.type === 'move') {
             title.textContent = '선택 항목 이동';
             continueButton.classList.add('btn-warning');
             continueButton.textContent = '이동';
-            infoContainer.classList.add('border', 'rounded', 'p-3');
-            infoContainer.addEventListener('click', function (event) {
-                const radio = event.target.closest('[name="folder"], [name="parent"]');
-                if (radio) {
-                    continueButton.dataset.destination = radio.value;
-                }
-            })
 
-            let itemType = "file";
-            let foldersToMove = [];
-            for (const item of selectedItems) {
-                if (item.type === 'folder') {
-                    itemType = "folder";
-                    foldersToMove.push(item.id);
-                }
-            }
-
-            drfRequest({
-                url: API_ROUTES.imageFolders + 'tree/',
-                onSuccess: (data) => {
-                    renderMoveTree(infoContainer, data, itemType, foldersToMove);
-                },
-                onError: (error) => {
-                    showFeedback('Error fetching folders: ' + error.message, 'danger');
-                }
-            });
-        } else if (button.dataset.type === 'delete') {
+            const info = document.createElement('p');
+            info.className = 'text-warning';
+            info.textContent = `정말로 선택한 ${selectedItems.length}개 항목을 이동하시겠습니까?`
+            body.appendChild(info);
+        } else if (continueButton.dataset.type === 'delete') {
             title.textContent = '선택 항목 삭제';
             continueButton.classList.add('btn-danger');
             continueButton.textContent = '삭제';
-            infoContainer.classList.remove('border', 'rounded', 'p-3');
 
             const info = document.createElement('p');
             info.className = 'text-danger';
             info.textContent = `정말로 선택한 ${selectedItems.length}개 항목을 삭제하시겠습니까?`
-            infoContainer.appendChild(info);
+            body.appendChild(info);
         } else {
             title.textContent = 'Error';
             continueButton.classList.add('btn-danger');
             continueButton.textContent = 'Error';
             continueButton.disabled = true;
-            infoContainer.innerHTML = 'Error';
+            body.innerHTML = 'Error';
         }
     });
 
@@ -395,6 +399,9 @@ document.addEventListener("DOMContentLoaded", function () {
         const title = this.querySelector('.modal-title');
         const itemListElement = document.getElementById('item-progress-list');
         itemListElement.innerHTML = '';
+
+        const selectedItems = getSelectedItems();
+
         selectedItems.forEach(item => {
             const listItem = document.createElement('li');
             listItem.className = 'list-group-item d-flex align-items-center justify-content-between';
@@ -437,7 +444,7 @@ document.addEventListener("DOMContentLoaded", function () {
         }
         continueButton.classList.remove('btn-secondary');
         continueButton.classList.add('btn-success');
-        continueButton.textContent = '완료';
+        continueButton.textContent = '닫기';
         unfreezeModal(this);
     });
 
@@ -494,10 +501,24 @@ function handleAnnotationModalFormSubmit(formId) {
         submitForm({
             form: this,
             onSuccess: (data) => {
-                $(this).closest('.modal').modal('hide');
+                bootstrap.Modal.getOrCreateInstance(this.closest('.modal')).hide();
             }
         })
     })
+}
+
+function getSelectedItems() {
+    let selectedItems = [];
+    document.querySelectorAll('[name="item-checkbox"]').forEach((item) => {
+        if (item.checked) {
+            selectedItems.push({
+                type: item.dataset.type,
+                id: item.value,
+                name: item.dataset.name,
+            });
+        }
+    });
+    return selectedItems;
 }
 
 function processBulkAction(items, actionType, destinationId = null) {
@@ -517,11 +538,11 @@ function processBulkAction(items, actionType, destinationId = null) {
                 if (currentItem.type === 'folder') {
                     url = API_ROUTES.imageFolderDetail(currentItem.id);
                     method = 'PATCH';
-                    data = {parent: destinationId};
+                    data = {parent: parseInt(destinationId)};
                 } else if (currentItem.type === 'slide') {
                     url = API_ROUTES.slideDetail(currentItem.id);
                     method = 'PATCH';
-                    data = {folder: destinationId};
+                    data = {folder: parseInt(destinationId)};
                 }
             } else if (actionType === 'delete') {
                 if (currentItem.type === 'folder') {

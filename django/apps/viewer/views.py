@@ -21,7 +21,7 @@ class ImageViewerView(
     def test_func(self):
         slide_id = self.kwargs.get("slide_id")
         slide = get_object_or_404(Slide, id=slide_id)
-        return slide.user_can_view(self.request.user)
+        return slide.is_viewable_by(self.request.user)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -40,8 +40,10 @@ class ImageViewerView(
             context["annotation"] = annotation
             context["annotation"].data = json.dumps(annotation.data)
 
-        context["can_create_annotation"] = slide.user_can_view(self.request.user)
-        context["can_edit_annotation"] = annotation and annotation.user_can_edit(
+        context["can_create_annotation"] = slide.is_viewable_by(
+            self.request.user, include_lecture=False
+        )
+        context["can_edit_annotation"] = annotation and annotation.is_editable_by(
             self.request.user
         )
         return context

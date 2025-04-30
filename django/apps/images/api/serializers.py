@@ -8,6 +8,7 @@ from apps.images.models import Slide, ImageFolder, Tag
 
 class ImageFolderSerializer(serializers.ModelSerializer):
     author = serializers.CharField(source="author.username", default=None)
+    manager_group = serializers.CharField(source="manager_group.name", default=None)
     url = serializers.SerializerMethodField()
 
     class Meta:
@@ -16,12 +17,13 @@ class ImageFolderSerializer(serializers.ModelSerializer):
             "id",
             "name",
             "author",
+            "manager_group",
             "parent",
             "created_at",
             "updated_at",
             "url",
         ]
-        read_only_fields = ["author"]
+        read_only_fields = ["author", "manager_group"]
         validators = [
             serializers.UniqueTogetherValidator(
                 queryset=ImageFolder.objects.all(),
@@ -32,11 +34,16 @@ class ImageFolderSerializer(serializers.ModelSerializer):
 
     def validate(self, attrs):
         user = self.context["request"].user
+        parent_is_sent = "parent" in self.initial_data
         parent = attrs.get("parent")
 
         errors = {}
-        if parent and not parent.is_owner(user):
-            errors["parent"] = "You don't have permission to edit this folder."
+
+        if parent_is_sent:
+            if not parent and not user.is_admin():
+                errors["detail"] = "You can't place folder at the root location."
+            elif parent and not parent.is_managed_by(user):
+                errors["detail"] = "You don't have permission to edit this folder."
         if errors:
             raise serializers.ValidationError(errors)
 
@@ -56,9 +63,9 @@ class TagSerializer(serializers.ModelSerializer):
         fields = [
             "id",
             "name",
+            "author",
             "created_at",
             "updated_at",
-            "created_by",
         ]
 
     def to_representation(self, instance):
@@ -68,6 +75,7 @@ class TagSerializer(serializers.ModelSerializer):
 class SlideSerializer(serializers.ModelSerializer):
     name = serializers.CharField(required=False, allow_blank=True)
     author = serializers.CharField(source="author.username", default=None)
+    manager_group = serializers.CharField(source="manager_group.name", default=None)
     thumbnail = serializers.SerializerMethodField()
     associated_image = serializers.SerializerMethodField()
     tags = TagSerializer(many=True, read_only=True)
@@ -82,6 +90,7 @@ class SlideSerializer(serializers.ModelSerializer):
             "name",
             "information",
             "author",
+            "manager_group",
             "folder",
             "file",
             "image_root",
@@ -97,15 +106,15 @@ class SlideSerializer(serializers.ModelSerializer):
             "view_url",
             "annotations_url",
         ]
-        read_only_fields = ["author", "image_root", "metadata"]
+        read_only_fields = ["author", "manager_group", "image_root", "metadata"]
 
     def validate(self, attrs):
         user = self.context["request"].user
         errors = {}
 
         folder = attrs.get("folder")
-        if folder and not folder.is_owner(user):
-            errors["folder"] = "You don't have permission to edit this folder."
+        if folder and not folder.is_managed_by(user):
+            errors["detail"] = "You don't have permission to edit this folder."
 
         if errors:
             raise serializers.ValidationError(errors)

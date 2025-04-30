@@ -56,8 +56,7 @@
                 <div class="btn-group" role="group">
                     <button id="btnGroupDrop_file" type="button"
                             class="btn btn btn-outline-light custom-button dropdown-toggle"
-                            data-bs-toggle="dropdown"
-                            aria-expanded="false" title="File"> File
+                            data-bs-toggle="dropdown" aria-expanded="false" title="File"> File
                     </button>
                     <ul class="dropdown-menu" aria-labelledby="btnGroupDrop_file">
                         <!-- 저장 버튼 -->
@@ -283,13 +282,19 @@
 
 <!-- aside block -->
 {% block aside_content %}
-    Description
+    <div class="position-relative d-flex justify-content-between align-items-center w-100">
+        <button class="btn btn-outline-light custom-button" data-bs-tooltip="tooltip" data-bs-toggle="modal"
+                data-bs-target="#description-modal" aria-label="Edit" data-bs-original-title="Edit">
+            <i class="bi bi-pencil"></i>
+        </button>
+        <span class="position-absolute" style="left: 50%; transform: translateX(-50%);">Description</span>
+    </div>
 {% endblock aside_content %}
-
+    
 <!-- article block -->
 {% block article_content %}
     <div id="article-header">
-        <!-- 버튼이 추가될 컨테이너 -->
+        <p id="slide-description" class="text-wrap d-block text-break"></p>
     </div>
     <div id="article-body">
         <!-- 버튼이 추가될 컨테이너 -->
@@ -297,6 +302,7 @@
 {% endblock article_content %}
 
 {% block extra_modal %}
+    <!-- Annotation Create Modal -->
     <div class="modal fade" id="annotation-create-modal" tabindex="-1">
         <div class="modal-dialog modal-dialog-scrollable">
             <div class="modal-content">
@@ -320,6 +326,25 @@
                         <button type="submit" class="btn btn-primary">Save</button>
                     </div>
                 </form>
+            </div>
+        </div>
+    </div>
+    <!-- Description Modal -->
+    <div class="modal modal-lg fade" id="description-modal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Description</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <textarea type="text" class="form-control" id="description-text" rows="20"></textarea>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" data-bs-dismiss="modal" id="apply-description">Apply
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -370,7 +395,7 @@
         let annotation;
         {% if annotation %}
             annotation = {
-                description: '{% if annotation.description %}{{ annotation.description }}{% endif %}',
+                description: '{% if annotation.description %}{{ annotation.description|linebreaksbr }}{% endif %}',
                 data: {{ annotation.data | safe }},
             };
         {% endif %}
@@ -670,12 +695,9 @@
 
             //슬라이드 자체 설명
             const articleHeader = document.getElementById('article-header');
-            const descriptionElement = document.createElement('p');
-            const formattedDescription = annotation.description.replace(/\n/g, '<br>');
-            descriptionElement.innerHTML = formattedDescription;
-            descriptionElement.classList.add('annotation-description'); // 클래스 추가
+            const descriptionElement = document.getElementById('slide-description');
+            descriptionElement.innerHTML = annotation.description;
             articleHeader.appendChild(descriptionElement);
-
         }
 
 

@@ -41,12 +41,13 @@ document.addEventListener('DOMContentLoaded', function (event) {
             onSuccess: (data) => {
                 listElement.innerHTML = '';
                 const details = {
-                    "Name": data.name || '-',
-                    "Contents": `${data.child_count || 0} folders, ${data.lecture_count || 0} lectures in this folder`,
-                    "Author": data.author || '-',
-                    "Parent": data.parent_path || '-',
-                    "Created": data.created_at_formatted || '-',
-                    "Updated": data.updated_at_formatted || '-'
+                    "이름": data.name || '-',
+                    "내용": `${data.child_count || 0} 폴더, ${data.lecture_count || 0} 강의`,
+                    "작성자": data.author || '-',
+                    "관리자": data.manager || '-',
+                    "상위폴더": data.parent_path || '-',
+                    "생성일": data.created_at_formatted || '-',
+                    "수정일": data.updated_at_formatted || '-'
                 }
                 createDetailList(listElement, details);
             },
@@ -65,15 +66,16 @@ document.addEventListener('DOMContentLoaded', function (event) {
             onSuccess: (data) => {
                 listElement.innerHTML = '';
                 const details = {
-                    "Name": data.name || '-',
-                    "Description": data.description || '-',
-                    "Author": data.author || '-',
-                    "Folder": data.folder_name || '-',
-                    "Groups": data.group_names.map(group => `<span class="badge text-bg-light border border-dark">${group}</span>`).join(' ') || '-',
-                    "Contents": `${data.file_count} slides`,
-                    "Visibility": data.is_active ? 'Active' : 'Inactive',
-                    "Created": data.created_at_formatted || '-',
-                    "Updated": data.updated_at_formatted || '-'
+                    "이름": data.name || '-',
+                    "설명": data.description || '-',
+                    "내용": `${data.slide_count} 슬라이드`,
+                    "작성자": data.author || '-',
+                    "관리자": data.manager || '-',
+                    "폴더": data.folder_name || '-',
+                    "공개 상태": data.is_active ? '공개' : '비공개',
+                    "공개대상그룹": data.group_names.map(group => `<span class="badge text-bg-light border border-dark ms-2">${group}</span>`).join('') || '-',
+                    "생성일": data.created_at_formatted || '-',
+                    "수정일": data.updated_at_formatted || '-'
                 }
                 createDetailList(listElement, details);
             },
@@ -148,7 +150,7 @@ document.addEventListener('DOMContentLoaded', function (event) {
                         input.name = "target";
                         input.value = user.id;
                         input.required = true;
-                        input.disabled = user.id.toString() === sendForm.dataset.ownerId;
+                        input.disabled = user.id.toString() === sendForm.dataset.managerId;
 
                         const label = document.createElement('label');
                         label.className = 'form-check-label';
@@ -177,113 +179,109 @@ document.addEventListener('DOMContentLoaded', function (event) {
     handleMoveModalShow("folder-move-modal", "folder-move-form", "folder");
     handleMoveModalShow("lecture-move-modal", "lecture-move-form", "file");
 
-    let selectedItems = [];
-
-    document.getElementById('item-list-modal').addEventListener('show.bs.modal', function (event) {
+    document.getElementById('bulk-move-modal').addEventListener('show.bs.modal', function (event) {
         let button = event.relatedTarget;
+
+        const message = this.querySelector('[data-type="message"]');
+        message.classList.add('d-none');
 
         const continueButton = this.querySelector('.continue');
         continueButton.dataset.type = button.dataset.type;
 
-        selectedItems = [];
-        document.querySelectorAll('[name="item-checkbox"]').forEach((item) => {
-            if (item.checked) {
-                selectedItems.push({
-                    type: item.dataset.type,
-                    id: item.value,
-                    name: item.dataset.name,
-                });
+        const treeContainer = this.querySelector('.tree-container');
+        treeContainer.innerHTML = '';
+        treeContainer.addEventListener('click', function (event) {
+            const radio = event.target.closest('input[type="radio"]');
+            if (radio) {
+                continueButton.dataset.destination = radio.value;
             }
         })
 
-        const itemListElement = document.getElementById('item-selected-list');
-        itemListElement.innerHTML = '';
-        if (selectedItems.length === 0) {
-            itemListElement.innerHTML = '<div class="alert alert-warning">선택된 항목이 없습니다.</div>';
-            continueButton.disabled = true;
-            return;
-        }
-        selectedItems.forEach(item => {
-            const listItem = document.createElement('li');
-            listItem.className = 'list-group-item d-flex align-items-center';
-
+        let itemType = "file";
+        let foldersToMove = [];
+        for (const item of getSelectedItems()) {
             if (item.type === 'folder') {
-                const icon = document.createElement('i');
-                icon.className = 'bi bi-folder text-warning ps-1 me-2';
-                icon.style.width = '25px';
-                listItem.append(icon);
-            } else {
-                const icon = document.createElement('i');
-                icon.className = 'bi bi-journal-text text-primary ps-1 me-2';
-                icon.style.width = '25px';
-                listItem.append(icon);
+                itemType = "folder";
+                foldersToMove.push(item.id);
+            }
+        }
+
+        drfRequest({
+            url: API_ROUTES.lectureFolders + 'tree/',
+            onSuccess: (data) => {
+                renderMoveTree(treeContainer, data, itemType, foldersToMove);
+            },
+            onError: (error) => {
+                message.textContent = error.message;
+                message.classList.remove('d-none');
+            }
+        });
+
+        const modal = this;
+        continueButton.addEventListener('click', function (event) {
+            if (this.dataset.destination === undefined) {
+                message.textContent = 'Please select a destination folder.';
+                message.classList.remove('d-none');
+                return;
             }
 
-            const listItemName = document.createElement('span');
-            listItemName.textContent = item.name;
-            listItem.append(listItemName);
+            const confirmationModal = document.getElementById('confirmation-modal');
+            const confirmButton = confirmationModal.querySelector('.continue');
+            confirmButton.dataset.type = this.dataset.type;
+            confirmButton.dataset.destination = this.dataset.destination;
 
-            itemListElement.appendChild(listItem);
+            bootstrap.Modal.getOrCreateInstance(modal).hide();
+            bootstrap.Modal.getOrCreateInstance(confirmationModal).show();
         });
     });
 
-    document.getElementById('bulk-action-modal').addEventListener('show.bs.modal', function (event) {
-        const button = event.relatedTarget;
-
+    document.getElementById('confirmation-modal').addEventListener('show.bs.modal', function (event) {
         const continueButton = this.querySelector('.continue');
-        continueButton.dataset.type = button.dataset.type;
         continueButton.classList.remove('btn-warning', 'btn-danger');
 
         const title = this.querySelector('.modal-title');
-        const infoContainer = this.querySelector('.info-container');
-        infoContainer.innerHTML = '';
+        const body = this.querySelector('.modal-body');
+        body.innerHTML = '';
 
-        if (button.dataset.type === 'move') {
+        const selectedItems = getSelectedItems();
+
+        if (selectedItems.length === 0) {
+            title.textContent = '선택 항목';
+            continueButton.classList.add('btn-secondary');
+            continueButton.textContent = '다음';
+            continueButton.disabled = true;
+            const info = document.createElement('div');
+            info.className = 'alert alert-warning mt-3';
+            info.role = 'alert';
+            info.textContent = '선택 항목이 없습니다.';
+            body.appendChild(info);
+            return;
+        }
+
+        if (continueButton.dataset.type === 'move') {
             title.textContent = '선택 항목 이동';
             continueButton.classList.add('btn-warning');
             continueButton.textContent = '이동';
-            infoContainer.classList.add('border', 'rounded', 'p-3');
-            infoContainer.addEventListener('click', function (event) {
-                const radio = event.target.closest('[name="folder"], [name="parent"]');
-                if (radio) {
-                    continueButton.dataset.destination = radio.value;
-                }
-            })
 
-            let itemType = "file";
-            let foldersToMove = [];
-            for (const item of selectedItems) {
-                if (item.type === 'folder') {
-                    itemType = "folder";
-                    foldersToMove.push(item.id);
-                }
-            }
-
-            drfRequest({
-                url: API_ROUTES.lectureFolders + 'tree/',
-                onSuccess: (data) => {
-                    renderMoveTree(infoContainer, data, itemType, foldersToMove);
-                },
-                onError: (error) => {
-                    showFeedback('Error fetching folders: ' + error.message, 'danger');
-                }
-            });
-        } else if (button.dataset.type === 'delete') {
+            const info = document.createElement('p');
+            info.className = 'text-warning';
+            info.textContent = `정말로 선택한 ${selectedItems.length}개 항목을 이동하시겠습니까?`
+            body.appendChild(info);
+        } else if (continueButton.dataset.type === 'delete') {
             title.textContent = '선택 항목 삭제';
             continueButton.classList.add('btn-danger');
             continueButton.textContent = '삭제';
-            infoContainer.classList.remove('border', 'rounded', 'p-3');
 
             const info = document.createElement('p');
             info.className = 'text-danger';
             info.textContent = `정말로 선택한 ${selectedItems.length}개 항목을 삭제하시겠습니까?`
-            infoContainer.appendChild(info);
+            body.appendChild(info);
         } else {
             title.textContent = 'Error';
             continueButton.classList.add('btn-danger');
             continueButton.textContent = 'Error';
             continueButton.disabled = true;
-            infoContainer.innerHTML = 'Error';
+            body.innerHTML = 'Error';
         }
     });
 
@@ -299,6 +297,9 @@ document.addEventListener('DOMContentLoaded', function (event) {
         const title = this.querySelector('.modal-title');
         const itemListElement = document.getElementById('item-progress-list');
         itemListElement.innerHTML = '';
+
+        const selectedItems = getSelectedItems();
+
         selectedItems.forEach(item => {
             const listItem = document.createElement('li');
             listItem.className = 'list-group-item d-flex align-items-center justify-content-between';
@@ -339,7 +340,7 @@ document.addEventListener('DOMContentLoaded', function (event) {
         }
         continueButton.classList.remove('btn-secondary');
         continueButton.classList.add('btn-success');
-        continueButton.textContent = '완료';
+        continueButton.textContent = '닫기';
         unfreezeModal(this);
     });
 
@@ -368,6 +369,20 @@ document.addEventListener('DOMContentLoaded', function (event) {
 
 });
 
+function getSelectedItems() {
+    let selectedItems = [];
+    document.querySelectorAll('[name="item-checkbox"]').forEach((item) => {
+        if (item.checked) {
+            selectedItems.push({
+                type: item.dataset.type,
+                id: item.value,
+                name: item.dataset.name,
+            });
+        }
+    });
+    return selectedItems;
+}
+
 function processBulkAction(items, actionType, destinationId = null) {
     const maxThreads = 5;
     let index = 0;
@@ -385,11 +400,11 @@ function processBulkAction(items, actionType, destinationId = null) {
                 if (currentItem.type === 'folder') {
                     url = API_ROUTES.lectureFolderDetail(currentItem.id);
                     method = 'PATCH';
-                    data = {parent: destinationId};
+                    data = {parent: parseInt(destinationId)};
                 } else if (currentItem.type === 'lecture') {
                     url = API_ROUTES.lectureDetail(currentItem.id);
                     method = 'PATCH';
-                    data = {folder: destinationId};
+                    data = {folder: parseInt(destinationId)};
                 }
             } else if (actionType === 'delete') {
                 if (currentItem.type === 'folder') {

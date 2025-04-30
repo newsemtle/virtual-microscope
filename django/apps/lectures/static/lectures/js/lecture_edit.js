@@ -67,6 +67,8 @@ function moveContent(listItem, direction) {
         const nextItem = listItem.nextElementSibling;
         if (nextItem) parent.insertBefore(nextItem, listItem);
     }
+
+    updateContentsOrder();
 }
 
 function removeContent(listItem) {
@@ -194,7 +196,7 @@ function collapseFolder(listItem) {
             listItem.appendChild(ulChildContainer);
 
             activateTooltips();
-            $(ulChildContainer).collapse('show');
+            bootstrap.Collapse.getOrCreateInstance(ulChildContainer).show();
 
             updateSelectedImages();
         },
@@ -211,7 +213,7 @@ function addContent(listItem) {
 
     const existingSlides = Array.from(contentList.querySelectorAll('li')).map(item => item.dataset.slideId);
     if (existingSlides.some(slideIdInList => slideIdInList === slideId.toString())) {
-        showFeedback(`Slide "${slideName}" is already added!`, "warning");
+        showFeedback(`Slide '${slideName}' is already added!`, "warning");
         return;
     }
 
@@ -219,10 +221,17 @@ function addContent(listItem) {
     content.className = 'list-group-item d-flex align-items-center';
     content.dataset.slideId = slideId;
 
+    const orderInput = document.createElement('input');
+    orderInput.type = 'hidden';
+    orderInput.name = 'contents[][order]';
+
     const slideInput = document.createElement('input');
     slideInput.type = 'hidden';
     slideInput.name = 'contents[][slide]';
     slideInput.value = slideId;
+
+    const order = document.createElement('span');
+    order.className = 'bg-secondary-subtle rounded me-2 content-list-order';
 
     const moveContainer = document.createElement('div');
     moveContainer.className = 'd-flex flex-column me-2';
@@ -283,10 +292,11 @@ function addContent(listItem) {
     removeIcon.className = 'bi bi-trash3';
 
     removeBtn.appendChild(removeIcon);
-    content.append(slideInput, moveContainer, img, slideText, annotationContainer, removeBtn);
+    content.append(orderInput, slideInput, order, moveContainer, img, slideText, annotationContainer, removeBtn);
     contentList.appendChild(content);
 
     updateSelectedImages();
+    updateContentsOrder();
 }
 
 function submitChanges(formItem) {
@@ -295,24 +305,28 @@ function submitChanges(formItem) {
     let data = {
         name: formData.get("name"),
         description: formData.get("description"),
-        groups: [],
+        groups: formData.getAll("groups[]").map(id => parseInt(id.toString(), 10)),
         contents: []
     };
 
-    formData.getAll("groups[]").forEach(id => {
-        data.groups.push(parseInt(id.toString(), 10));
-    });
+    document.querySelectorAll('#content-list li').forEach((item, index) => {
+        const orderInput = item.querySelector("[name='contents[][order]']");
+        const slideInput = item.querySelector("[name='contents[][slide]']");
+        const annotationInput = item.querySelector("[name='contents[][annotation]']");
 
-    let slides = formData.getAll("contents[][slide]");
-    let annotations = formData.getAll("contents[][annotation]");
+        const orderValue = orderInput.value;
+        const slideValue = slideInput.value;
+        if (!slideValue || !orderValue) {
+            showFeedback(`오류가 발생했습니다.`, "danger");
+        }
+        const annotationValue = annotationInput?.value;
 
-    for (let i = 0; i < slides.length; i++) {
         data.contents.push({
-            order: i + 1,
-            slide: parseInt(slides[i].toString(), 10),
-            annotation: annotations[i] ? parseInt(annotations[i].toString(), 10) : null
+            order: parseInt(orderValue, 10),
+            slide: parseInt(slideValue, 10),
+            annotation: annotationValue ? parseInt(annotationValue, 10) : null,
         });
-    }
+    });
 
     drfRequest({
         url: formItem.dataset.url,
@@ -326,6 +340,14 @@ function submitChanges(formItem) {
             showFeedback("Error updating lecture: " + error.message, "danger");
         }
     })
+}
+
+function updateContentsOrder() {
+    const items = document.querySelectorAll('#content-list li');
+    for (let i = 0; i < items.length; i++) {
+        items[i].querySelector('[name="contents[][order]"]').value = (i + 1).toString();
+        items[i].querySelector('.content-list-order').textContent = (i + 1).toString();
+    }
 }
 
 function updateSelectedImages() {

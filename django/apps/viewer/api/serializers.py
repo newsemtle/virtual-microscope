@@ -32,7 +32,7 @@ class AnnotationSerializer(serializers.ModelSerializer):
         errors = {}
 
         slide = attrs.get("slide")
-        if slide and not slide.user_can_view(user):
+        if slide and not slide.is_viewable_by(user):
             errors["slide"] = "You don't have permission to view this slide."
 
         if errors:
@@ -51,4 +51,4 @@ class AnnotationSerializer(serializers.ModelSerializer):
         return reverse("viewer:image-viewer", kwargs={"slide_id": obj.slide.pk}) + f"?annotation={obj.pk}"
 
     def get_editable(self, obj):
-        return obj.user_can_edit(self.context["request"].user)
+        return obj.is_editable_by(self.context["request"].user)

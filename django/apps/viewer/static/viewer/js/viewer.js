@@ -4,7 +4,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const button = event.target;
 
         const data = {
-            // description: document.getElementById('slide-description').value,
+            description: decodeHTML(document.getElementById('slide-description').innerHTML),
             data: anno.getAnnotations(),
         }
 
@@ -31,7 +31,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const data = {
             name: formData.get('name'),
             slide: formData.get('slide'),
-            // description: document.getElementById('slide-description').value,
+            description: decodeHTML(document.getElementById('slide-description').innerHTML),
             data: anno.getAnnotations(),
         }
 
@@ -48,4 +48,27 @@ document.addEventListener('DOMContentLoaded', function () {
         })
     });
 
+    const description = document.getElementById('slide-description');
+    const descriptionText = document.getElementById('description-text');
+
+    document.getElementById('description-modal')?.addEventListener('show.bs.modal', function (event) {
+        descriptionText.value = decodeHTML(description.innerHTML);
+    });
+
+    document.getElementById('apply-description')?.addEventListener('click', function (event) {
+        description.innerHTML = encodeHTML(descriptionText.value);
+    });
+
 });
+
+function decodeHTML(html) {
+    const txt = document.createElement('textarea');
+    txt.innerHTML = html.replaceAll('<br>', '\n');
+    return txt.value;
+}
+
+function encodeHTML(text) {
+    const txt = document.createElement('textarea');
+    txt.textContent = text;
+    return txt.innerHTML.replaceAll('\n', '<br>');
+}

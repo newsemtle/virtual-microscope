@@ -9,7 +9,10 @@ from rest_framework.permissions import IsAuthenticated, DjangoModelPermissions
 from rest_framework.response import Response
 
 from apps.lectures.models import Lecture, LectureFolder
-from .serializers import LectureSerializer, LectureFolderSerializer
+from .serializers import (
+    LectureSerializer,
+    LectureFolderSerializer,
+)
 
 logger = logging.getLogger("django")
 
@@ -35,9 +38,9 @@ class LectureFolderViewSet(viewsets.ModelViewSet):
         logger.info(f"Lecture folder '{folder.name}' updated by {self.request.user}")
 
     def perform_destroy(self, instance):
-        self._check_edit_permissions(instance)
+        self._check_delete_permissions(instance)
 
-        if not instance.is_empty():
+        if instance.file_count() > 0:
             raise PermissionDenied("Folder is not empty. Cannot delete.")
 
         name = instance.name
@@ -66,25 +69,28 @@ class LectureFolderViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=["get"])
     def tree(self, request):
-        if not request.user.has_perm("lectures.view_lecturefolder"):
+        user = request.user
+        if not user.has_perm("lectures.view_lecturefolder"):
             raise PermissionDenied("You do not have permission to view folders.")
 
-        root_folders = LectureFolder.objects.viewable(request.user, folder="root")
-        tree = [self._get_tree_structure(folder) for folder in root_folders]
+        root_folders = LectureFolder.objects.user_root_folders(user)
+        tree = [self._serialize_folders(folder) for folder in root_folders]
         return Response(tree)
 
-    def _get_tree_structure(self, folder):
+    def _check_delete_permissions(self, folder):
+        if not folder.is_deletable_by(self.request.user):
+            raise PermissionDenied("You do not have permission to delete this folder.")
+
+    def _check_edit_permissions(self, folder):
+        if not folder.is_editable_by(self.request.user):
+            raise PermissionDenied("You do not have permission to edit this folder.")
+
+    def _serialize_folders(self, folder):
         return {
             "id": folder.id,
             "name": folder.name,
-            "children": [
-                self._get_tree_structure(sub) for sub in folder.children.all()
-            ],
+            "children": [self._serialize_folders(sub) for sub in folder.children.all()],
         }
-
-    def _check_edit_permissions(self, folder):
-        if not folder.user_can_edit(self.request.user):
-            raise PermissionDenied("You do not have permission to edit this folder.")
 
 
 class LectureViewSet(viewsets.ModelViewSet):
@@ -108,7 +114,7 @@ class LectureViewSet(viewsets.ModelViewSet):
         logger.info(f"Lecture '{lecture.name}' updated by {self.request.user}")
 
     def perform_destroy(self, instance):
-        self._check_edit_permissions(instance)
+        self._check_delete_permissions(instance)
 
         name = instance.name
         instance.delete()
@@ -120,17 +126,29 @@ class LectureViewSet(viewsets.ModelViewSet):
         data.update(
             {
                 "folder_name": str(lecture.folder) if lecture.folder else "Root",
-                "group_names": [group.name for group in lecture.groups.all()],
+                "group_names": [group.name for group in lecture.viewer_groups.all()],
                 "created_at_formatted": timezone.localtime(lecture.created_at).strftime(
                     "%Y-%m-%d %H:%M:%S"
                 ),
                 "updated_at_formatted": timezone.localtime(lecture.updated_at).strftime(
                     "%Y-%m-%d %H:%M:%S"
                 ),
-                "file_count": lecture.get_slides().count(),
+                "slide_count": lecture.contents.all().count(),
             }
         )
         return Response(data)
+
+    # @action(detail=True, methods=["get"])
+    # def contents(self, request, *args, **kwargs):
+    #     lecture = self.get_object()
+    #
+    #     if not request.user.has_perm("lectures.view_lecture"):
+    #         raise PermissionDenied("You do not have permission to view lectures.")
+    #     if not lecture.is_viewable_by(request.user):
+    #         raise PermissionDenied("You do not have permission to view this lecture.")
+    #
+    #     contents = lecture.contents.all()
+    #     return Response(LectureContentSerializer(contents, many=True).data)
 
     @action(detail=True, methods=["patch"])
     def toggle_activity(self, request, *args, **kwargs):
@@ -138,13 +156,15 @@ class LectureViewSet(viewsets.ModelViewSet):
 
         if not request.user.has_perm("lectures.change_lecture"):
             raise PermissionDenied("You do not have permission to edit lectures.")
-        if not lecture.user_can_edit(request.user):
+        if not lecture.is_editable_by(request.user):
             raise PermissionDenied("You do not have permission to edit this lecture.")
 
         lecture.is_active = not lecture.is_active
         lecture.save()
 
-        logger.info(f"Lecture '{lecture.name}' activity toggled by {self.request.user}")
+        logger.info(
+            f"Lecture '{lecture.name}' activity set to '{lecture.is_active}' by '{self.request.user}'"
+        )
         return Response(
             {
                 "is_active": lecture.is_active,
@@ -160,13 +180,14 @@ class LectureViewSet(viewsets.ModelViewSet):
         self._check_edit_permissions(lecture)
 
         original_name = lecture.name
-        # force evaluating queryset with list() to store contents in memory
+
+        # evaluate queryset to send a query to db before changing lecture object.
         contents = list(lecture.contents.all())
 
         lecture.pk = None
         lecture.name = f"{lecture.name} (copy)"
-        lecture.author = lecture.folder.get_owner()
-        lecture.save()
+        lecture.is_active = False
+        lecture.save()  # m2m relations are cleared. (viewer_groups)
 
         for content in contents:
             content.pk = None
@@ -194,14 +215,16 @@ class LectureViewSet(viewsets.ModelViewSet):
             )
 
         original_name = lecture.name
-        # force evaluating queryset with list() to store contents in memory
+
+        # evaluate queryset to send a query to db before changing lecture object.
         contents = list(lecture.contents.all())
 
         lecture.pk = None
         lecture.name = f"{lecture.name} (copy)"
         lecture.author = target
         lecture.folder = target.base_lecture_folder
-        lecture.save()
+        lecture.is_active = False
+        lecture.save()  # m2m relations are cleared. (viewer_groups)
 
         for content in contents:
             content.pk = None
@@ -211,6 +234,10 @@ class LectureViewSet(viewsets.ModelViewSet):
         logger.info(f"Lecture '{original_name}' copied to {target} by {user}")
         return Response({"detail": f"Lecture copied to '{target}' successfully."})
 
+    def _check_delete_permissions(self, lecture):
+        if not lecture.is_deletable_by(self.request.user):
+            raise PermissionDenied("You do not have permission to delete this lecture.")
+
     def _check_edit_permissions(self, lecture):
-        if not lecture.user_can_edit(self.request.user):
+        if not lecture.is_editable_by(self.request.user):
             raise PermissionDenied("You do not have permission to edit this lecture.")

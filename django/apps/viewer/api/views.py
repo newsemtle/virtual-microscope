@@ -33,7 +33,7 @@ class AnnotationViewSet(viewsets.ModelViewSet):
         logger.info(f"Annotation '{annotation.name}' updated by {self.request.user}")
 
     def perform_destroy(self, instance):
-        self._check_edit_permissions(instance)
+        self._check_delete_permissions(instance)
 
         name = instance.name
         instance.delete()
@@ -55,6 +55,12 @@ class AnnotationViewSet(viewsets.ModelViewSet):
         )
         return Response(data)
 
+    def _check_delete_permissions(self, annotation):
+        if not annotation.is_deletable_by(self.request.user):
+            raise PermissionDenied(
+                "You don't have permission to delete this annotation."
+            )
+
     def _check_edit_permissions(self, annotation):
-        if not annotation.user_can_edit(self.request.user):
+        if not annotation.is_editable_by(self.request.user):
             raise PermissionDenied("You don't have permission to edit this annotation.")

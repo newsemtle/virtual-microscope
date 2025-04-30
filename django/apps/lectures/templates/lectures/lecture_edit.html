@@ -23,8 +23,8 @@
         <!-- Contents -->
         <div class="card mb-3">
             <div class="card-body">
-                <div class="row">
-                    <div class="col-md-6">
+                <div class="row g-3">
+                    <div class="col-md">
                         <div class="mb-3">
                             <label for="lecture-name" class="form-label">Name</label>
                             <input type="text" class="form-control" id="lecture-name" name="name"
@@ -36,32 +36,32 @@
                                       rows="2">{{ lecture.description|default:"" }}</textarea>
                         </div>
                     </div>
-                    <div class="col-md-6">
-                        <label class="form-label fw-bold">Groups</label>
-                        <span class="text-muted">(Select groups to allow access)</span>
-                        <div class="row">
-                            <div class="col">
+                    <div class="col-md">
+                        <label class="form-label fw-bold">Viewer Groups</label>
+                        <span class="text-muted">(Select the groups that can view this lecture.)</span>
+                        <div class="row g-1">
+                            <div class="col-sm">
                                 <label class="form-label text-decoration-underline">Publishers</label>
-                                <div class="overflow-y-scroll" style="max-height: 150px;">
+                                <div class="overflow-scroll" style="max-height: 150px;">
                                     {% for publisher in publishers %}
                                         <div class="form-check ms-2">
                                             <input class="form-check-input" type="checkbox" name="groups[]"
                                                    id="group-{{ publisher.id }}" value="{{ publisher.id }}"
-                                                   {% if publisher in lecture.groups.all %}checked{% endif %}>
+                                                   {% if publisher in lecture.viewer_groups.all %}checked{% endif %}>
                                             <label class="form-check-label"
                                                    for="group-{{ publisher.id }}">{{ publisher.name }}</label>
                                         </div>
                                     {% endfor %}
                                 </div>
                             </div>
-                            <div class="col">
+                            <div class="col-sm">
                                 <label class="form-label text-decoration-underline">Viewers</label>
-                                <div class="overflow-y-scroll" style="max-height: 150px;">
+                                <div class="overflow-scroll" style="max-height: 150px;">
                                     {% for viewer in viewers %}
                                         <div class="form-check ms-2">
                                             <input class="form-check-input" type="checkbox" name="groups[]"
                                                    id="group-{{ viewer.id }}" value="{{ viewer.id }}"
-                                                   {% if viewer in lecture.groups.all %}checked{% endif %}>
+                                                   {% if viewer in lecture.viewer_groups.all %}checked{% endif %}>
                                             <label class="form-check-label"
                                                    for="group-{{ viewer.id }}">{{ viewer.name }}</label>
                                         </div>
@@ -73,9 +73,9 @@
                 </div>
             </div>
         </div>
-        <div class="row">
+        <div class="row g-3">
             <div class="col-md-6">
-                <div class="card mb-3">
+                <div class="card">
                     <div class="card-header d-flex align-items-baseline">
                         <h5 class="card-title">Lecture Contents</h5>
                         <span class="text-muted ms-2">(These images will be added to the lecture.)</span>
@@ -85,7 +85,9 @@
                             {% for content in contents %}
                                 <li class="list-group-item d-flex align-items-center"
                                     data-slide-id="{{ content.slide.id }}">
+                                    <input type="hidden" name="contents[][order]" value="{{ forloop.counter }}">
                                     <input type="hidden" name="contents[][slide]" value="{{ content.slide.id }}">
+                                    <span class="bg-secondary-subtle rounded me-2 content-list-order">{{ forloop.counter }}</span>
                                     <div class="d-flex flex-column me-2">
                                         <i class="bi bi-caret-up" role="button" data-action="up"></i>
                                         <i class="bi bi-caret-down" role="button" data-action="down"></i>
@@ -121,7 +123,7 @@
                 </div>
             </div>
             <div class="col-md-6">
-                <div class="card mb-3">
+                <div class="card">
                     <div class="card-header d-flex align-items-center justify-content-between">
                         <div class="d-flex align-items-baseline">
                             <h5 class="card-title">DB/Image</h5>
@@ -129,7 +131,8 @@
                         </div>
                         <button class="btn btn-primary btn-sm" type="button" data-bs-toggle="offcanvas"
                                 data-bs-target="#slide-search-sidebar">
-                            <i class="bi bi-search"></i> Search
+                            <i class="bi bi-search"></i>
+                            <span class="d-none d-sm-inline">Search</span>
                         </button>
                     </div>
                     <div class="card-body">
@@ -178,7 +181,7 @@
             <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
         </div>
         <div class="offcanvas-body">
-            <form id="image-search-form" data-url="{% url 'api:slide-list' %}">
+            <form id="image-search-form" data-url="{% url 'api:slide-dbsearch' %}">
                 <div class="mb-2">
                     <label for="image-search-input" class="form-label">Search</label>
                     <div class="input-group">
