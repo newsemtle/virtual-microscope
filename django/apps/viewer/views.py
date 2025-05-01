@@ -1,4 +1,5 @@
 import json
+import os
 
 from django.contrib.auth.mixins import (
     LoginRequiredMixin,
@@ -6,6 +7,7 @@ from django.contrib.auth.mixins import (
     UserPassesTestMixin,
 )
 from django.shortcuts import get_object_or_404
+from django.utils import timezone
 from django.views.generic import TemplateView
 
 from apps.images.models import Slide
@@ -36,6 +38,14 @@ class ImageViewerView(
                 annotation = None
 
         context["slide"] = slide
+        context["slide"].file_name = os.path.basename(slide.file.name)
+        context["slide"].created_at_formatted = timezone.localtime(
+            slide.created_at
+        ).strftime("%Y-%m-%d %H:%M:%S")
+        context["slide"].updated_at_formatted = timezone.localtime(
+            slide.updated_at
+        ).strftime("%Y-%m-%d %H:%M:%S")
+
         if annotation:
             context["annotation"] = annotation
             context["annotation"].data = json.dumps(annotation.data)

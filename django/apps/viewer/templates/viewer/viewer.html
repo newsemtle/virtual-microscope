@@ -79,8 +79,14 @@
                             <hr class="dropdown-divider" style="--bs-dropdown-divider-margin-y: 0">
                         </li>
                         <!-- 정보 버튼 -->
+                        {#                        <li>#}
+                        {#                            <button class="dropdown-item" title="Slide-Information" onclick="openinfoPopup()">#}
+                        {#                                <i class="bi bi-info-circle"></i> Information#}
+                        {#                            </button>#}
+                        {#                        </li>#}
                         <li>
-                            <button class="dropdown-item" title="Slide-Information" onclick="openinfoPopup()">
+                            <button class="dropdown-item" title="Slide-Information" data-bs-toggle="modal"
+                                    data-bs-target="#information-modal">
                                 <i class="bi bi-info-circle"></i> Information
                             </button>
                         </li>
@@ -290,7 +296,7 @@
         <span class="position-absolute" style="left: 50%; transform: translateX(-50%);">Description</span>
     </div>
 {% endblock aside_content %}
-    
+
 <!-- article block -->
 {% block article_content %}
     <div id="article-header">
@@ -344,6 +350,60 @@
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                     <button type="button" class="btn btn-primary" data-bs-dismiss="modal" id="apply-description">Apply
                     </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Information Modal -->
+    <div class="modal fade" id="information-modal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">이미지 정보</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <dl class="row" id="information-list">
+                        <dt class="col-sm-3">이름</dt>
+                        <dd class="col-sm-9">{{ slide.name|default:"-" }}</dd>
+                        <dt class="col-sm-3">정보</dt>
+                        <dd class="col-sm-9">{{ slide.information|default:"-" }}</dd>
+                        <dt class="col-sm-3">작성자</dt>
+                        <dd class="col-sm-9">{{ slide.author.username|default:"-" }}</dd>
+                        <dt class="col-sm-3">관리자그룹</dt>
+                        <dd class="col-sm-9">{{ slide.manager_group.name|default:"-" }}</dd>
+                        <dt class="col-sm-3">폴더</dt>
+                        <dd class="col-sm-9">{{ slide.folder|default:"-" }}</dd>
+                        <dt class="col-sm-3">원본 파일</dt>
+                        <dd class="col-sm-9">
+                            <dl class="row">
+                                <dt class="col-sm-3">이름</dt>
+                                <dd class="col-sm-9">{{ slide.file_name }}</dd>
+                                <dt class="col-sm-3">용량</dt>
+                                <dd class="col-sm-9">{{ slide.file.size|filesizeformat }}</dd>
+                            </dl>
+                        </dd>
+                        <dt class="col-sm-3">연관이미지</dt>
+                        <dd class="col-sm-9">
+                            <img src="{% url 'api:slide-associated-image' pk=slide.pk %}" class="img-fluid" alt="">
+                        </dd>
+                        <dt class="col-sm-3">메타데이터</dt>
+                        <dd class="col-sm-9">
+                            <dl class="row">
+                                <dt class="col-sm-3">생성일</dt>
+                                <dd class="col-sm-9">{{ slide.metadata.created }}</dd>
+                                <dt class="col-sm-3">촬영 배율</dt>
+                                <dd class="col-sm-9">{{ slide.metadata.sourceLens }}</dd>
+                            </dl>
+                        </dd>
+                        <dt class="col-sm-3">생성일</dt>
+                        <dd class="col-sm-9">{{ slide.created_at_formatted }}</dd>
+                        <dt class="col-sm-3">수정일</dt>
+                        <dd class="col-sm-9">{{ slide.updated_at_formatted }}</dd>
+                    </dl>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                 </div>
             </div>
         </div>

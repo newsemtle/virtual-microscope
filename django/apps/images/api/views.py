@@ -277,7 +277,7 @@ class SlideFileAPIView(APIView):
 
     def get(self, request, pk):
         slide = get_object_or_404(Slide, pk=pk)
-        _check_slide_view_permission(request.user, slide)
+        _check_slide_edit_permission(request.user, slide)
 
         path = slide.file.path
         if not os.path.exists(path):
