@@ -1,0 +1,207 @@
+{% extends "common/base.html" %}
+{% load static %}
+
+{% block content %}
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item">
+                <a href="{% url 'lectures:lecture-database' %}?folder={{ lecture.folder.id }}">{{ lecture.folder.name }}</a>
+            </li>
+        </ol>
+    </nav>
+    <form id="lecture-form" data-url="{% url 'api:lecture-detail' pk=lecture.id %}">
+        <!-- Header -->
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h4 class="mb-0">
+                Edit Lecture
+            </h4>
+            <button class="btn btn-primary" type="submit">
+                <i class="bi bi-save"></i> Save Changes
+            </button>
+        </div>
+        <!-- Contents -->
+        <div class="card mb-3">
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md">
+                        <div class="mb-3">
+                            <label for="lecture-name" class="form-label">Name</label>
+                            <input type="text" class="form-control" id="lecture-name" name="name"
+                                   value="{{ lecture.name }}">
+                        </div>
+                        <div>
+                            <label for="lecture-description" class="form-label">Description</label>
+                            <textarea class="form-control" id="lecture-description" name="description"
+                                      rows="2">{{ lecture.description|default:"" }}</textarea>
+                        </div>
+                    </div>
+                    <div class="col-md">
+                        <label class="form-label fw-bold">Viewer Groups</label>
+                        <span class="text-muted">(Select the groups that can view this lecture.)</span>
+                        <div class="row g-1">
+                            <div class="col-sm">
+                                <label class="form-label text-decoration-underline">Publishers</label>
+                                <div class="overflow-scroll" style="max-height: 150px;">
+                                    {% for publisher in publishers %}
+                                        <div class="form-check ms-2">
+                                            <input class="form-check-input" type="checkbox" name="groups[]"
+                                                   id="group-{{ publisher.id }}" value="{{ publisher.id }}"
+                                                   {% if publisher in lecture.viewer_groups.all %}checked{% endif %}>
+                                            <label class="form-check-label"
+                                                   for="group-{{ publisher.id }}">{{ publisher.name }}</label>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            <div class="col-sm">
+                                <label class="form-label text-decoration-underline">Viewers</label>
+                                <div class="overflow-scroll" style="max-height: 150px;">
+                                    {% for viewer in viewers %}
+                                        <div class="form-check ms-2">
+                                            <input class="form-check-input" type="checkbox" name="groups[]"
+                                                   id="group-{{ viewer.id }}" value="{{ viewer.id }}"
+                                                   {% if viewer in lecture.viewer_groups.all %}checked{% endif %}>
+                                            <label class="form-check-label"
+                                                   for="group-{{ viewer.id }}">{{ viewer.name }}</label>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row g-3">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header d-flex align-items-baseline">
+                        <h5 class="card-title">Lecture Contents</h5>
+                        <span class="text-muted ms-2">(These images will be added to the lecture.)</span>
+                    </div>
+                    <div class="card-body">
+                        <ul class="list-group" id="content-list">
+                            {% for content in contents %}
+                                <li class="list-group-item d-flex align-items-center"
+                                    data-slide-id="{{ content.slide.id }}">
+                                    <input type="hidden" name="contents[][order]" value="{{ forloop.counter }}">
+                                    <input type="hidden" name="contents[][slide]" value="{{ content.slide.id }}">
+                                    <span class="bg-secondary-subtle rounded me-2 content-list-order">{{ forloop.counter }}</span>
+                                    <div class="d-flex flex-column me-2">
+                                        <i class="bi bi-caret-up" role="button" data-action="up"></i>
+                                        <i class="bi bi-caret-down" role="button" data-action="down"></i>
+                                    </div>
+                                    <img src="{% url 'api:slide-thumbnail' pk=content.slide.id %}"
+                                         height=40 class="me-2" alt="">
+                                    <a href="{% url 'viewer:image-viewer' slide_id=content.slide.id %}"
+                                       class="text-decoration-none text-body" target="_blank"
+                                       rel="noopener noreferrer nofollow">{{ content.slide.name }}</a>
+                                    <div class="ms-auto col-3">
+                                        <label for="annotation-for-{{ content.slide.id }}">Annotation:</label>
+                                        <select class="form-select" id="annotation-for-{{ content.slide.id }}"
+                                                name="contents[][annotation]" data-action="loadAnnotation"
+                                                data-url="{% url 'api:slide-annotations' pk=content.slide.id %}">
+                                            {% if content.annotation %}
+                                                <option value="">None</option>
+                                                <option value="{{ content.annotation.id }}"
+                                                        selected>{{ content.annotation.name }}
+                                                    ({{ content.annotation.author.username }})
+                                                </option>
+                                            {% else %}
+                                                <option value="" selected>None</option>
+                                            {% endif %}
+                                        </select>
+                                    </div>
+                                    <button class="btn btn-sm" title="Remove" data-action="remove">
+                                        <i class="bi bi-trash3"></i>
+                                    </button>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header d-flex align-items-center justify-content-between">
+                        <div class="d-flex align-items-baseline">
+                            <h5 class="card-title">DB/Image</h5>
+                            <span class="text-muted ms-2">(Select images to add.)</span>
+                        </div>
+                        <button class="btn btn-primary btn-sm" type="button" data-bs-toggle="offcanvas"
+                                data-bs-target="#slide-search-sidebar">
+                            <i class="bi bi-search"></i>
+                            <span class="d-none d-sm-inline">Search</span>
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        {% if items %}
+                            <ul class="list-group" id="database-list">
+                                {% for item in items %}
+                                    {% if item.type == "folder" %}
+                                        <li class="list-group-item"
+                                            data-url="{% url 'api:image-folder-items' pk=item.id %}"
+                                            data-folder-id="{{ item.id }}">
+                                            <i class="bi bi-chevron-right me-2" data-bs-toggle="collapse"
+                                               href="#collapse-{{ item.id }}" role="button"
+                                               data-action="collapse"></i>
+                                            <i class="bi bi-folder text-warning me-2"></i>
+                                            <span>{{ item.name }}</span>
+                                        </li>
+                                    {% else %}
+                                        <li class="list-group-item"
+                                            data-annotations-url="{% url 'api:slide-annotations' pk=item.id %}"
+                                            data-slide-id="{{ item.id }}" data-slide-name="{{ item.name }}">
+                                            <i class="bi bi-plus-circle me-2" role="button"
+                                               data-bs-tooltip="tooltip"
+                                               title="Add" data-action="add"></i>
+                                            <img src="{% url 'api:slide-thumbnail' pk=item.id %}"
+                                                 height=40 class="me-2" alt="">
+                                            <a href="{% url 'viewer:image-viewer' slide_id=item.id %}"
+                                               class="text-decoration-none text-body" target="_blank"
+                                               rel="noopener noreferrer nofollow">{{ item.name }}</a>
+                                        </li>
+                                    {% endif %}
+                                {% endfor %}
+                            </ul>
+                        {% else %}
+                            <div class="alert alert-info" role="alert">
+                                <i class="bi bi-info-circle me-2"></i>There's nothing in database.
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+    <div class="offcanvas offcanvas-end" data-bs-scroll="true" tabindex="-1" id="slide-search-sidebar">
+        <div class="offcanvas-header">
+            <h5 class="offcanvas-title">DB/Image Search</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
+        </div>
+        <div class="offcanvas-body">
+            <form id="image-search-form" data-url="{% url 'api:slide-dbsearch' %}">
+                <div class="mb-2">
+                    <label for="image-search-input" class="form-label">Search</label>
+                    <div class="input-group">
+                        <input type="text" class="form-control" id="image-search-input" placeholder="name, author"
+                               name="search" required>
+                        <button type="submit" class="btn btn-outline-secondary"><i class="bi bi-search"></i></button>
+                    </div>
+                </div>
+                <div class="align-items-center text-danger mb-2 d-none" data-type="message"></div>
+                <div id="image-search-info" class="text-muted mb-2" data-page-size="0"></div>
+                <ul class="list-group mb-2" id="image-search-result"></ul>
+                <nav id="image-search-pagination" class="d-flex justify-content-end">
+                    <ul class="pagination mb-0"></ul>
+                </nav>
+            </form>
+        </div>
+    </div>
+{% endblock content %}
+
+
+{% block extra_js %}
+    <script src="{% static 'lectures/js/lecture_edit.js' %}" type="text/javascript"></script>
+{% endblock extra_js %}
