@@ -45,7 +45,7 @@
                                 <div class="overflow-scroll" style="max-height: 150px;">
                                     {% for publisher in publishers %}
                                         <div class="form-check ms-2">
-                                            <input class="form-check-input" type="checkbox" name="groups[]"
+                                            <input class="form-check-input" type="checkbox" name="viewer_groups[]"
                                                    id="group-{{ publisher.id }}" value="{{ publisher.id }}"
                                                    {% if publisher in lecture.viewer_groups.all %}checked{% endif %}>
                                             <label class="form-check-label"
@@ -59,7 +59,7 @@
                                 <div class="overflow-scroll" style="max-height: 150px;">
                                     {% for viewer in viewers %}
                                         <div class="form-check ms-2">
-                                            <input class="form-check-input" type="checkbox" name="groups[]"
+                                            <input class="form-check-input" type="checkbox" name="viewer_groups[]"
                                                    id="group-{{ viewer.id }}" value="{{ viewer.id }}"
                                                    {% if viewer in lecture.viewer_groups.all %}checked{% endif %}>
                                             <label class="form-check-label"

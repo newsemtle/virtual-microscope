@@ -305,7 +305,7 @@ function submitChanges(formItem) {
     let data = {
         name: formData.get("name"),
         description: formData.get("description"),
-        groups: formData.getAll("groups[]").map(id => parseInt(id.toString(), 10)),
+        viewer_groups: formData.getAll("viewer_groups[]").map(id => parseInt(id.toString(), 10)),
         contents: []
     };
 
@@ -368,14 +368,40 @@ function updateSelectedImages() {
             item.classList.remove('bg-secondary-subtle');
         }
     });
+
+    const imageList = document.getElementById("image-search-result");
+    imageList.querySelectorAll("li").forEach(item => {
+        const slideId = parseInt(item.dataset.slideId, 10);
+
+        if (selectedImages.includes(slideId)) {
+            item.classList.add('opacity-50')
+            item.classList.add('bg-secondary-subtle')
+        } else {
+            item.classList.remove('opacity-50');
+            item.classList.remove('bg-secondary-subtle');
+        }
+    })
 }
 
-document.getElementById("image-search-form").addEventListener("submit", function (event) {
+document.getElementById("image-search-form").addEventListener("submit", async function (event) {
     event.preventDefault();
     const query = document.getElementById("image-search-input").value;
     if (!query) {
         return;
     }
     const url = this.dataset.url + `?search=${encodeURIComponent(query)}`;
-    fetchResults(url);
+    await fetchResults(url);
+
+    const imageList = document.getElementById("image-search-result");
+    imageList.querySelectorAll("li").forEach(item => {
+        item.dataset.annotationsUrl = API_ROUTES.slideDetail(item.dataset.slideId) + 'annotations/';
+        
+        const addButton = document.createElement("button");
+        addButton.className = "btn btn-outline-secondary";
+        addButton.innerHTML = "<i class='bi bi-plus-circle'></i>";
+        addButton.dataset.action = "add";
+        item.querySelector('.action-button-group').appendChild(addButton);
+    });
+
+    updateSelectedImages();
 });

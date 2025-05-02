@@ -328,18 +328,18 @@ function sendFeedback(message, type = "info") {
  * @param {Function} [options.onError=() => {}] - Callback function executed when the request fails. The error object is passed as a parameter.
  * @return {void} No return value. Handles the request internally and executes the appropriate callback.
  */
-function drfRequest({
-                        url,
-                        method = 'GET',
-                        headers = {},
-                        data = null,
-                        onSuccess = () => {
-                        },
-                        onError = () => {
-                        },
-                        onNext: onFinally = () => {
-                        }
-                    }) {
+async function drfRequest({
+                              url,
+                              method = 'GET',
+                              headers = {},
+                              data = null,
+                              onSuccess = () => {
+                              },
+                              onError = () => {
+                              },
+                              onNext: onFinally = () => {
+                              }
+                          }) {
     const options = {method, headers};
     options.headers['X-CSRFToken'] = getCookie('csrftoken');
 
@@ -356,7 +356,7 @@ function drfRequest({
         }
     }
 
-    fetch(url, options)
+    return fetch(url, options)
         .then(async response => {
             const status = response.status;
 
@@ -512,8 +512,8 @@ function createMoveTree(data, itemType, movingFolderIds = []) {
     return ul;
 }
 
-function fetchResults(url) {
-    drfRequest({
+async function fetchResults(url) {
+    await drfRequest({
         url: url,
         onSuccess: (data) => {
             const imageList = document.getElementById("image-search-result");
@@ -546,6 +546,8 @@ function fetchResults(url) {
             data.results.forEach(image => {
                 const listItem = document.createElement("li");
                 listItem.className = "list-group-item d-flex justify-content-between align-items-center";
+                listItem.dataset.slideId = image.id;
+                listItem.dataset.slideName = image.name;
                 listItem.innerHTML = `
                     <div class="d-flex align-items-center">
                         <img src="${image.thumbnail}" height=40 class="me-2" alt="">
@@ -554,7 +556,7 @@ function fetchResults(url) {
                            ${image.name}
                         </a>
                     </div>
-                    <div class="btn-group btn-group-sm">
+                    <div class="btn-group btn-group-sm action-button-group">
                         <a type="button" class="btn btn-outline-warning"
                            href="/images/database/?folder=${image.folder}"
                            target="_blank" rel="noopener noreferrer nofollow">
