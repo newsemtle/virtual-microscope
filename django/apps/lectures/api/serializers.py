@@ -5,8 +5,12 @@ from apps.lectures.models import Lecture, LectureContent, LectureFolder
 
 
 class LectureFolderSerializer(serializers.ModelSerializer):
-    author = serializers.CharField(source="author.username", default=None)
-    manager = serializers.CharField(source="manager.username", default=None)
+    author = serializers.CharField(
+        source="author.username", default=None, read_only=True
+    )
+    manager = serializers.CharField(
+        source="manager.username", default=None, read_only=True
+    )
 
     class Meta:
         model = LectureFolder
@@ -19,7 +23,7 @@ class LectureFolderSerializer(serializers.ModelSerializer):
             "created_at",
             "updated_at",
         ]
-        read_only_fields = ["author", "manager"]
+        read_only_fields = []
         validators = [
             serializers.UniqueTogetherValidator(
                 queryset=LectureFolder.objects.all(),
@@ -58,8 +62,12 @@ class LectureContentSerializer(serializers.ModelSerializer):
 
 
 class LectureSerializer(serializers.ModelSerializer):
-    author = serializers.CharField(source="author.username", default=None)
-    manager = serializers.CharField(source="manager.username", default=None)
+    author = serializers.CharField(
+        source="author.username", default=None, read_only=True
+    )
+    manager = serializers.CharField(
+        source="manager.username", default=None, read_only=True
+    )
     contents = LectureContentSerializer(many=True, required=False)
     edit_url = serializers.SerializerMethodField()
     folder_url = serializers.SerializerMethodField()
@@ -81,7 +89,7 @@ class LectureSerializer(serializers.ModelSerializer):
             "edit_url",
             "folder_url",
         ]
-        read_only_fields = ["author", "manager"]
+        read_only_fields = []
 
     def validate(self, attrs):
         user = self.context["request"].user

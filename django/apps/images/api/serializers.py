@@ -7,8 +7,12 @@ from apps.images.models import Slide, ImageFolder, Tag
 
 
 class ImageFolderSerializer(serializers.ModelSerializer):
-    author = serializers.CharField(source="author.username", default=None)
-    manager_group = serializers.CharField(source="manager_group.name", default=None)
+    author = serializers.CharField(
+        source="author.username", default=None, read_only=True
+    )
+    manager_group = serializers.CharField(
+        source="manager_group.name", default=None, read_only=True
+    )
     url = serializers.SerializerMethodField()
 
     class Meta:
@@ -23,7 +27,7 @@ class ImageFolderSerializer(serializers.ModelSerializer):
             "updated_at",
             "url",
         ]
-        read_only_fields = ["author", "manager_group"]
+        read_only_fields = []
         validators = [
             serializers.UniqueTogetherValidator(
                 queryset=ImageFolder.objects.all(),
@@ -74,8 +78,12 @@ class TagSerializer(serializers.ModelSerializer):
 
 class SlideSerializer(serializers.ModelSerializer):
     name = serializers.CharField(required=False, allow_blank=True)
-    author = serializers.CharField(source="author.username", default=None)
-    manager_group = serializers.CharField(source="manager_group.name", default=None)
+    author = serializers.CharField(
+        source="author.username", default=None, read_only=True
+    )
+    manager_group = serializers.CharField(
+        source="manager_group.name", default=None, read_only=True
+    )
     thumbnail = serializers.SerializerMethodField()
     associated_image = serializers.SerializerMethodField()
     tags = TagSerializer(many=True, read_only=True)
@@ -106,7 +114,7 @@ class SlideSerializer(serializers.ModelSerializer):
             "view_url",
             "annotations_url",
         ]
-        read_only_fields = ["author", "manager_group", "image_root", "metadata"]
+        read_only_fields = ["image_root", "metadata"]
 
     def validate(self, attrs):
         user = self.context["request"].user
