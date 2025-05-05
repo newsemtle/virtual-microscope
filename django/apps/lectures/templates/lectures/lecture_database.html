@@ -152,7 +152,7 @@
                                     {{ item.description }}
                                 </h6>
                                 <h6 class="mb-0 group-truncate"><i class="bi bi-people-fill"></i>
-                                    {% for group in item.groups.all %}
+                                    {% for group in item.viewer_groups.all %}
                                         {{ group.name }}{% if not forloop.last %}, {% endif %}
                                     {% empty %}No groups.
                                     {% endfor %}

@@ -9,6 +9,7 @@ migrations/
 logs/
 .env
 db.sqlite3
+*.mo
 
 # NGINX
 *.crt

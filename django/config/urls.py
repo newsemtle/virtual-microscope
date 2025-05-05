@@ -19,15 +19,22 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import include, path
+from django.views.i18n import JavaScriptCatalog, set_language
 
 urlpatterns = [
-    path("", include("apps.common.urls")),
+    # Admin
     path("admin/", admin.site.urls),
+    # Urls from apps
+    path("", include("apps.common.urls")),
     path("viewer/", include("apps.viewer.urls")),
     path("images/", include("apps.images.urls")),
     path("accounts/", include("apps.accounts.urls")),
     path("lectures/", include("apps.lectures.urls")),
     path("api/", include("config.api_urls")),
+    # Set language
+    path("i18n/setlang/", set_language, name="set_language"),
+    # JavaScript catalog for JS translation
+    path("jsi18n/", JavaScriptCatalog.as_view(), name="javascript-catalog"),
 ]
 
 if settings.DEBUG:

@@ -73,7 +73,7 @@ document.addEventListener('DOMContentLoaded', function (event) {
                     "관리자": data.manager || '-',
                     "폴더": data.folder_name || '-',
                     "공개 상태": data.is_active ? '공개' : '비공개',
-                    "공개대상그룹": data.group_names.map(group => `<span class="badge text-bg-light border border-dark ms-2">${group}</span>`).join('') || '-',
+                    "공개대상그룹": data.group_names.map(group => `<span class="badge text-bg-light border border-dark me-2">${group}</span>`).join('') || '-',
                     "생성일": data.created_at_formatted || '-',
                     "수정일": data.updated_at_formatted || '-'
                 }

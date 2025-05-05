@@ -342,6 +342,7 @@ async function drfRequest({
                           }) {
     const options = {method, headers};
     options.headers['X-CSRFToken'] = getCookie('csrftoken');
+    options.headers['Accept-Language'] = navigator.language;
 
     if (data) {
         if (data instanceof FormData) {

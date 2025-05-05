@@ -46,27 +46,25 @@
 
             <div class="py-5" id="features">
                 <div class="container px-5 my-5">
-                    <div class="row gx-5">
-                        {% if show_database %}
-                            <div class="col-lg-4 mb-5 mb-lg-0 position-relative">
+                    <div class="row g-5 justify-content-center">
+                        {% if user.is_admin or user.is_publisher %}
+                            <div class="col-md-4 position-relative">
                                 <div class="feature bg-primary bg-gradient text-white rounded-3 mb-3"><i
                                         class="bi bi-folder"></i>
                                 </div>
                                 <h2 class="h4 fw-bolder">DB/Image</h2>
-                                <p>Navigate all uploaded images in folder structure</p>
+                                <p>Navigate all uploaded images with a folder structure</p>
                                 <a class="text-decoration-none stretched-link" href="{% url 'images:image-database' %}">
                                     View DB/Image
                                     <i class="bi bi-arrow-right"></i>
                                 </a>
                             </div>
-                        {% endif %}
-                        {% if show_lecture_database %}
-                            <div class="col-lg-4 mb-5 mb-lg-0 position-relative">
+                            <div class="col-md-4 position-relative">
                                 <div class="feature bg-primary bg-gradient text-white rounded-3 mb-3"><i
                                         class="bi bi-folder"></i>
                                 </div>
                                 <h2 class="h4 fw-bolder">DB/Lecture</h2>
-                                <p>Navigate all your lectures in folder structure.</p>
+                                <p>Navigate all your lectures with a folder structure.</p>
                                 <a class="text-decoration-none stretched-link"
                                    href="{% url 'lectures:lecture-database' %}">
                                     View DB/Lecture
@@ -74,7 +72,7 @@
                                 </a>
                             </div>
                         {% endif %}
-                        <div class="col-lg-4 position-relative">
+                        <div class="col-md-4 position-relative">
                             <div class="feature bg-primary bg-gradient text-white rounded-3 mb-3"><i
                                     class="bi bi-journal-text"></i>
                             </div>

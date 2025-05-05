@@ -1,4 +1,4 @@
-__version__ = "[feature/system-rework] 2025.05.01 commit-1"
+__version__ = "[feature/internationalization] 2025.05.05 commit-1"
 
 
 from .celery import app as celery_app
