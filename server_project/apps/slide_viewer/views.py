@@ -41,7 +41,7 @@ class SlideView(
             context["annotation"] = annotation
             context["annotation"].data = json.dumps(annotation.data)
 
-        context["can_create_annotation"] = slide.user_can_view(self.request.user)
+        context["can_create_annotation"] = slide.user_can_view(self.request.user) and (self.request.user.is_admin() or self.request.user.is_publisher()) 
         context["can_edit_annotation"] = annotation and annotation.user_can_edit(
             self.request.user
         )
