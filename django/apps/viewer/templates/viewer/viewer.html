@@ -1,0 +1,1218 @@
+{% extends 'common/base.html' %}
+{% load static %}
+
+{% block title %}{{ slide.name }}{% endblock %}
+
+{% block extra_head %}
+    <!-- Openseadragon -->
+    <script src="{% static 'openseadragon/openseadragon.min.js' %}"></script>
+    <!-- Openseadragon scalebar 플러그인 -->
+    <script src="{% static 'openseadragon/openseadragon-scalebar.js' %}"></script>
+    <!-- annotorious JS -->
+    <script src="{% static 'annotorious/js/annotorious-openseadragon.js' %}"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@annotorious/plugin-tools@1.0.2/dist/annotorious-plugin-tools.js"></script>
+    <!-- OSDMeasure 플러그인 -->
+    <script src="{% static 'OSDMeasure/dexie.min.js' %}"></script>
+    <script src="{% static 'OSDMeasure/fabricjs.min.js' %}"></script>
+    <script src="{% static 'OSDMeasure/openseadragon-fabricjs-overlay.js' %}"></script>
+    <script src="{% static 'OSDMeasure/OSDMeasure.js' %}"></script>
+    <!-- screenshot 플러그인 -->
+    <script src="{% static 'screenshot/html2canvas.min.js' %}"></script>
+
+{% endblock extra_head %}
+
+
+<!-- css -->
+{% block extra_css %}
+    <!-- custom slide-viewer css -->
+    <link rel="stylesheet" href="{% static 'viewer/css/viewer.css' %}">
+    <!-- annotorious CSS -->
+    <link rel="stylesheet" href="{% static 'annotorious/css/annotorious-openseadragon.css' %}">
+    <link rel="stylesheet"
+          href="https://cdn.jsdelivr.net/npm/@annotorious/plugin-tools@1.0.2/dist/annotorious-plugin-tools.css">
+{% endblock extra_css %}
+
+<!-- slide_name part in header block -->
+{% block slide_name %}
+    {{ slide.name }}
+    <!-- 임시로 현재 annotation 정보 표시 -->
+    {% if annotation %}[{{ annotation.name }}({{ annotation.author }})]{% endif %}
+{% endblock slide_name %}
+
+
+<!-- main block -->
+{% block content %}
+    <div id="openseadragon-container"></div>
+{% endblock content %}
+
+<!-- nav block -->
+{% block nav_content %}
+    <!-- 화면 클 때 나오는 네비게이션 -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark custom-nav nav-large-query">
+        <div class="container-fluid custom-nav">
+            <!-- 전체 버튼 그룹 -->
+            <div class="btn-group" role="group">
+                <!-- File 드롭다운 버튼 -->
+                <div class="btn-group" role="group">
+                    <button id="btnGroupDrop_file" type="button"
+                            class="btn btn btn-outline-light custom-button dropdown-toggle"
+                            data-bs-toggle="dropdown" aria-expanded="false" title="File"> File
+                    </button>
+                    <ul class="dropdown-menu" aria-labelledby="btnGroupDrop_file">
+                        <!-- 저장 버튼 -->
+                        <li>
+                            {% if can_edit_annotation %}
+                                <button class="dropdown-item" id="annotation-update-btn" title="Save"
+                                        data-annotation-id="{{ annotation.id }}"
+                                        data-url="{% url 'api:annotation-detail' pk=annotation.id %}">
+                                    <i class="bi bi-floppy"></i> Save
+                                </button>
+                            {% endif %}
+                            {% if can_create_annotation %}
+                                <button class="dropdown-item" title="Save As" data-bs-toggle="modal"
+                                        data-bs-target="#annotation-create-modal">
+                                    <i class="bi bi-floppy"></i> Save As..
+                                </button>
+
+                        </li>
+                        <li>
+                            <hr class="dropdown-divider" style="--bs-dropdown-divider-margin-y: 0">
+                        </li>
+                        {% endif %}
+                        <!-- 정보 버튼 -->
+                        {#                        <li>#}
+                        {#                            <button class="dropdown-item" title="Slide-Information" onclick="openinfoPopup()">#}
+                        {#                                <i class="bi bi-info-circle"></i> Information#}
+                        {#                            </button>#}
+                        {#                        </li>#}
+                        <li>
+                            <button class="dropdown-item" title="Slide-Information" data-bs-toggle="modal"
+                                    data-bs-target="#information-modal">
+                                <i class="bi bi-info-circle"></i> Information
+                            </button>
+                        </li>
+                        <!-- 도움말 버튼 -->
+                        <li>
+                            <button class="dropdown-item" title="Help">
+                                <i class="bi bi-question-circle"></i> Help
+                            </button>
+                        </li>
+                    </ul>
+                </div>
+                <!-- View 드롭다운 버튼 -->
+                <div class="btn-group" role="group">
+                    <button id="btnGroupDrop_view" type="button"
+                            class="btn btn btn-outline-light custom-button dropdown-toggle"
+                            data-bs-toggle="dropdown"
+                            aria-expanded="false" title="File"> View
+                    </button>
+                    <ul class="dropdown-menu" aria-labelledby="btnGroupDrop_view">
+                        <!-- 네비게이터 버튼-->
+                        <li>
+                            <button class="dropdown-item" onclick="toggleNav()" title="Toggle Navigator">
+                                <i class="bi bi-geo-alt-fill"></i> Navigator
+                            </button>
+                        </li>
+                        <!-- 전체화면 버튼 -->
+                        <li>
+                            <button class="dropdown-item" onclick="toggleFullScreen()" title="Full Screen">
+                                <i class="bi bi-arrows-fullscreen"></i> Full Screen
+                            </button>
+                        </li>
+                        <!-- Brightness Control -->
+                        <li class="dropdown-item">
+                            <label for="brightness">밝기:</label>
+
+                            <input type="range" id="brightness" min="0" max="2" step="0.01" value="1"
+                                   oninput="updateFilters()">
+                            <span id="brightness-value" class="filter-value">1.00</span>
+
+                            <button type="button" onclick="resetBrightness()">Reset</button>
+                        </li>
+                        <!-- Contrast Control -->
+                        <li class="dropdown-item">
+                            <label for="contrast">대비:</label>
+                            <input type="range" id="contrast" min="0" max="2" step="0.01" value="1"
+                                   oninput="updateFilters()">
+                            <span id="contrast-value" class="filter-value">1.00</span>
+                            <button type="button" onclick="resetContrast()">Reset</button>
+                        </li>
+                        <!-- Saturate Control -->
+                        <li class="dropdown-item">
+                            <label for="saturate">채도:</label>
+                            <input type="range" id="saturate" min="0" max="2" step="0.01" value="1"
+                                oninput="updateFilters()">
+                            <span id="saturate-value" class="filter-value">1.00</span>
+                            <button type="button" onclick="resetSaturate()">Reset</button>
+                        </li>
+
+                    </ul>
+                </div>
+                <!-- 배율 드롭다운 버튼 -->
+                <div class="btn-group" role="group">
+                    <button id="btnGroupDrop_scale" type="button"
+                            class="btn btn btn-outline-light custom-button dropdown-toggle"
+                            data-bs-toggle="dropdown"
+                            aria-expanded="false" style="width: 102px;" title="Change Lens">
+                    </button>
+                    <ul class="dropdown-menu" aria-labelledby="btnGroupDrop_scale">
+                        <!-- Reset 버튼 -->
+                        <li>
+                            <button class="dropdown-item" onclick="viewer.viewport.goHome()">
+                                Reset
+                            </button>
+                        </li>
+                        <!-- 배율 버튼 -->
+                        <li>
+                            <button class="dropdown-item" onclick="setZoomLevel(1.25)">1.25X</button>
+                        </li>
+                        <li>
+                            <button class="dropdown-item" onclick="setZoomLevel(2.5)">2.5X</button>
+                        </li>
+                        <li>
+                            <button class="dropdown-item" onclick="setZoomLevel(5)">5X</button>
+                        </li>
+                        <li>
+                            <button class="dropdown-item" onclick="setZoomLevel(10)">10X</button>
+                        </li>
+                        <li>
+                            <button class="dropdown-item" onclick="setZoomLevel(20)">20X</button>
+                        </li>
+                        <li>
+                            <button class="dropdown-item" onclick="setZoomLevel(40)">40X</button>
+                        </li>
+                        <li>
+                            <button class="dropdown-item" onclick="setZoomLevel(63)">63X</button>
+                        </li>
+                        <li>
+                            <button class="dropdown-item" onclick="setZoomLevel(100)">100X</button>
+                        </li>
+                    </ul>
+                </div>
+                <!-- 그리기 드롭다운 버튼-->
+                <div class="btn-group" role="group">
+                    <button id="btnGroupDrop_annotation" type="button"
+                            class="btn btn btn-outline-light custom-button dropdown-toggle"
+                            data-bs-toggle="dropdown"
+                            aria-expanded="false" title="Drawing" style="background-color: rgb(243, 88, 83);">
+                        <span>Drawing </span><span id="ink">●</span>
+                    </button>
+                    <ul class="dropdown-menu" aria-labelledby="btnGroupDrop_annotation">
+                        <!-- Annotation 버튼-->
+                        <li>
+                            <button class="dropdown-item" onclick="setDrawingTool('ellipse')"><i
+                                    class="bi bi-circle"></i> Circle
+                            </button>
+                        </li>
+                        <li>
+                            <button class="dropdown-item" onclick="setDrawingTool('rectangle')"><i
+                                    class="bi bi-square"></i> Rectangle
+                            </button>
+                        </li>
+                        <li>
+                            <button class="dropdown-item" onclick="setDrawingTool('polygon')"><i
+                                    class="bi bi-pentagon"></i> Polygon
+                            </button>
+                        </li>
+                        <li>
+                            <hr class="dropdown-divider" style="--bs-dropdown-divider-margin-y: 0">
+                        </li>
+                        <!-- Measure 버튼-->
+                        <li>
+                            <button class="dropdown-item" onclick="plugin.setMeasureMode(true)"><i
+                                    class="bi bi-rulers"></i> Linear Measure
+                            </button>
+                        </li>
+                        <li>
+                            <hr class="dropdown-divider" style="--bs-dropdown-divider-margin-y: 0">
+                        </li>
+                        <li class="dropdown-item">
+                            <i class="bi bi-palette"></i><span> Choose Color </span>
+                        </li>
+                        <!-- 항상 보이는 색상 팔레트 -->
+                        <li class="color-palette">
+                            <div class="color-option" data-color="#ff0000">
+                                <div class="color-circle red"></div>
+                            </div>
+                            <div class="color-option" data-color="#0000ff">
+                                <div class="color-circle blue"></div>
+                            </div>
+                            <div class="color-option" data-color="#000001">
+                                <div class="color-circle black"></div>
+                            </div>
+                            <div class="color-option" data-color="#ffffff">
+                                <div class="color-circle white"></div>
+                            </div>
+                            <div class="color-option" data-color="#ffff00">
+                                <div class="color-circle yellow"></div>
+                            </div>
+                            <div class="color-option" data-color="#ff00ff">
+                                <div class="color-circle magenta"></div>
+                            </div>
+                            <div class="color-option" data-color="#00ff00">
+                                <div class="color-circle green"></div>
+                            </div>
+                            <div class="color-option" data-color="#8b4513">
+                                <div class="color-circle brown"></div>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+                <!-- 숨기기 버튼 -->
+                <button class="btn btn btn-outline-light custom-button" id="invisible-btn"
+                        title="Hide Annotation" style="background-color: rgb(243, 88, 83);">
+                    <i class="bi bi-eye-slash"></i>
+                </button>
+                <!-- 지우개 버튼 -->
+                <button class="btn btn btn-outline-light custom-button" id="erase-btn"
+                        title="Remove Annotation" style="background-color: rgb(243, 88, 83); display: none;">
+                    <i class="bi bi-eraser"></i>
+                </button>
+                <!-- annotation 수정 버튼 -->
+                <button class="btn btn btn-outline-light custom-button" id="edit-btn"
+                        title="Edit Annotation" style="background-color: rgb(243, 88, 83); display: none;">
+                    <i class="bi bi-pen"></i>
+                </button>
+            </div>
+            <!-- 오른쪽 버튼 그룹들 -->
+            <div class="btn-group ms-auto nav-media-query" role="group">
+                <!-- Reset 버튼(이 이후로 오른쪽으로 밀림림) -->
+                <button class="btn btn btn-outline-light custom-button"
+                        onclick="viewer.viewport.goHome(true)" title="Reset View">
+                    <i class="bi bi-house"></i>
+                </button>
+                <!-- 저장 버튼 -->
+                <button class="btn btn btn-outline-light custom-button"
+                        onclick="captureOpenSeadragonView()" title="Screenshot">
+                    <i class="bi bi-camera"></i>
+                </button>
+            </div>
+        </div>
+    </nav>
+    <!-- 화면 작을 때 나오는 네비게이션 -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark custom-nav nav-small-query">
+        <div class="container-fluid custom-nav nav-slide-text d-flex justify-content-center">
+            {{ slide.name }}
+        </div>
+    </nav>
+{% endblock nav_content %}
+
+<!-- aside block -->
+{% block aside_content %}
+    <!-- 왼쪽 버튼 그룹들 -->
+    <div class="btn-group ms-auto nav-media-query" role="group">
+        <button class="btn btn-outline-light custom-button" data-bs-tooltip="tooltip" data-bs-toggle="modal"
+                data-bs-target="#description-modal" aria-label="Edit" data-bs-original-title="Edit">
+            <i class="bi bi-pencil"></i>
+        </button>
+    </div>
+    <div class="text-center flex-grow-1">
+        {% if annotation %}
+        {{ annotation.name|slice:':20' }}
+        {% else %}
+        Description
+        {% endif %}
+    </div>
+    <!-- 오른쪽 버튼 그룹들 -->
+    <div class="btn-group ms-auto nav-media-query" role="group">
+        <!-- 저장 버튼 -->
+        <button class="btn btn-outline-light custom-button" onclick="" title="Save">
+            <i class="bi bi-floppy"></i>
+        </button>
+    </div>
+{% endblock aside_content %}
+
+<!-- article block -->
+{% block article_content %}
+    <div id="article-header">
+        <p id="slide-description" class="text-wrap d-block text-break"></p>
+    </div>
+    <div id="article-body">
+        <!-- 버튼이 추가될 컨테이너 -->
+    </div>
+{% endblock article_content %}
+
+{% block extra_modal %}
+    <!-- Annotation Create Modal -->
+    <div class="modal fade" id="annotation-create-modal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Create New Annotation</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="annotation-create-form" data-url="{% url 'api:annotation-list' %}" data-method="POST"
+                      novalidate>
+                    <div class="modal-body">
+                        <input type="hidden" name="slide" value="{{ slide.id }}">
+                        <div class="mb-2">
+                            <label for="annotation-create-name" class="form-label">Annotation Name</label>
+                            <input type="text" class="form-control" id="annotation-create-name" name="name" required>
+                            <div class="invalid-feedback" id="name-feedback"></div>
+                        </div>
+                        <div class="align-items-center text-danger d-none" data-type="message"></div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Save</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <!-- Description Modal -->
+    <div class="modal modal-lg fade" id="description-modal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Description</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <textarea type="text" class="form-control" id="description-text" rows="20"></textarea>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" data-bs-dismiss="modal" id="apply-description">Apply
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Information Modal -->
+    <div class="modal fade" id="information-modal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">이미지 정보</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <dl class="row" id="information-list">
+                        <dt class="col-sm-3">이름</dt>
+                        <dd class="col-sm-9">{{ slide.name|default:"-" }}</dd>
+                        <dt class="col-sm-3">정보</dt>
+                        <dd class="col-sm-9">{{ slide.information|default:"-" }}</dd>
+                        <dt class="col-sm-3">작성자</dt>
+                        <dd class="col-sm-9">{{ slide.author.username|default:"-" }}</dd>
+                        <dt class="col-sm-3">관리자그룹</dt>
+                        <dd class="col-sm-9">{{ slide.manager_group.name|default:"-" }}</dd>
+                        <dt class="col-sm-3">폴더</dt>
+                        <dd class="col-sm-9">{{ slide.folder|default:"-" }}</dd>
+                        <dt class="col-sm-3">원본 파일</dt>
+                        <dd class="col-sm-9">
+                            <dl class="row">
+                                <dt class="col-sm-3">이름</dt>
+                                <dd class="col-sm-9">{{ slide.file_name }}</dd>
+                                <dt class="col-sm-3">용량</dt>
+                                <dd class="col-sm-9">{{ slide.file.size|filesizeformat }}</dd>
+                            </dl>
+                        </dd>
+                        <dt class="col-sm-3">연관이미지</dt>
+                        <dd class="col-sm-9">
+                            <img src="{% url 'api:slide-associated-image' pk=slide.pk %}" class="img-fluid" alt="">
+                        </dd>
+                        <dt class="col-sm-3">메타데이터</dt>
+                        <dd class="col-sm-9">
+                            <dl class="row">
+                                <dt class="col-sm-3">생성일</dt>
+                                <dd class="col-sm-9">{{ slide.metadata.created }}</dd>
+                                <dt class="col-sm-3">촬영 배율</dt>
+                                <dd class="col-sm-9">{{ slide.metadata.sourceLens }}</dd>
+                            </dl>
+                        </dd>
+                        <dt class="col-sm-3">생성일</dt>
+                        <dd class="col-sm-9">{{ slide.created_at_formatted }}</dd>
+                        <dt class="col-sm-3">수정일</dt>
+                        <dd class="col-sm-9">{{ slide.updated_at_formatted }}</dd>
+                    </dl>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock extra_modal %}
+
+
+{% block extra_js %}
+
+
+    <!-- slide metadata 불러오기 -->
+    <div id="overlay"></div>
+
+    <!-- 팝업(Annotation) 폼 -->
+    <div id="annotation-popup">
+        <h3>Annotation Details</h3>
+        <form id="annotation-form">
+            <label for="title">Title:</label><br>
+            <input type="text" id="title" name="title" required><br><br>
+            <label for="comment">Comment:</label><br>
+            <textarea id="comment" name="comment" required></textarea><br><br>
+            <button type="submit">Save</button>
+            <button type="button" onclick="cancelPopup()">Cancel</button>
+        </form>
+    </div>
+
+    <!-- 팝업(Information) -->
+    <div id="information-popup" style="display: none;">
+        <h3>Information</h3>
+        <div id="information-box">
+            {{ slide.information }} <!-- 정보 내용 표시 -->
+        </div>
+        <button type="button" onclick="closeinfoPopup()">Close</button>
+    </div>
+
+
+    {{ slide.metadata|json_script:"slide-metadata" }}
+    <!-- extension에서 django 다운받기
+이런 식으로 받아오면 돼
+ http://127.0.0.1:8000/api/database/slides/ 이 링크의 것은 {{ slide.name }}이나 {{ slide.information }} 처럼 가져오면 되고
+
+ http://127.0.0.1:8000/api/viewer/annotations/ 여기서 나오는 "data"에 annotation json이 들어가면 되는데, 
+ http://127.0.0.1:8000/api/viewer/annotations/data/ 그러면 여기에 저장될 거야. 불러올 때는 slideAnnotation으로 불러오면 되는 거 같고고
+-->
+
+    <!-- script -->
+    <script type="text/javascript">
+        // 현재 연결된 annotation 정보. `undefined` 면 연결된 annotation 이 없다고 보면 됨.
+        let annotation;
+        {% if annotation %}
+            annotation = {
+                description: '{% if annotation.description %}{{ annotation.description|linebreaksbr }}{% endif %}',
+                data: {{ annotation.data | safe }},
+            };
+        {% endif %}
+
+        var viewer = OpenSeadragon({
+            id: "openseadragon-container",
+            tileSources: "{% url 'api:slide-dzi' pk=slide.id %}",
+            prefixUrl: "{% static 'openseadragon/images' %}/",
+            //네비게이터
+            showNavigator: true,
+            navigatorPosition: "BOTTOM_RIGHT", //네비게이터 위치
+            navigatorSizeRatio: 0.17, //네비게이터 크기를 뷰어의 얼마 비율로
+            navigatorMaintainSizeRatio: true, //뷰어 크기 변경되면 네비게이터도 바뀜
+            navigatorDisplayRegionColor: "blue", //viewport 구역 표시 색
+            navigatorBorderColor: "rgba(0, 0, 0, 0.4)", //테두리 색색
+            navigatorBackground: "rgb(248, 249, 250)", //배경색
+            navigatorAutoFade: false,
+
+            debugMode: false,
+            //네비게이션 컨트롤
+            showNavigationControl: true,
+            navigationControlAnchor: OpenSeadragon.ControlAnchor.TOP_RIGHT,
+            zoomInButton: 'zoom-in',
+            zoomOutButton: 'zoom-out',
+            homeButton: 'home',
+            fullPageButton: 'full-page',
+            nextButton: 'next',
+            previousButton: 'previous',
+            maxZoomLevel: 52, //최대 줌 레벨 설정. 100X까지 되도록 설정함.
+            showRotationControl: true,
+            gestureSettingsMouse: {
+                clickToZoom: false, //사용시 약간 불편해서 꺼둠 (250210)
+                dblClickToZoom: true,
+                pinchToZoom: true,
+                scrollToZoom: true,
+                pinchRotate: true
+            }
+        });
+
+        const raw_metadata = JSON.parse(document.getElementById('slide-metadata').textContent);
+        const slide_metadata = {
+            mpp_x: parseFloat(raw_metadata["mpp-x"]).toFixed(3), // toFixed(3)를 사용하여 소수점 3자리 문자열로 만들 수도 있음
+            sourceLens: parseInt(raw_metadata.sourceLens)
+        };
+
+        //Scalebar 추가
+        viewer.scalebar({
+            type: OpenSeadragon.ScalebarType.MICROSCOPY,
+            pixelsPerMeter: 1 / slide_metadata.mpp_x * 1000000,
+            minWidth: "150px",
+            location: OpenSeadragon.ScalebarLocation.BOTTOM_LEFT,
+            color: "black",
+            fontColor: "black",
+            backgroundColor: "rgba(255, 255, 255, 0.5)",
+            fontSize: "large",
+            barThickness: 3,
+        });
+        var navShown = true;
+
+        function toggleNav() {
+            if (navShown) {
+                viewer.navigator.element.style.display = "none";
+            } else {
+                viewer.navigator.element.style.display = "inline-block";
+            }
+            navShown = !navShown;
+        }
+
+        function toggleFullScreen() {
+            if (!document.fullscreenElement) {
+                document.getElementById('openseadragon-container').requestFullscreen()
+                    .catch(err => {
+                        console.log(`Error attempting to enable full-screen mode: ${err.message}`);
+                    });
+            } else {
+                document.exitFullscreen();
+            }
+        }
+
+        // Add touch gesture support
+        let touchStartX = 0;
+        let touchStartY = 0;
+        document.getElementById('openseadragon-container').addEventListener('touchstart', function (e) {
+            touchStartX = e.changedTouches[0].screenX;
+            touchStartY = e.changedTouches[0].screenY;
+        });
+
+        // Scale
+        //sourceLens의 값과 baseImageZoom을 이용하여 배율 보정정
+        function calculateZoomFactor(targetMagnification) {
+            const sourceLens = slide_metadata.sourceLens;
+            const baseImageZoom = viewer.viewport.viewportToImageZoom(sourceLens);
+            const zoomFactor = targetMagnification / baseImageZoom;
+            return zoomFactor;
+        }
+
+        //zoom 설정정
+        function setZoomLevel(targetMagnification) {
+            const zoomFactor = calculateZoomFactor(targetMagnification);
+            viewer.viewport.zoomTo(zoomFactor, refPoint = null, immeadiately = true);
+
+        }
+
+        let plugin = null;
+
+        // 최대 zoom level 설정
+        viewer.addHandler("open", function () {
+
+            // 100배에 필요한 zoom factor를 미리 구해본 뒤
+            const zoomFactorAt100x = calculateZoomFactor(100);
+
+            // 그 값을 maxZoomLevel에 설정
+            viewer.viewport.maxZoomLevel = zoomFactorAt100x;
+
+            const contentFactor = viewer.world._contentFactor;
+
+            plugin = new OSDMeasure(viewer, {
+                conversionFactor: slide_metadata.mpp_x,
+                units: "um",
+                fontSize: contentFactor / 50,
+                selectedColor: selectedColor
+            });
+        });
+
+        let currentMagnification;
+        //현재 zoom을 추적, 버튼 업데이트 함수
+        function trackZoomAndUpdateButton() {
+            const scaleButton = document.getElementById('btnGroupDrop_scale'); // Scale 버튼 선택
+            if (!scaleButton) {
+                console.error('Scale button not found');
+                return;
+            }
+
+            //배율 변화 감지, 버튼에 반영
+            viewer.addHandler('zoom', function () {
+                let viewportZoom = viewer.viewport.getZoom();
+                let imageZoom = viewer.viewport.viewportToImageZoom(viewportZoom);
+                const sourceLens = slide_metadata.sourceLens;
+
+                currentMagnification = imageZoom * sourceLens;
+
+                const predefinedMagnifications = [5, 10, 20, 40, 63, 100]; // 정수 배율 리스트
+                if (predefinedMagnifications.includes(Math.round(currentMagnification))) {
+                    scaleButton.textContent = `${Math.round(currentMagnification)}X`;
+                } else {
+                    scaleButton.textContent = `${currentMagnification.toFixed(2)}X`;
+                }
+            })
+        }
+
+        //페이지 로드될 때 -배율 추적 시작, 색상 팔레트 초기화
+        document.addEventListener('DOMContentLoaded', () => {
+            // 색상 팔레트 관련 초기화
+            const colorPalette = document.querySelector('.color-palette');
+            const dropdownMenu = document.querySelector('#btnGroupDrop_annotation').nextElementSibling;
+
+            // 색상 팔레트 안에서 클릭 시 드롭다운이 닫히지 않도록 방지
+            colorPalette.addEventListener('click', function (event) {
+                event.stopPropagation(); // 클릭 이벤트가 부모 요소까지 전달되지 않도록 막음
+            });
+
+            // 배율 추적 시작
+            trackZoomAndUpdateButton();
+        });
+
+
+        // Add keyboard controls
+        document.addEventListener('keydown', function (event) {
+
+            const activeEl = document.activeElement;
+            if (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA') {
+                return; // 입력창에 포커스 있을 땐 키 막기
+            }
+
+            switch (event.key) {
+                case 'n':
+                case 'N':
+                    toggleNav(); //네비게이터 불러오기
+                    break;
+                case 'f':
+                case 'F':
+                    toggleFullScreen(); //전체화면
+                    break;
+                case 'h':
+                case 'H':
+                case '0':
+                    viewer.viewport.goHome(true); //reset view
+                    break;
+                case 'p':
+                    captureOpenSeadragonView();
+                    break;
+                //case 'r':
+                //case 'R':
+                //    viewer.viewport.setRotation(90); //90도 회전 : 제대로 안됨. 보류
+                //    break;
+
+               //숫자키 입력시 배율 조정정
+                case '1':
+                    setZoomLevel(1.25);
+                    break;
+                case '2':
+                    setZoomLevel(2.5);
+                    break;
+                case '3':
+                    setZoomLevel(5);
+                    break;
+                case '4':
+                    setZoomLevel(10);
+                    break;
+                case '5':
+                    setZoomLevel(20);
+                    break;
+                case '6':
+                    setZoomLevel(40);
+                    break;
+                case '7':
+                    setZoomLevel(63);
+                    break;
+                case '8':
+                    setZoomLevel(100);
+                    break;
+
+                // 직사각형, 타원형 주석 지우기
+                //case "Backspace":   //맥OS 이용자
+                //case "Delete":      //윈도우 이용자
+                //    let selectedAnno = anno.getSelected()[0];
+                //    if (selectedAnno) {
+                //        anno.removeAnnotation(selectedAnno.id);
+                //    }
+                //    break;
+            }
+        });
+
+
+        // viewer.addHandler('update-viewport', function () {
+        //     // Viewport Zoom 가져오기
+        //     var viewportZoom = viewer.viewport.getZoom();
+
+        //     // Viewport Zoom을 Image Zoom으로 변환
+        //     var imageZoom = viewer.viewport.viewportToImageZoom(viewportZoom);
+
+        //     // 콘솔에 출력
+        //     console.log("Viewport Zoom:", viewportZoom);
+        //     console.log("Image Zoom:", imageZoom);
+        // });
+
+        OpenSeadragon.setString("Tooltips.ScreenshotToggle", "스크린샷 저장");
+
+        window.getScreenshotFilename = function () {
+            function getFormattedTime() {
+                const now = new Date();
+                const yyyy = now.getFullYear();
+                const mm = String(now.getMonth() + 1).padStart(2, '0');
+                const dd = String(now.getDate()).padStart(2, '0');
+                const hh = String(now.getHours()).padStart(2, '0');
+                const min = String(now.getMinutes()).padStart(2, '0');
+                const ss = String(now.getSeconds()).padStart(2, '0');
+                return `${yyyy}${mm}${dd}-${hh}${min}${ss}`;
+            }
+
+            const userId = "{{ user.username }}";
+            const slideTitle = "{{ slide.name|slice:':15' }}".replace(/\s+/g, '_');
+            const timeStr = getFormattedTime();
+            return `${userId}_${timeStr}_${slideTitle}`;
+        };
+
+        //const viewerElement = viewer.element; // 또는 document.getElementById('openseadragon-viewer')
+        //const offset = OpenSeadragon.getElementOffset(viewerElement);
+        //console.log(`뷰어 위치: x=${offset.x}, y=${offset.y}`);
+
+
+        // Annotorious 초기화
+        let anno;
+        let anno2;
+        let selectedColor = '#ff0000'
+        let editMode = false;
+        document.getElementById("ink").style.color = selectedColor;
+        anno = AnnotoriousOSD.createOSDAnnotator(viewer, {
+            userSelectAction: "{% if can_create_annotation %}EDIT{% else %}NONE{% endif %}"
+        });
+
+
+        {% if can_create_annotation %}
+            const activeAnno = anno;
+        {% else %}
+            anno2 = AnnotoriousOSD.createOSDAnnotator(viewer);
+            const activeAnno = anno2;
+        {% endif %}
+
+        AnnotoriousTools.mountPlugin(activeAnno);
+
+
+        const slideId = {{ slide.id }};
+
+
+        //저장된 주석 이미지 및 설명(슬라이드 자체 설명 & 주석 설명) 띄우기 (fetch 사용 제거)
+        if (annotation && annotation.data) {
+            annotation.data.forEach(annot => {
+                anno.addAnnotation(annot);
+                updateAnnotationDisplay(annot);
+            });
+
+            //슬라이드 자체 설명
+            const articleHeader = document.getElementById('article-header');
+            const descriptionElement = document.getElementById('slide-description');
+            descriptionElement.innerHTML = annotation.description;
+            articleHeader.appendChild(descriptionElement);
+        }
+
+
+        // 그리기 모드 변경 핸들러
+        function setDrawingTool(tool) {
+            if (!activeAnno) return console.error('Annotorious is not initialized');
+            activeAnno.setDrawingEnabled(true);
+            activeAnno.setDrawingTool(tool);
+            viewer.setMouseNavEnabled(false);
+            //document.getElementById('openseadragon-viewer').classList.add('cursor-crosshair');
+        }
+
+        activeAnno.on('createAnnotation', (annotation) => {
+            activeAnno.setDrawingEnabled(false);
+            viewer.setMouseNavEnabled(true);
+            annotation["motivation"] = selectedColor;
+            editMode = false;
+
+            openPopup(annotation)
+        });
+
+
+        //주석 선택 후 지우개 버튼 클릭하면 -> 지우기
+        activeAnno.on('selectionChanged', (annotation) => {
+            let deleteBtn = document.getElementById('erase-btn');
+            let editBtn = document.getElementById('edit-btn');
+
+            if (annotation[0] != null) { //주석이 선택된 경우
+                let selectedAnnotation = annotation[0]; // 현재 선택된 주석 저장
+                // 기존 이벤트를 덮어쓰는 방식으로 클릭 이벤트 설정
+                deleteBtn.onclick = () => {
+                    activeAnno.removeAnnotation(selectedAnnotation.id);
+
+                    // article-header와 article-body에서 해당 annotation의 요소 제거
+                    let bodyElem = document.getElementById('annotation-combined-' + selectedAnnotation.id);
+                    if (bodyElem) bodyElem.remove();
+
+                };
+
+                // 편집 버튼 클릭 이벤트 설정 - openEditPopup 함수 호출
+                editBtn.onclick = () => {
+                    openEditPopup(selectedAnnotation);
+                };
+
+                document.getElementById('erase-btn').style.display = 'block';
+                document.getElementById('edit-btn').style.display = 'block';
+
+
+                console.log(annotation);
+            } else { // 주석 선택이 해제된 경우
+                // 클릭 이벤트 제거 (null로 설정)
+                deleteBtn.onclick = null;
+                document.getElementById('erase-btn').style.display = 'none';
+                document.getElementById('edit-btn').style.display = 'none';
+            }
+        });
+
+        //OSDMeasure 삭제 버튼 띄우기
+        window.addEventListener('measurement-selected', e => {
+            const m = e.detail.measurement;
+
+            // 원하는 정보 띄우기
+            document.getElementById('erase-btn').style.display = 'block';
+
+            // 삭제 버튼에 해당 측정 저장
+            document.getElementById('erase-btn').onclick = () => {
+                plugin.deleteSelectedMeasurement(m);
+                document.getElementById('erase-btn').style.display = 'none';
+            };
+        });
+
+        window.addEventListener('measurement-deselected', () => {
+            console.log("deselected");
+            document.getElementById('erase-btn').style.display = 'none';
+        });
+
+        // 색상 선택
+        document.querySelectorAll('.color-option').forEach(item => {
+            item.addEventListener('click', function () {
+                selectedColor = this.dataset.color;
+                document.getElementById("ink").style.color = selectedColor;
+
+                plugin.setMeasurementColor(selectedColor);
+            });
+        });
+
+        //annotorious 주석 색 지정
+        anno.setStyle((annotation, state) => {
+            const color = annotation["motivation"];
+            return {
+                fillOpacity: 0,
+                stroke: color,
+                strokeOpacity: 1,
+                strokeWidth: 3
+            }
+        });
+        if(anno2){
+            anno2.setStyle((annotation, state) => {
+                const color = annotation["motivation"];
+                return {
+                    fillOpacity: 0,
+                    stroke: color,
+                    strokeOpacity: 1,
+                    strokeWidth: 3
+                }
+            });
+        }
+
+        function openPopup(annotation) {
+            return new Promise((resolve, reject) => {
+                // 입력 필드 초기화
+                document.getElementById('title').value = '';
+                document.getElementById('comment').value = '';
+                document.getElementById('overlay').style.display = 'block';
+                document.getElementById('annotation-popup').style.display = 'block';
+
+                const form = document.getElementById('annotation-form');
+
+                // 팝업에서 제목과 코멘트 입력 후 저장할 때 실행
+                form.onsubmit = function (event) {
+                    event.preventDefault();
+
+                    const title = document.getElementById('title').value;
+                    const comment = document.getElementById('comment').value;
+
+                    annotation["name"] = title;
+                    annotation["description"] = comment;
+
+                    {% if can_create_annotation %}
+                        updateAnnotationDisplay(annotation);
+                    {% endif %}
+
+                    closePopup();
+
+                    resolve(annotation);
+                };
+            });
+        }
+
+        // 팝업을 닫는 함수
+        function closePopup() {
+            document.getElementById('overlay').style.display = 'none';
+            document.getElementById('annotation-popup').style.display = 'none';
+        }
+
+        function cancelPopup() {
+            if (!editMode) {
+                activeAnno.removeAnnotation(activeAnno.getSelected()[0]);
+            }
+            closePopup();
+        }
+
+        function updateAnnotationDisplay(annotation) {
+            // article-body에 주석의 설명과 이름을 한 문단으로 추가
+            const articleBody = document.getElementById('article-body');
+            const combinedElement = document.createElement('p');
+            combinedElement.id = 'annotation-combined-' + annotation.id;
+
+            // 설명 부분
+            const descriptionSpan = document.createElement('span');
+            descriptionSpan.classList.add('annotation-description');
+            descriptionSpan.style.color = 'black';
+            const formattedDescription = annotation["description"].replace(/\n/g, '<br>');
+            descriptionSpan.innerHTML = formattedDescription;
+
+            // 구분자
+            const separator = document.createTextNode(': ');
+
+            // 이름 부분
+            const nameSpan = document.createElement('span');
+            nameSpan.classList.add('annotation-name');
+            nameSpan.style.color = 'blue';
+            const formattedName = annotation["name"].replace(/\n/g, '<br>');
+            nameSpan.innerHTML = formattedName;
+
+            // 요소들을 조합하여 하나의 문단에 추가
+            combinedElement.appendChild(nameSpan);
+            combinedElement.appendChild(separator);
+            combinedElement.appendChild(descriptionSpan);
+
+            articleBody.appendChild(combinedElement);
+
+            // 클릭 시 주석 영역으로 이동 (combinedElement 전체에 이벤트 적용)
+            combinedElement.addEventListener('click', function () {
+                anno.fitBounds(annotation, {immediately: false, padding: 50});
+            });
+        }
+
+
+        // 주석 수정 함수
+        function openEditPopup(annotation) {
+            editMode = true;
+            // 기존 값으로 입력 필드 미리 채우기
+            document.getElementById('title').value = annotation["name"] || '';
+            document.getElementById('comment').value = annotation["description"] || '';
+            document.getElementById('overlay').style.display = 'block';
+            document.getElementById('annotation-popup').style.display = 'block';
+
+            const form = document.getElementById('annotation-form');
+
+            form.onsubmit = function (event) {
+                event.preventDefault();
+
+                const newTitle = document.getElementById('title').value;
+                const newComment = document.getElementById('comment').value;
+
+                // 수정된 내용으로 annotation 업데이트
+                annotation["name"] = newTitle;
+                annotation["description"] = newComment;
+
+
+                activeAnno.updateAnnotation(annotation);
+
+                {% if can_create_annotation %}
+                    let bodyElem = document.getElementById('annotation-combined-' + annotation.id);
+                    if (bodyElem) bodyElem.remove();
+                    updateAnnotationDisplay(annotation);
+                {% endif %}
+
+                closePopup();
+            };
+        }
+
+        // 주석 숨기기 버튼 클릭 이벤트 핸들러
+        document.getElementById('invisible-btn').addEventListener('click', function () {
+            const icon = this.querySelector('i');
+            // 현재 아이콘이 eye-slash이면 보이는 상태 => 숨기기
+            if (icon.classList.contains('bi-eye-slash')) {
+                activeAnno.cancelSelected();
+                activeAnno.setVisible(false); // 주석 숨기기
+                icon.classList.remove('bi-eye-slash');
+                icon.classList.add('bi-eye');
+                this.title = "Show Annotation";
+
+                plugin.deselectMeasurement();
+                plugin.measurements.forEach(m => {
+                    if (m.line) m.line.visible = false;
+                    if (m.textObject) m.textObject.visible = false;
+                    if (m.p1?.fabricObject) m.p1.fabricObject.visible = false;
+                    if (m.p2?.fabricObject) m.p2.fabricObject.visible = false;
+                });
+                plugin.fabricCanvas.renderAll();
+
+            } else {
+                // 현재 아이콘이 eye이면 안 보이는 상태 => 보이기
+                activeAnno.setVisible(true); // 주석 보이기
+                icon.classList.remove('bi-eye');
+                icon.classList.add('bi-eye-slash');
+                this.title = "Hide Annotation";
+
+                plugin.measurements.forEach(m => {
+                    if (m.line) m.line.visible = true;
+                    if (m.textObject) m.textObject.visible = true;
+                    if (m.p1?.fabricObject) m.p1.fabricObject.visible = true;
+                    if (m.p2?.fabricObject) m.p2.fabricObject.visible = true;
+                });
+                plugin.fabricCanvas.renderAll();
+
+            }
+        });
+
+
+        //Information popup 추가
+        // info팝업을 열기 위한 함수
+        function openinfoPopup() {
+            document.getElementById('overlay').style.display = 'block';
+            document.getElementById("information-popup").style.display = "block";
+        }
+
+        // info팝업 닫기
+        function closeinfoPopup() {
+            document.getElementById('overlay').style.display = 'none';
+            document.getElementById("information-popup").style.display = "none";
+        }
+
+
+        // CSRF 토큰 가져오는 함수 (Django CSRF 보호)
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let cookie of cookies) {
+                    cookie = cookie.trim();
+                    if (cookie.startsWith(name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.slice(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+        const csrftoken = getCookie('csrftoken');
+
+
+
+        // Function to update filters based on slider values
+        function updateFilters() {
+            const brightness = document.getElementById('brightness').value;
+            const contrast = document.getElementById('contrast').value;
+            const saturate = document.getElementById('saturate').value;
+
+            // Update the displayed values
+            document.getElementById('brightness-value').textContent = Math.round((parseFloat(brightness) * 100 - 100));
+            document.getElementById('contrast-value').textContent = Math.round((parseFloat(contrast) * 100 - 100));
+            document.getElementById('saturate-value').textContent = Math.round((parseFloat(saturate) * 100 - 100));
+
+            // Apply CSS filters to the OpenSeadragon viewer
+            document.querySelector('#openseadragon-container canvas').style.filter = `brightness(${brightness}) contrast(${contrast}) saturate(${saturate})`;
+        }
+
+        // Function to reset brightness to default
+        function resetBrightness() {
+            const brightnessSlider = document.getElementById('brightness');
+            brightnessSlider.value = 1;
+            updateFilters();
+        }
+
+        // Function to reset contrast to default
+        function resetContrast() {
+            const contrastSlider = document.getElementById('contrast');
+            contrastSlider.value = 1;
+            updateFilters();
+        }
+
+        function resetSaturate() {
+            const saturateSlider = document.getElementById('saturate');
+            saturateSlider.value = 1;
+            updateFilters();
+        }
+
+        // Initialize filters on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            updateFilters();
+        });
+
+        function captureOpenSeadragonView() {
+            const viewerElement = viewer.element;
+            const canvas = document.querySelector('#openseadragon-container > div > div.openseadragon-canvas > canvas:nth-child(1)');
+            const filterValue = canvas.style.filter || 'none';
+            const ctx = canvas.getContext('2d');
+
+            const originalImageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = canvas.width;
+            tempCanvas.height = canvas.height;
+            const tempCtx = tempCanvas.getContext('2d');
+            tempCtx.filter = filterValue;
+            tempCtx.drawImage(canvas, 0, 0);
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.drawImage(tempCanvas, 0, 0);
+
+            viewer.setMouseNavEnabled(false);
+            viewer.setControlsEnabled(false);
+
+            html2canvas(viewerElement, {
+              useCORS: true,
+              backgroundColor: null,
+              scale: 2
+            }).then(originalCanvas => {
+              const filename = typeof getScreenshotFilename === 'function'
+                ? getScreenshotFilename()
+                : 'screenshot';
+
+              const now = new Date();
+              const dateString = now.toLocaleDateString('ko-KR'); // 예: 2025. 5. 12.
+              const timeString = now.toLocaleTimeString('ko-KR'); // 예: 14:23:45
+              const dateTimeString = `${dateString.replace(/\./g, '-').replace(/\s/g, '')} ${timeString}`;
+
+              // 💡 여백 추가할 캔버스 만들기
+              const marginHeight = 50; // 아래 여백 크기 (px)
+              const finalCanvas = document.createElement('canvas');
+              finalCanvas.width = originalCanvas.width;
+              finalCanvas.height = originalCanvas.height + marginHeight;
+
+              const finalCtx = finalCanvas.getContext('2d');
+
+              // 기존 이미지 그리기
+              finalCtx.drawImage(originalCanvas, 0, 0);
+
+              // 아래 여백 흰색 배경
+              finalCtx.fillStyle = 'white';
+              finalCtx.fillRect(0, originalCanvas.height, finalCanvas.width, marginHeight);
+
+              // 텍스트 작성
+              finalCtx.fillStyle = 'black';
+              finalCtx.font = '36px arial';
+              finalCtx.textBaseline = 'top';
+              const username = "{{ user.username }}";
+              const slideTitle = "{{ slide.name|slice:':30' }}".replace(/\s+/g, '_');
+
+              finalCtx.textAlign = 'left';
+              finalCtx.fillText(`${slideTitle}`, 10, originalCanvas.height + 5);
+              finalCtx.textAlign = 'center';
+              finalCtx.fillText(`배율: ${Math.round(currentMagnification)}X`, finalCanvas.width / 2, originalCanvas.height + 5);
+              finalCtx.textAlign = 'right';
+              finalCtx.fillText(`${username} | ${dateTimeString}`, finalCanvas.width - 10, originalCanvas.height + 5);
+
+              // 저장
+              finalCanvas.toBlob(blob => {
+                saveAs(blob, `${filename}.png`);
+
+                const item = new ClipboardItem({ 'image/png': blob });
+
+                navigator.clipboard.write([item]).then(() => {
+                    alert('이미지가 복사되었습니다! Ctrl+V로 붙여넣어보세요.');
+                }).catch(err => {
+                    console.error('클립보드 복사 실패:', err);
+                });
+              });
+
+              // 복원
+              ctx.putImageData(originalImageData, 0, 0);
+              viewer.setMouseNavEnabled(true);
+              viewer.setControlsEnabled(true);
+            }).catch(err => {
+              console.error('❌ 캡처 실패:', err);
+              ctx.putImageData(originalImageData, 0, 0);
+              viewer.setMouseNavEnabled(true);
+              viewer.setControlsEnabled(true);
+            });
+          }
+
+    </script>
+    <script src="{% static 'viewer/js/viewer.js' %}" type="text/javascript"></script>
+{% endblock extra_js %}
