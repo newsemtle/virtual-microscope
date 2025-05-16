@@ -73,6 +73,7 @@ function moveContent(listItem, direction) {
 
 function removeContent(listItem) {
     if (!listItem) return;
+    hideTooltips(...listItem.querySelectorAll("[data-bs-tooltip='tooltip']"));
     listItem.remove();
     updateSelectedImages();
 }
@@ -93,7 +94,7 @@ function loadSlideAnnotations(selectItem) {
 
             data.forEach(item => {
                 if (!existingOptions.has(item.id.toString())) {
-                    const annotation = document.createElement('option');
+                    const annotation = document.createElement("option");
                     annotation.value = item.id;
                     annotation.textContent = `${item.name} (${item.author})`;
                     selectItem.appendChild(annotation);
@@ -101,91 +102,93 @@ function loadSlideAnnotations(selectItem) {
             });
         },
         onError: (error) => {
-            showFeedback("Error loading slide annotations: " + error.message, "danger");
-        }
-    })
+            showFeedback(gettext("Failed to get slide annotations."), "danger");
+        },
+    });
 }
 
 function collapseFolder(listItem) {
     const collapseId = `collapse-${listItem.dataset.folderId}`;
     if (document.getElementById(collapseId)) return;
 
-    const ulChildContainer = document.createElement('div');
-    ulChildContainer.className = 'collapse';
+    const ulChildContainer = document.createElement("div");
+    ulChildContainer.className = "collapse";
     ulChildContainer.id = collapseId;
 
-    const chevronIcon = listItem.querySelector('[data-action="collapse"]');
-    ulChildContainer.addEventListener('show.bs.collapse', function (event) {
+    const chevronIcon = listItem.querySelector("[data-action='collapse']");
+    ulChildContainer.addEventListener("show.bs.collapse", function (event) {
         event.stopPropagation();
-        chevronIcon.classList.remove('bi-chevron-right');
-        chevronIcon.classList.add('bi-chevron-down');
+        chevronIcon.classList.remove("bi-chevron-right");
+        chevronIcon.classList.add("bi-chevron-down");
     });
-    ulChildContainer.addEventListener('hide.bs.collapse', function (event) {
+    ulChildContainer.addEventListener("hide.bs.collapse", function (event) {
         event.stopPropagation();
-        chevronIcon.classList.remove('bi-chevron-down');
-        chevronIcon.classList.add('bi-chevron-right');
+        chevronIcon.classList.remove("bi-chevron-down");
+        chevronIcon.classList.add("bi-chevron-right");
     });
 
-    const ulChild = document.createElement('ul');
-    ulChild.className = 'list-group mt-2 ms-2';
+    const ulChild = document.createElement("ul");
+    ulChild.className = "list-group mt-2 ms-2";
 
     drfRequest({
         url: listItem.dataset.url,
         onSuccess: (data) => {
             const {children, slides} = data;
             if ((!children || children.length === 0) && (!slides || slides.length === 0)) {
-                ulChild.innerHTML = '<li class="list-group-item">(No items)</li>';
+                const noItems = document.createElement("li");
+                noItems.className = "list-group-item";
+                noItems.textContent = `(${gettext("No items")})`;
+                ulChild.appendChild(noItems);
             } else {
                 children?.forEach(item => {
-                    const listItem = document.createElement('li');
-                    listItem.className = 'list-group-item';
+                    const listItem = document.createElement("li");
+                    listItem.className = "list-group-item";
                     listItem.dataset.url = item.url;
                     listItem.dataset.folderId = item.id;
                     listItem.dataset.folderName = item.name;
 
-                    const collapseIcon = document.createElement('i');
-                    collapseIcon.className = 'bi bi-chevron-right me-2';
-                    collapseIcon.setAttribute('data-bs-toggle', 'collapse');
-                    collapseIcon.setAttribute('href', `#collapse-${item.id}`);
-                    collapseIcon.role = 'button';
+                    const collapseIcon = document.createElement("i");
+                    collapseIcon.className = "bi bi-chevron-right me-2";
+                    collapseIcon.setAttribute("data-bs-toggle", "collapse");
+                    collapseIcon.setAttribute("href", `#collapse-${item.id}`);
+                    collapseIcon.role = "button";
                     collapseIcon.dataset.action = "collapse";
 
-                    const folderIcon = document.createElement('i');
-                    folderIcon.className = 'bi bi-folder text-warning me-2';
+                    const folderIcon = document.createElement("i");
+                    folderIcon.className = "bi bi-folder text-warning me-2";
 
-                    const text = document.createElement('span');
+                    const text = document.createElement("span");
                     text.textContent = item.name;
 
                     listItem.append(collapseIcon, folderIcon, text);
                     ulChild.appendChild(listItem);
                 });
-
                 slides?.forEach(item => {
-                    const listItem = document.createElement('li');
-                    listItem.className = 'list-group-item';
-                    listItem.dataset.annotationsUrl = item.annotations_url
+                    const listItem = document.createElement("li");
+                    listItem.className = "list-group-item";
+                    listItem.dataset.annotationsUrl = item.annotations_url;
                     listItem.dataset.slideId = item.id;
                     listItem.dataset.slideName = item.name;
 
-                    const addIcon = document.createElement('i');
-                    addIcon.className = 'bi bi-plus-circle me-2';
-                    addIcon.role = 'button';
-                    addIcon.setAttribute('data-bs-tooltip', 'tooltip')
-                    addIcon.title = 'Add';
-                    addIcon.dataset.action = 'add';
+                    const addIcon = document.createElement("i");
+                    addIcon.className = "bi bi-plus-circle me-2";
+                    addIcon.role = "button";
+                    addIcon.title = "Add";
+                    addIcon.dataset.bsTooltip = "tooltip";
+                    addIcon.dataset.action = "add";
 
-                    const img = document.createElement('img');
+                    const img = document.createElement("img");
                     img.src = item.thumbnail;
                     img.height = 40;
-                    img.className = 'me-2';
-                    img.alt = '';
+                    img.className = "me-2";
+                    img.alt = "";
 
-                    const text = document.createElement('a')
+                    const text = document.createElement("a");
                     text.href = item.view_url;
-                    text.className = 'text-decoration-none text-body';
+                    text.className = "text-decoration-none text-body";
                     text.textContent = item.name;
-                    text.target = '_blank';
-                    text.rel = 'noopener noreferrer nofollow';
+                    text.target = "_blank";
+                    text.rel = "noopener noreferrer nofollow";
 
                     listItem.append(addIcon, img, text);
                     ulChild.appendChild(listItem);
@@ -201,95 +204,96 @@ function collapseFolder(listItem) {
             updateSelectedImages();
         },
         onError: (error) => {
-            showFeedback("Error loading folder content: " + error.message, "danger");
-        }
-    })
+            showFeedback(gettext("Failed to get folder content."), "danger");
+        },
+    });
 }
 
 function addContent(listItem) {
-    const contentList = document.getElementById('content-list');
+    const contentList = document.getElementById("content-list");
     const slideId = listItem.dataset.slideId;
     const slideName = listItem.dataset.slideName;
 
-    const existingSlides = Array.from(contentList.querySelectorAll('li')).map(item => item.dataset.slideId);
+    const existingSlides = Array.from(contentList.querySelectorAll("li")).map(item => item.dataset.slideId);
     if (existingSlides.some(slideIdInList => slideIdInList === slideId.toString())) {
-        showFeedback(`Slide '${slideName}' is already added!`, "warning");
+        showFeedback(interpolate(gettext("Slide '%(name)s' is already added!"), {name: slideName}, true), "warning");
         return;
     }
 
-    const content = document.createElement('li');
-    content.className = 'list-group-item d-flex align-items-center';
+    const content = document.createElement("li");
+    content.className = "list-group-item d-flex align-items-center";
     content.dataset.slideId = slideId;
 
-    const orderInput = document.createElement('input');
-    orderInput.type = 'hidden';
-    orderInput.name = 'contents[][order]';
+    const orderInput = document.createElement("input");
+    orderInput.type = "hidden";
+    orderInput.name = "contents[][order]";
 
-    const slideInput = document.createElement('input');
-    slideInput.type = 'hidden';
-    slideInput.name = 'contents[][slide]';
+    const slideInput = document.createElement("input");
+    slideInput.type = "hidden";
+    slideInput.name = "contents[][slide]";
     slideInput.value = slideId;
 
-    const order = document.createElement('span');
-    order.className = 'bg-secondary-subtle rounded me-2 content-list-order';
+    const order = document.createElement("span");
+    order.className = "bg-secondary-subtle rounded me-2 content-list-order";
 
-    const moveContainer = document.createElement('div');
-    moveContainer.className = 'd-flex flex-column me-2';
+    const moveContainer = document.createElement("div");
+    moveContainer.className = "d-flex flex-column me-2";
 
-    const upBtn = document.createElement('i');
-    upBtn.className = 'bi bi-caret-up';
-    upBtn.role = 'button';
-    upBtn.dataset.action = 'up';
+    const upBtn = document.createElement("i");
+    upBtn.className = "bi bi-caret-up";
+    upBtn.role = "button";
+    upBtn.dataset.action = "up";
 
-    const downBtn = document.createElement('i');
-    downBtn.className = 'bi bi-caret-down';
-    downBtn.role = 'button';
-    downBtn.dataset.action = 'down';
+    const downBtn = document.createElement("i");
+    downBtn.className = "bi bi-caret-down";
+    downBtn.role = "button";
+    downBtn.dataset.action = "down";
 
     moveContainer.append(upBtn, downBtn);
 
-    const img = document.createElement('img');
-    img.src = listItem.querySelector('img').src;
-    img.height = 40;
-    img.className = 'me-2';
-    img.alt = '';
+    const img = document.createElement("img");
+    img.src = listItem.querySelector("img").src;
+    img.height = 50;
+    img.className = "me-2";
+    img.alt = "";
 
-    const slideText = document.createElement('a');
-    slideText.href = listItem.querySelector('a').href;
-    slideText.className = 'text-decoration-none text-body';
+    const slideText = document.createElement("a");
+    slideText.href = listItem.querySelector("a").href;
+    slideText.className = "text-decoration-none text-body";
     slideText.textContent = slideName;
-    slideText.target = '_blank';
-    slideText.rel = 'noopener noreferrer nofollow';
+    slideText.target = "_blank";
+    slideText.rel = "noopener noreferrer nofollow";
 
-    const annotationContainer = document.createElement('div');
-    annotationContainer.className = 'ms-auto col-3';
+    const annotationContainer = document.createElement("div");
+    annotationContainer.className = "ms-auto col-3";
 
-    const annotationLabel = document.createElement('label');
-    annotationLabel.textContent = 'Annotation:';
+    const annotationLabel = document.createElement("label");
+    annotationLabel.textContent = gettext("Annotation");
     annotationLabel.htmlFor = `annotation-for-${slideId}`;
 
-    const annotationSelect = document.createElement('select');
-    annotationSelect.className = 'form-select';
+    const annotationSelect = document.createElement("select");
+    annotationSelect.className = "form-select";
     annotationSelect.id = `annotation-for-${slideId}`;
-    annotationSelect.name = 'contents[][annotation]';
-    annotationSelect.dataset.action = 'loadAnnotation';
-    annotationSelect.dataset.url = listItem.dataset.annotationsUrl
+    annotationSelect.name = "contents[][annotation]";
+    annotationSelect.dataset.action = "loadAnnotation";
+    annotationSelect.dataset.url = listItem.dataset.annotationsUrl;
 
-    const defaultOption = document.createElement('option');
-    defaultOption.value = '';
-    defaultOption.textContent = 'None';
+    const defaultOption = document.createElement("option");
+    defaultOption.value = "";
+    defaultOption.textContent = gettext("None");
     defaultOption.selected = true;
 
     annotationSelect.appendChild(defaultOption);
     annotationContainer.append(annotationLabel, annotationSelect);
 
-    const removeBtn = document.createElement('button');
-    removeBtn.className = 'btn btn-sm';
-    removeBtn.title = 'Remove';
-    removeBtn.dataset.action = 'remove';
+    const removeBtn = document.createElement("button");
+    removeBtn.className = "btn btn-sm";
+    removeBtn.title = gettext("Remove");
+    removeBtn.dataset.bsTooltip = "tooltip";
+    removeBtn.dataset.action = "remove";
 
-    const removeIcon = document.createElement('i');
-    removeIcon.className = 'bi bi-trash3';
+    const removeIcon = document.createElement("i");
+    removeIcon.className = "bi bi-trash3";
 
     removeBtn.appendChild(removeIcon);
     content.append(orderInput, slideInput, order, moveContainer, img, slideText, annotationContainer, removeBtn);
@@ -297,6 +301,7 @@ function addContent(listItem) {
 
     updateSelectedImages();
     updateContentsOrder();
+    activateTooltips(removeBtn);
 }
 
 function submitChanges(formItem) {
@@ -306,10 +311,10 @@ function submitChanges(formItem) {
         name: formData.get("name"),
         description: formData.get("description"),
         viewer_groups: formData.getAll("viewer_groups[]").map(id => parseInt(id.toString(), 10)),
-        contents: []
+        contents: [],
     };
 
-    document.querySelectorAll('#content-list li').forEach((item, index) => {
+    document.querySelectorAll("#content-list li").forEach((item, index) => {
         const orderInput = item.querySelector("[name='contents[][order]']");
         const slideInput = item.querySelector("[name='contents[][slide]']");
         const annotationInput = item.querySelector("[name='contents[][annotation]']");
@@ -317,7 +322,8 @@ function submitChanges(formItem) {
         const orderValue = orderInput.value;
         const slideValue = slideInput.value;
         if (!slideValue || !orderValue) {
-            showFeedback(`오류가 발생했습니다.`, "danger");
+            showFeedback(gettext("Error occurred."), "danger");
+            return;
         }
         const annotationValue = annotationInput?.value;
 
@@ -330,42 +336,42 @@ function submitChanges(formItem) {
 
     drfRequest({
         url: formItem.dataset.url,
-        method: 'PATCH',
+        method: formItem.dataset.method,
         data: data,
         onSuccess: (data) => {
-            sendFeedback(`Lecture '${data.name}' updated successfully!`, "success");
-            window.location.href = data.folder_url;
+            sendFeedback(interpolate(gettext("Lecture '%(name)s' updated successfully!"), {name: data.name}, true), "success");
+            redirectToNextOrDefault(`/lectures/database/?folder=${data.folder}`);
         },
         onError: (error) => {
-            showFeedback("Error updating lecture: " + error.message, "danger");
-        }
-    })
+            showFeedback(gettext("Failed to update lecture."), "danger");
+        },
+    });
 }
 
 function updateContentsOrder() {
-    const items = document.querySelectorAll('#content-list li');
+    const items = document.querySelectorAll("#content-list li");
     for (let i = 0; i < items.length; i++) {
-        items[i].querySelector('[name="contents[][order]"]').value = (i + 1).toString();
-        items[i].querySelector('.content-list-order').textContent = (i + 1).toString();
+        items[i].querySelector("[name='contents[][order]']").value = (i + 1).toString();
+        items[i].querySelector(".content-list-order").textContent = (i + 1).toString();
     }
 }
 
 function updateSelectedImages() {
-    const contentList = Array.from(document.getElementById('content-list').querySelectorAll('li'));
+    const contentList = Array.from(document.getElementById("content-list").querySelectorAll("li"));
     const selectedImages = contentList.map(item => parseInt(item.dataset.slideId, 10));
 
-    const databaseList = Array.from(document.getElementById('database-list').querySelectorAll('li'));
+    const databaseList = Array.from(document.getElementById("database-list").querySelectorAll("li"));
     databaseList.forEach(item => {
         if (item.dataset.slideId === undefined) return;
 
         const slideId = parseInt(item.dataset.slideId, 10);
 
         if (selectedImages.includes(slideId)) {
-            item.classList.add('opacity-50')
-            item.classList.add('bg-secondary-subtle')
+            item.classList.add("opacity-50");
+            item.classList.add("bg-secondary-subtle");
         } else {
-            item.classList.remove('opacity-50');
-            item.classList.remove('bg-secondary-subtle');
+            item.classList.remove("opacity-50");
+            item.classList.remove("bg-secondary-subtle");
         }
     });
 
@@ -374,13 +380,13 @@ function updateSelectedImages() {
         const slideId = parseInt(item.dataset.slideId, 10);
 
         if (selectedImages.includes(slideId)) {
-            item.classList.add('opacity-50')
-            item.classList.add('bg-secondary-subtle')
+            item.classList.add("opacity-50");
+            item.classList.add("bg-secondary-subtle");
         } else {
-            item.classList.remove('opacity-50');
-            item.classList.remove('bg-secondary-subtle');
+            item.classList.remove("opacity-50");
+            item.classList.remove("bg-secondary-subtle");
         }
-    })
+    });
 }
 
 document.getElementById("image-search-form").addEventListener("submit", async function (event) {
@@ -389,18 +395,22 @@ document.getElementById("image-search-form").addEventListener("submit", async fu
     if (!query) {
         return;
     }
-    const url = this.dataset.url + `?search=${encodeURIComponent(query)}`;
+    const url = API_ROUTES.slides.list.search(encodeURIComponent(query));
     await fetchResults(url);
 
     const imageList = document.getElementById("image-search-result");
     imageList.querySelectorAll("li").forEach(item => {
-        item.dataset.annotationsUrl = API_ROUTES.slideDetail(item.dataset.slideId) + 'annotations/';
-        
+        item.dataset.annotationsUrl = API_ROUTES.slides.detail(item.dataset.slideId).annotations;
+
         const addButton = document.createElement("button");
         addButton.className = "btn btn-outline-secondary";
         addButton.innerHTML = "<i class='bi bi-plus-circle'></i>";
+        addButton.title = gettext("Add");
         addButton.dataset.action = "add";
-        item.querySelector('.action-button-group').appendChild(addButton);
+
+        item.querySelector(".action-button-group").appendChild(addButton);
+
+        activateTooltips(addButton);
     });
 
     updateSelectedImages();

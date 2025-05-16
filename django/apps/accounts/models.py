@@ -1,4 +1,5 @@
 import logging
+import re
 
 from django.contrib.auth import user_logged_out
 from django.contrib.auth.models import (
@@ -15,6 +16,7 @@ from django.db.models import Q
 from django.db.models.signals import m2m_changed, post_save
 from django.dispatch import receiver
 from django.utils import timezone
+from django.utils.translation import gettext as _, gettext_lazy as _lazy
 
 from apps.images.models import ImageFolder
 from apps.lectures.models import LectureFolder
@@ -24,30 +26,36 @@ logger = logging.getLogger("django")
 
 class GroupProfile(models.Model):
     class Type(models.TextChoices):
-        PUBLISHER = ("1", "Publisher")
-        VIEWER = ("2", "Viewer")
+        PUBLISHER = ("1", _lazy("Publisher"))
+        VIEWER = ("2", _lazy("Viewer"))
 
     id = models.AutoField(primary_key=True)
-    group = models.OneToOneField(
-        "auth.Group", on_delete=models.CASCADE, related_name="profile"
-    )
     type = models.CharField(
+        _lazy("type"),
         max_length=10,
         choices=Type.choices,
         blank=False,
-        help_text="Type of the group.",
+        help_text=_lazy("Type of the group."),
     )
-    base_folder = models.OneToOneField(
+
+    group = models.OneToOneField(
+        "auth.Group",
+        verbose_name=_lazy("group"),
+        on_delete=models.CASCADE,
+        related_name="profile",
+    )
+    base_image_folder = models.OneToOneField(
         "images.ImageFolder",
+        verbose_name=_lazy("base folder"),
         on_delete=models.CASCADE,
         related_name="groupprofile",
         blank=True,
         null=True,
-        help_text="Base folder for the publisher group.",
+        help_text=_lazy("Base folder for the publisher group."),
     )
 
     def __str__(self):
-        return f"Profile for '{self.group.name}' group"
+        return _("Profile for '{group_name}' group").format(group_name=self.group.name)
 
     def save(self, *args, **kwargs):
         created = False if self.pk else True
@@ -65,8 +73,8 @@ class GroupProfile(models.Model):
             logger.error(f"Failed to delete group: {str(e)}")
 
         try:
-            if self.base_folder:
-                self.base_folder.delete()
+            if self.base_image_folder:
+                self.base_image_folder.delete()
         except Exception as e:
             logger.error(f"Failed to delete base folder: {str(e)}")
 
@@ -96,17 +104,18 @@ class GroupProfile(models.Model):
 def update_group_profile(sender, instance, created, **kwargs):
     profile = instance.profile
     if profile and profile.is_publisher_group():
-        if profile.base_folder:
-            base_folder = profile.base_folder
-            if base_folder.name != instance.name.title():
-                base_folder.name = instance.name.title()
-                base_folder.save(update_fields=["name"])
+        if profile.base_image_folder:
+            base_image_folder = profile.base_image_folder
+            if base_image_folder.name != instance.name.title():
+                base_image_folder.name = instance.name.title()
+                base_image_folder.save(update_fields=["name"])
         else:
-            profile.base_folder = ImageFolder.objects.create(
+            profile.base_image_folder = ImageFolder.objects.create(
                 name=instance.name.title(),
                 author=User.objects.filter(is_superuser=True).first(),
                 manager_group=instance,
             )
+            profile.save(update_fields=["base_image_folder"])
 
 
 class UserManager(BaseUserManager):
@@ -152,52 +161,70 @@ class UserManager(BaseUserManager):
 
 
 class User(AbstractBaseUser, PermissionsMixin):
+    username_validator = UnicodeUsernameValidator()
+
     id = models.AutoField(primary_key=True)
     username = models.CharField(
-        "username",
+        _lazy("username"),
         max_length=150,
         unique=True,
-        help_text="Required. 150 characters or fewer. Letters, digits and @/./+/-/_ only.",
-        validators=[UnicodeUsernameValidator()],
+        help_text=_lazy(
+            "Required. 150 characters or fewer. Letters, digits and @/./+/-/_ only."
+        ),
+        validators=[username_validator],
         error_messages={
-            "unique": "A user with that username already exists.",
+            "unique": _lazy("A user with that username already exists."),
         },
     )
-    email = models.EmailField("email address", max_length=255, blank=True, null=True)
-    first_name = models.CharField("first name", max_length=255, blank=False)
-    last_name = models.CharField("last name", max_length=255, blank=False)
+    first_name = models.CharField(_lazy("first name"), max_length=255, blank=False)
+    last_name = models.CharField(_lazy("last name"), max_length=255, blank=False)
+    email = models.EmailField(
+        _lazy("email address"),
+        max_length=255,
+        blank=True,
+        null=True,
+    )
     profile_image = models.ImageField(
-        "profile image",
+        _lazy("profile image"),
         upload_to="public/profile_images",
         blank=True,
         null=True,
     )
+    is_staff = models.BooleanField(
+        _lazy("staff status"),
+        default=False,
+        help_text=_lazy("Designates whether the user can log into this admin site."),
+    )
+    is_active = models.BooleanField(
+        _lazy("active"),
+        default=True,
+        help_text=_lazy(
+            "Designates whether this user should be treated as active. "
+            "Unselect this instead of deleting accounts."
+        ),
+    )
+    date_joined = models.DateTimeField(_lazy("date joined"), default=timezone.now)
+
     base_lecture_folder = models.OneToOneField(
         "lectures.LectureFolder",
+        verbose_name=_lazy("base lecture folder"),
         on_delete=models.SET_NULL,
         related_name="user",
         blank=True,
         null=True,
-        help_text="Base lecture folder for the publisher.",
+        help_text=_lazy("Base lecture folder for the publisher."),
     )
-
-    is_staff = models.BooleanField(
-        "staff status",
-        default=False,
-        help_text="Designates whether the user can log into this admin site.",
-    )
-    is_active = models.BooleanField(
-        "active",
-        default=True,
-        help_text="Designates whether this user should be treated as active.\nUnselect this instead of deleting accounts.",
-    )
-    date_joined = models.DateTimeField("date joined", default=timezone.now)
 
     objects = UserManager()
 
     USERNAME_FIELD = "username"
     EMAIL_FIELD = "email"
     REQUIRED_FIELDS = ("first_name", "last_name")
+
+    class Meta:
+        verbose_name = _("user")
+        verbose_name_plural = _("users")
+        ordering = ["username"]
 
     def save(self, *args, **kwargs):
         if self.pk:
@@ -241,10 +268,14 @@ class User(AbstractBaseUser, PermissionsMixin):
         self.email = self.__class__.objects.normalize_email(self.email)
 
     def get_full_name(self):
-        return f"{self.first_name} {self.last_name}".strip()
+        korean_pattern = re.compile("[가-힣]+")
+        is_korean = korean_pattern.search(self.first_name) and korean_pattern.search(
+            self.last_name
+        )
 
-    def get_korean_name(self):
-        return f"{self.last_name}{self.first_name}".strip()
+        if is_korean:
+            return f"{self.last_name}{self.first_name}"  # Korean format
+        return f"{self.first_name} {self.last_name}"  # English format
 
     def is_admin(self):
         return self.is_staff

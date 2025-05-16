@@ -1,5 +1,6 @@
-{% extends 'common/base.html' %}
+{% extends 'core/base.html' %}
 {% load static %}
+{% load i18n %}
 
 {% block title %}{{ slide.name }}{% endblock %}
 
@@ -79,11 +80,6 @@
                             <hr class="dropdown-divider" style="--bs-dropdown-divider-margin-y: 0">
                         </li>
                         <!-- 정보 버튼 -->
-                        {#                        <li>#}
-                        {#                            <button class="dropdown-item" title="Slide-Information" onclick="openinfoPopup()">#}
-                        {#                                <i class="bi bi-info-circle"></i> Information#}
-                        {#                            </button>#}
-                        {#                        </li>#}
                         <li>
                             <button class="dropdown-item" title="Slide-Information" data-bs-toggle="modal"
                                     data-bs-target="#information-modal">
@@ -141,8 +137,7 @@
                 <!-- 배율 드롭다운 버튼 -->
                 <div class="btn-group" role="group">
                     <button id="btnGroupDrop_scale" type="button"
-                            class="btn btn btn-outline-light custom-button dropdown-toggle"
-                            data-bs-toggle="dropdown"
+                            class="btn btn btn-outline-light custom-button dropdown-toggle" data-bs-toggle="dropdown"
                             aria-expanded="false" style="width: 102px;" title="Change Lens">
                     </button>
                     <ul class="dropdown-menu" aria-labelledby="btnGroupDrop_scale">
@@ -308,6 +303,22 @@
 {% endblock article_content %}
 
 {% block extra_modal %}
+    <!-- UI Overlay -->
+    <div id="overlay"></div>
+
+    <!-- 팝업(Annotation) 폼 -->
+    <div id="annotation-popup">
+        <h3>Annotation Details</h3>
+        <form id="annotation-form">
+            <label for="title">Title:</label><br>
+            <input type="text" id="title" name="title" required><br><br>
+            <label for="comment">Comment:</label><br>
+            <textarea id="comment" name="comment" required></textarea><br><br>
+            <button type="submit">Save</button>
+            <button type="button" onclick="cancelPopup()">Cancel</button>
+        </form>
+    </div>
+
     <!-- Annotation Create Modal -->
     <div class="modal fade" id="annotation-create-modal" tabindex="-1">
         <div class="modal-dialog modal-dialog-scrollable">
@@ -328,7 +339,9 @@
                         <div class="align-items-center text-danger d-none" data-type="message"></div>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                            {% trans "Cancel" %}
+                        </button>
                         <button type="submit" class="btn btn-primary">Save</button>
                     </div>
                 </form>
@@ -347,7 +360,9 @@
                     <textarea type="text" class="form-control" id="description-text" rows="20"></textarea>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        {% trans "Cancel" %}
+                    </button>
                     <button type="button" class="btn btn-primary" data-bs-dismiss="modal" id="apply-description">Apply
                     </button>
                 </div>
@@ -364,46 +379,51 @@
                 </div>
                 <div class="modal-body">
                     <dl class="row" id="information-list">
-                        <dt class="col-sm-3">이름</dt>
+                        <dt class="col-sm-3 mb-2">이름</dt>
                         <dd class="col-sm-9">{{ slide.name|default:"-" }}</dd>
-                        <dt class="col-sm-3">정보</dt>
+                        <dt class="col-sm-3 mb-2">정보</dt>
                         <dd class="col-sm-9">{{ slide.information|default:"-" }}</dd>
-                        <dt class="col-sm-3">작성자</dt>
+                        <dt class="col-sm-3 mb-2">작성자</dt>
                         <dd class="col-sm-9">{{ slide.author.username|default:"-" }}</dd>
-                        <dt class="col-sm-3">관리자그룹</dt>
+                        <dt class="col-sm-3 mb-2">관리자그룹</dt>
                         <dd class="col-sm-9">{{ slide.manager_group.name|default:"-" }}</dd>
-                        <dt class="col-sm-3">폴더</dt>
+                        <dt class="col-sm-3 mb-2">폴더</dt>
                         <dd class="col-sm-9">{{ slide.folder|default:"-" }}</dd>
-                        <dt class="col-sm-3">원본 파일</dt>
+                        <dt class="col-sm-3 mb-2">원본 파일</dt>
                         <dd class="col-sm-9">
                             <dl class="row">
-                                <dt class="col-sm-3">이름</dt>
-                                <dd class="col-sm-9">{{ slide.file_name }}</dd>
-                                <dt class="col-sm-3">용량</dt>
-                                <dd class="col-sm-9">{{ slide.file.size|filesizeformat }}</dd>
+                                <dt class="col-sm-3 mb-2">이름</dt>
+                                <dd class="col-sm-9">{{ slide.file_name|default:"-" }}</dd>
+                                <dt class="col-sm-3 mb-2">용량</dt>
+                                <dd class="col-sm-9">{{ slide.file.size|filesizeformat|default:"-" }}</dd>
                             </dl>
                         </dd>
-                        <dt class="col-sm-3">연관이미지</dt>
+                        <dt class="col-sm-3 mb-2">연관이미지</dt>
                         <dd class="col-sm-9">
-                            <img src="{% url 'api:slide-associated-image' pk=slide.pk %}" class="img-fluid" alt="">
+                            {% for name in slide.associated_image_names %}
+                                <img src="{% url 'api:slide-associated-image' pk=slide.pk filename=name %}"
+                                     class="img-fluid mb-2" alt="" style="max-height: 150px">
+                            {% endfor %}
                         </dd>
-                        <dt class="col-sm-3">메타데이터</dt>
+                        <dt class="col-sm-3 mb-2">메타데이터</dt>
                         <dd class="col-sm-9">
                             <dl class="row">
-                                <dt class="col-sm-3">생성일</dt>
+                                <dt class="col-sm-3 mb-2">생성일</dt>
                                 <dd class="col-sm-9">{{ slide.metadata.created }}</dd>
-                                <dt class="col-sm-3">촬영 배율</dt>
-                                <dd class="col-sm-9">{{ slide.metadata.sourceLens }}</dd>
+                                <dt class="col-sm-3 mb-2">촬영 배율</dt>
+                                <dd class="col-sm-9">{{ slide.metadata.objective_power }}</dd>
                             </dl>
                         </dd>
-                        <dt class="col-sm-3">생성일</dt>
-                        <dd class="col-sm-9">{{ slide.created_at_formatted }}</dd>
-                        <dt class="col-sm-3">수정일</dt>
-                        <dd class="col-sm-9">{{ slide.updated_at_formatted }}</dd>
+                        <dt class="col-sm-3 mb-2">생성일</dt>
+                        <dd class="col-sm-9">{{ slide.created_at|date:"Y-m-d H:i:s" }}</dd>
+                        <dt class="col-sm-3 mb-2">수정일</dt>
+                        <dd class="col-sm-9">{{ slide.updated_at|date:"Y-m-d H:i:s" }}</dd>
                     </dl>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        {% trans "Close" %}
+                    </button>
                 </div>
             </div>
         </div>
@@ -412,51 +432,12 @@
 
 
 {% block extra_js %}
-
-
-    <!-- slide metadata 불러오기 -->
-    <div id="overlay"></div>
-
-    <!-- 팝업(Annotation) 폼 -->
-    <div id="annotation-popup">
-        <h3>Annotation Details</h3>
-        <form id="annotation-form">
-            <label for="title">Title:</label><br>
-            <input type="text" id="title" name="title" required><br><br>
-            <label for="comment">Comment:</label><br>
-            <textarea id="comment" name="comment" required></textarea><br><br>
-            <button type="submit">Save</button>
-            <button type="button" onclick="cancelPopup()">Cancel</button>
-        </form>
-    </div>
-
-    <!-- 팝업(Information) -->
-    <div id="information-popup" style="display: none;">
-        <h3>Information</h3>
-        <div id="information-box">
-            {{ slide.information }} <!-- 정보 내용 표시 -->
-        </div>
-        <button type="button" onclick="closeinfoPopup()">Close</button>
-    </div>
-
-
-    {{ slide.metadata|json_script:"slide-metadata" }}
-    <!-- extension에서 django 다운받기
-이런 식으로 받아오면 돼
- http://127.0.0.1:8000/api/database/slides/ 이 링크의 것은 {{ slide.name }}이나 {{ slide.information }} 처럼 가져오면 되고
-
- http://127.0.0.1:8000/api/viewer/annotations/ 여기서 나오는 "data"에 annotation json이 들어가면 되는데, 
- http://127.0.0.1:8000/api/viewer/annotations/data/ 그러면 여기에 저장될 거야. 불러올 때는 slideAnnotation으로 불러오면 되는 거 같고고
--->
-
-    <!-- script -->
     <script type="text/javascript">
         // 현재 연결된 annotation 정보. `undefined` 면 연결된 annotation 이 없다고 보면 됨.
-        let annotation;
         {% if annotation %}
-            annotation = {
-                description: '{% if annotation.description %}{{ annotation.description|linebreaksbr }}{% endif %}',
-                data: {{ annotation.data | safe }},
+            let annotation = {
+                description: '{{ annotation.description|linebreaksbr }}',
+                data: {{ annotation.data|safe }},
             };
         {% endif %}
 
@@ -478,26 +459,26 @@
             //네비게이션 컨트롤
             showNavigationControl: true,
             navigationControlAnchor: OpenSeadragon.ControlAnchor.TOP_RIGHT,
-            zoomInButton: 'zoom-in',
-            zoomOutButton: 'zoom-out',
-            homeButton: 'home',
-            fullPageButton: 'full-page',
-            nextButton: 'next',
-            previousButton: 'previous',
+            zoomInButton: "zoom-in",
+            zoomOutButton: "zoom-out",
+            homeButton: "home",
+            fullPageButton: "full-page",
+            nextButton: "next",
+            previousButton: "previous",
             showRotationControl: true,
             maxZoomLevel: 52, //최대 줌 레벨 설정. 100X까지 되도록 설정함.
             gestureSettingsMouse: {
                 clickToZoom: false, //사용시 약간 불편해서 꺼둠 (250210)
                 dblClickToZoom: true,
                 pinchToZoom: true,
-                scrollToZoom: true
-            }
+                scrollToZoom: true,
+            },
         });
 
-        const raw_metadata = JSON.parse(document.getElementById('slide-metadata').textContent);
+        const raw_metadata = {{ slide.metadata|safe }};
         const slide_metadata = {
             mpp_x: parseFloat(raw_metadata["mpp-x"]).toFixed(3), // toFixed(3)를 사용하여 소수점 3자리 문자열로 만들 수도 있음
-            sourceLens: parseInt(raw_metadata.sourceLens)
+            objective_power: parseInt(raw_metadata.objective_power),
         };
 
         //Scalebar 추가
@@ -525,7 +506,7 @@
 
         function toggleFullScreen() {
             if (!document.fullscreenElement) {
-                document.getElementById('openseadragon-container').requestFullscreen()
+                document.getElementById("openseadragon-container").requestFullscreen()
                     .catch(err => {
                         console.log(`Error attempting to enable full-screen mode: ${err.message}`);
                     });
@@ -537,16 +518,16 @@
         // Add touch gesture support
         let touchStartX = 0;
         let touchStartY = 0;
-        document.getElementById('openseadragon-container').addEventListener('touchstart', function (e) {
+        document.getElementById("openseadragon-container").addEventListener("touchstart", function (e) {
             touchStartX = e.changedTouches[0].screenX;
             touchStartY = e.changedTouches[0].screenY;
         });
 
         // Scale
-        //sourceLens의 값과 baseImageZoom을 이용하여 배율 보정정
+        //objective_power의 값과 baseImageZoom을 이용하여 배율 보정정
         function calculateZoomFactor(targetMagnification) {
-            const sourceLens = slide_metadata.sourceLens;
-            const baseImageZoom = viewer.viewport.viewportToImageZoom(sourceLens);
+            const objective_power = slide_metadata.objective_power;
+            const baseImageZoom = viewer.viewport.viewportToImageZoom(objective_power);
             const zoomFactor = targetMagnification / baseImageZoom;
             return zoomFactor;
         }
@@ -555,7 +536,6 @@
         function setZoomLevel(targetMagnification) {
             const zoomFactor = calculateZoomFactor(targetMagnification);
             viewer.viewport.zoomTo(zoomFactor, refPoint = null, immeadiately = true);
-
         }
 
         let plugin = null;
@@ -574,25 +554,25 @@
                 conversionFactor: slide_metadata.mpp_x,
                 units: "um",
                 fontSize: contentFactor / 40,
-                selectedColor: selectedColor
+                selectedColor: selectedColor,
             });
         });
 
         //현재 zoom을 추적, 버튼 업데이트 함수
         function trackZoomAndUpdateButton() {
-            const scaleButton = document.getElementById('btnGroupDrop_scale'); // Scale 버튼 선택
+            const scaleButton = document.getElementById("btnGroupDrop_scale"); // Scale 버튼 선택
             if (!scaleButton) {
-                console.error('Scale button not found');
+                console.error("Scale button not found");
                 return;
             }
 
             //배율 변화 감지, 버튼에 반영
-            viewer.addHandler('zoom', function () {
+            viewer.addHandler("zoom", function () {
                 let viewportZoom = viewer.viewport.getZoom();
                 let imageZoom = viewer.viewport.viewportToImageZoom(viewportZoom);
-                const sourceLens = slide_metadata.sourceLens;
+                const objective_power = slide_metadata.objective_power;
 
-                let currentMagnification = imageZoom * sourceLens;
+                let currentMagnification = imageZoom * objective_power;
 
                 const predefinedMagnifications = [5, 10, 20, 40, 63, 100]; // 정수 배율 리스트
                 if (predefinedMagnifications.includes(Math.round(currentMagnification))) {
@@ -600,17 +580,17 @@
                 } else {
                     scaleButton.textContent = `${currentMagnification.toFixed(2)}X`;
                 }
-            })
+            });
         }
 
         //페이지 로드될 때 -배율 추적 시작, 색상 팔레트 초기화
-        document.addEventListener('DOMContentLoaded', () => {
+        document.addEventListener("DOMContentLoaded", () => {
             // 색상 팔레트 관련 초기화
-            const colorPalette = document.querySelector('.color-palette');
-            const dropdownMenu = document.querySelector('#btnGroupDrop_annotation').nextElementSibling;
+            const colorPalette = document.querySelector(".color-palette");
+            const dropdownMenu = document.querySelector("#btnGroupDrop_annotation").nextElementSibling;
 
             // 색상 팔레트 안에서 클릭 시 드롭다운이 닫히지 않도록 방지
-            colorPalette.addEventListener('click', function (event) {
+            colorPalette.addEventListener("click", function (event) {
                 event.stopPropagation(); // 클릭 이벤트가 부모 요소까지 전달되지 않도록 막음
             });
 
@@ -620,25 +600,25 @@
 
 
         // Add keyboard controls
-        document.addEventListener('keydown', function (event) {
+        document.addEventListener("keydown", function (event) {
 
             const activeEl = document.activeElement;
-            if (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA') {
+            if (activeEl.tagName === "INPUT" || activeEl.tagName === "TEXTAREA") {
                 return; // 입력창에 포커스 있을 땐 키 막기
             }
 
             switch (event.key) {
-                case 'n':
-                case 'N':
+                case "n":
+                case "N":
                     toggleNav(); //네비게이터 불러오기
                     break;
-                case 'f':
-                case 'F':
+                case "f":
+                case "F":
                     toggleFullScreen(); //전체화면
                     break;
-                case 'h':
-                case 'H':
-                case '0':
+                case "h":
+                case "H":
+                case "0":
                     viewer.viewport.goHome(); //reset view
                     break;
                 //case 'p':
@@ -648,28 +628,28 @@
                 //     viewer.viewport.setRotation(90); //90도 회전 : 제대로 안됨. 보류
                 //     break;
                 // 숫자키 입력시 배율 조정정
-                case '1':
+                case "1":
                     setZoomLevel(1.25);
                     break;
-                case '2':
+                case "2":
                     setZoomLevel(2.5);
                     break;
-                case '3':
+                case "3":
                     setZoomLevel(5);
                     break;
-                case '4':
+                case "4":
                     setZoomLevel(10);
                     break;
-                case '5':
+                case "5":
                     setZoomLevel(20);
                     break;
-                case '6':
+                case "6":
                     setZoomLevel(40);
                     break;
-                case '7':
+                case "7":
                     setZoomLevel(63);
                     break;
-                case '8':
+                case "8":
                     setZoomLevel(100);
                     break;
 
@@ -701,24 +681,24 @@
 
         viewer.screenshotInstance = viewer.screenshot({
             showOptions: false,
-            keyboardShortcut: 'p',
-            showScreenshotControl: false
+            keyboardShortcut: "p",
+            showScreenshotControl: false,
         });
 
         window.getScreenshotFilename = function () {
             function getFormattedTime() {
                 const now = new Date();
                 const yyyy = now.getFullYear();
-                const mm = String(now.getMonth() + 1).padStart(2, '0');
-                const dd = String(now.getDate()).padStart(2, '0');
-                const hh = String(now.getHours()).padStart(2, '0');
-                const min = String(now.getMinutes()).padStart(2, '0');
-                const ss = String(now.getSeconds()).padStart(2, '0');
+                const mm = String(now.getMonth() + 1).padStart(2, "0");
+                const dd = String(now.getDate()).padStart(2, "0");
+                const hh = String(now.getHours()).padStart(2, "0");
+                const min = String(now.getMinutes()).padStart(2, "0");
+                const ss = String(now.getSeconds()).padStart(2, "0");
                 return `${yyyy}${mm}${dd}-${hh}${min}${ss}`;
             }
 
             const userId = "{{ user.username }}";
-            const slideTitle = "{{ slide.name|slice:':15' }}".replace(/\s+/g, '_');
+            const slideTitle = "{{ slide.name|slice:':15' }}".replace(/\s+/g, "_");
             const timeStr = getFormattedTime();
             return `${userId}_${timeStr}_${slideTitle}`;
         };
@@ -726,11 +706,11 @@
 
         // Annotorious 초기화
         let anno;
-        let selectedColor = '#ff0000'
+        let selectedColor = "#ff0000";
         let editMode = false;
         document.getElementById("ink").style.color = selectedColor;
         anno = AnnotoriousOSD.createOSDAnnotator(viewer, {
-            userSelectAction: "{% if can_edit_annotation %}EDIT{% else %}NONE{% endif %}"
+            userSelectAction: "{% if can_edit_annotation %}EDIT{% else %}NONE{% endif %}",
         });
 
         {% if can_edit_annotation %}
@@ -754,8 +734,8 @@
             });
 
             //슬라이드 자체 설명
-            const articleHeader = document.getElementById('article-header');
-            const descriptionElement = document.getElementById('slide-description');
+            const articleHeader = document.getElementById("article-header");
+            const descriptionElement = document.getElementById("slide-description");
             descriptionElement.innerHTML = annotation.description;
             articleHeader.appendChild(descriptionElement);
         }
@@ -763,27 +743,27 @@
 
         // 그리기 모드 변경 핸들러
         function setDrawingTool(tool) {
-            if (!activeAnno) return console.error('Annotorious is not initialized');
+            if (!activeAnno) return console.error("Annotorious is not initialized");
             activeAnno.setDrawingEnabled(true);
             activeAnno.setDrawingTool(tool);
             viewer.setMouseNavEnabled(false);
             //document.getElementById('openseadragon-viewer').classList.add('cursor-crosshair');
         }
 
-        activeAnno.on('createAnnotation', (annotation) => {
+        activeAnno.on("createAnnotation", (annotation) => {
             activeAnno.setDrawingEnabled(false);
             viewer.setMouseNavEnabled(true);
             annotation["motivation"] = selectedColor;
             editMode = false;
 
-            openPopup(annotation)
+            openPopup(annotation);
         });
 
 
         //주석 선택 후 지우개 버튼 클릭하면 -> 지우기
-        activeAnno.on('selectionChanged', (annotation) => {
-            let deleteBtn = document.getElementById('erase-btn');
-            let editBtn = document.getElementById('edit-btn');
+        activeAnno.on("selectionChanged", (annotation) => {
+            let deleteBtn = document.getElementById("erase-btn");
+            let editBtn = document.getElementById("edit-btn");
 
             if (annotation[0] != null) { //주석이 선택된 경우
                 let selectedAnnotation = annotation[0]; // 현재 선택된 주석 저장
@@ -792,7 +772,7 @@
                     activeAnno.removeAnnotation(selectedAnnotation.id);
 
                     // article-header와 article-body에서 해당 annotation의 요소 제거
-                    let bodyElem = document.getElementById('annotation-combined-' + selectedAnnotation.id);
+                    let bodyElem = document.getElementById("annotation-combined-" + selectedAnnotation.id);
                     if (bodyElem) bodyElem.remove();
 
                 };
@@ -802,41 +782,41 @@
                     openEditPopup(selectedAnnotation);
                 };
 
-                document.getElementById('erase-btn').style.display = 'block';
-                document.getElementById('edit-btn').style.display = 'block';
+                document.getElementById("erase-btn").style.display = "block";
+                document.getElementById("edit-btn").style.display = "block";
 
 
                 console.log(annotation);
             } else { // 주석 선택이 해제된 경우
                 // 클릭 이벤트 제거 (null로 설정)
                 deleteBtn.onclick = null;
-                document.getElementById('erase-btn').style.display = 'none';
-                document.getElementById('edit-btn').style.display = 'none';
+                document.getElementById("erase-btn").style.display = "none";
+                document.getElementById("edit-btn").style.display = "none";
             }
         });
 
         //OSDMeasure 삭제 버튼 띄우기
-        window.addEventListener('measurement-selected', e => {
+        window.addEventListener("measurement-selected", e => {
             const m = e.detail.measurement;
 
             // 원하는 정보 띄우기
-            document.getElementById('erase-btn').style.display = 'block';
+            document.getElementById("erase-btn").style.display = "block";
 
             // 삭제 버튼에 해당 측정 저장
-            document.getElementById('erase-btn').onclick = () => {
+            document.getElementById("erase-btn").onclick = () => {
                 plugin.deleteSelectedMeasurement(m);
-                document.getElementById('erase-btn').style.display = 'none';
+                document.getElementById("erase-btn").style.display = "none";
             };
         });
 
-        window.addEventListener('measurement-deselected', () => {
+        window.addEventListener("measurement-deselected", () => {
             console.log("deselected");
-            document.getElementById('erase-btn').style.display = 'none';
+            document.getElementById("erase-btn").style.display = "none";
         });
 
         // 색상 선택
-        document.querySelectorAll('.color-option').forEach(item => {
-            item.addEventListener('click', function () {
+        document.querySelectorAll(".color-option").forEach(item => {
+            item.addEventListener("click", function () {
                 selectedColor = this.dataset.color;
                 document.getElementById("ink").style.color = selectedColor;
 
@@ -851,8 +831,8 @@
                 fillOpacity: 0,
                 stroke: color,
                 strokeOpacity: 1,
-                strokeWidth: 3
-            }
+                strokeWidth: 3,
+            };
         });
         anno2.setStyle((annotation, state) => {
             const color = annotation["motivation"];
@@ -860,27 +840,27 @@
                 fillOpacity: 0,
                 stroke: color,
                 strokeOpacity: 1,
-                strokeWidth: 3
-            }
+                strokeWidth: 3,
+            };
         });
 
 
         function openPopup(annotation) {
             return new Promise((resolve, reject) => {
                 // 입력 필드 초기화
-                document.getElementById('title').value = '';
-                document.getElementById('comment').value = '';
-                document.getElementById('overlay').style.display = 'block';
-                document.getElementById('annotation-popup').style.display = 'block';
+                document.getElementById("title").value = "";
+                document.getElementById("comment").value = "";
+                document.getElementById("overlay").style.display = "block";
+                document.getElementById("annotation-popup").style.display = "block";
 
-                const form = document.getElementById('annotation-form');
+                const form = document.getElementById("annotation-form");
 
                 // 팝업에서 제목과 코멘트 입력 후 저장할 때 실행
                 form.onsubmit = function (event) {
                     event.preventDefault();
 
-                    const title = document.getElementById('title').value;
-                    const comment = document.getElementById('comment').value;
+                    const title = document.getElementById("title").value;
+                    const comment = document.getElementById("comment").value;
 
                     annotation["name"] = title;
                     annotation["description"] = comment;
@@ -898,8 +878,8 @@
 
         // 팝업을 닫는 함수
         function closePopup() {
-            document.getElementById('overlay').style.display = 'none';
-            document.getElementById('annotation-popup').style.display = 'none';
+            document.getElementById("overlay").style.display = "none";
+            document.getElementById("annotation-popup").style.display = "none";
         }
 
         function cancelPopup() {
@@ -911,25 +891,25 @@
 
         function updateAnnotationDisplay(annotation) {
             // article-body에 주석의 설명과 이름을 한 문단으로 추가
-            const articleBody = document.getElementById('article-body');
-            const combinedElement = document.createElement('p');
-            combinedElement.id = 'annotation-combined-' + annotation.id;
+            const articleBody = document.getElementById("article-body");
+            const combinedElement = document.createElement("p");
+            combinedElement.id = "annotation-combined-" + annotation.id;
 
             // 설명 부분
-            const descriptionSpan = document.createElement('span');
-            descriptionSpan.classList.add('annotation-description');
-            descriptionSpan.style.color = 'black';
-            const formattedDescription = annotation["description"].replace(/\n/g, '<br>');
+            const descriptionSpan = document.createElement("span");
+            descriptionSpan.classList.add("annotation-description");
+            descriptionSpan.style.color = "black";
+            const formattedDescription = annotation["description"].replace(/\n/g, "<br>");
             descriptionSpan.innerHTML = formattedDescription;
 
             // 구분자
-            const separator = document.createTextNode(': ');
+            const separator = document.createTextNode(": ");
 
             // 이름 부분
-            const nameSpan = document.createElement('span');
-            nameSpan.classList.add('annotation-name');
-            nameSpan.style.color = 'blue';
-            const formattedName = annotation["name"].replace(/\n/g, '<br>');
+            const nameSpan = document.createElement("span");
+            nameSpan.classList.add("annotation-name");
+            nameSpan.style.color = "blue";
+            const formattedName = annotation["name"].replace(/\n/g, "<br>");
             nameSpan.innerHTML = formattedName;
 
             // 요소들을 조합하여 하나의 문단에 추가
@@ -940,7 +920,7 @@
             articleBody.appendChild(combinedElement);
 
             // 클릭 시 주석 영역으로 이동 (combinedElement 전체에 이벤트 적용)
-            combinedElement.addEventListener('click', function () {
+            combinedElement.addEventListener("click", function () {
                 anno.fitBounds(annotation, {immediately: false, padding: 50});
             });
         }
@@ -950,18 +930,18 @@
         function openEditPopup(annotation) {
             editMode = true;
             // 기존 값으로 입력 필드 미리 채우기
-            document.getElementById('title').value = annotation["name"] || '';
-            document.getElementById('comment').value = annotation["description"] || '';
-            document.getElementById('overlay').style.display = 'block';
-            document.getElementById('annotation-popup').style.display = 'block';
+            document.getElementById("title").value = annotation["name"] || "";
+            document.getElementById("comment").value = annotation["description"] || "";
+            document.getElementById("overlay").style.display = "block";
+            document.getElementById("annotation-popup").style.display = "block";
 
-            const form = document.getElementById('annotation-form');
+            const form = document.getElementById("annotation-form");
 
             form.onsubmit = function (event) {
                 event.preventDefault();
 
-                const newTitle = document.getElementById('title').value;
-                const newComment = document.getElementById('comment').value;
+                const newTitle = document.getElementById("title").value;
+                const newComment = document.getElementById("comment").value;
 
                 // 수정된 내용으로 annotation 업데이트
                 annotation["name"] = newTitle;
@@ -971,7 +951,7 @@
                 activeAnno.updateAnnotation(annotation);
 
                 {% if can_edit_annotation %}
-                    let bodyElem = document.getElementById('annotation-combined-' + annotation.id);
+                    let bodyElem = document.getElementById("annotation-combined-" + annotation.id);
                     if (bodyElem) bodyElem.remove();
                     updateAnnotationDisplay(annotation);
                 {% endif %}
@@ -981,14 +961,14 @@
         }
 
         // 주석 숨기기 버튼 클릭 이벤트 핸들러
-        document.getElementById('invisible-btn').addEventListener('click', function () {
-            const icon = this.querySelector('i');
+        document.getElementById("invisible-btn").addEventListener("click", function () {
+            const icon = this.querySelector("i");
             // 현재 아이콘이 eye-slash이면 보이는 상태 => 숨기기
-            if (icon.classList.contains('bi-eye-slash')) {
+            if (icon.classList.contains("bi-eye-slash")) {
                 anno.cancelSelected();
                 anno.setVisible(false); // 주석 숨기기
-                icon.classList.remove('bi-eye-slash');
-                icon.classList.add('bi-eye');
+                icon.classList.remove("bi-eye-slash");
+                icon.classList.add("bi-eye");
                 this.title = "Show Annotation";
                 plugin.measurements.forEach(m => {
                     if (m.line) m.line.visible = false;
@@ -1001,8 +981,8 @@
             } else {
                 // 현재 아이콘이 eye이면 안 보이는 상태 => 보이기
                 anno.setVisible(true); // 주석 보이기
-                icon.classList.remove('bi-eye');
-                icon.classList.add('bi-eye-slash');
+                icon.classList.remove("bi-eye");
+                icon.classList.add("bi-eye-slash");
                 this.title = "Hide Annotation";
 
                 plugin.measurements.forEach(m => {
@@ -1020,13 +1000,13 @@
         //Information popup 추가
         // info팝업을 열기 위한 함수
         function openinfoPopup() {
-            document.getElementById('overlay').style.display = 'block';
+            document.getElementById("overlay").style.display = "block";
             document.getElementById("information-popup").style.display = "block";
         }
 
         // info팝업 닫기
         function closeinfoPopup() {
-            document.getElementById('overlay').style.display = 'none';
+            document.getElementById("overlay").style.display = "none";
             document.getElementById("information-popup").style.display = "none";
         }
 
@@ -1034,11 +1014,11 @@
         // CSRF 토큰 가져오는 함수 (Django CSRF 보호)
         function getCookie(name) {
             let cookieValue = null;
-            if (document.cookie && document.cookie !== '') {
-                const cookies = document.cookie.split(';');
+            if (document.cookie && document.cookie !== "") {
+                const cookies = document.cookie.split(";");
                 for (let cookie of cookies) {
                     cookie = cookie.trim();
-                    if (cookie.startsWith(name + '=')) {
+                    if (cookie.startsWith(name + "=")) {
                         cookieValue = decodeURIComponent(cookie.slice(name.length + 1));
                         break;
                     }
@@ -1047,7 +1027,7 @@
             return cookieValue;
         }
 
-        const csrftoken = getCookie('csrftoken');
+        const csrftoken = getCookie("csrftoken");
 
 
         // 주석 생성 이벤트 처리: 주석이 만들어지면 서버에 저장
@@ -1055,33 +1035,33 @@
 
         // Function to update filters based on slider values
         function updateFilters() {
-            const brightness = document.getElementById('brightness').value;
-            const contrast = document.getElementById('contrast').value;
+            const brightness = document.getElementById("brightness").value;
+            const contrast = document.getElementById("contrast").value;
 
             // Update the displayed values
-            document.getElementById('brightness-value').textContent = Math.round((parseFloat(brightness) * 100 - 100));
-            document.getElementById('contrast-value').textContent = Math.round((parseFloat(contrast) * 100 - 100));
+            document.getElementById("brightness-value").textContent = Math.round((parseFloat(brightness) * 100 - 100));
+            document.getElementById("contrast-value").textContent = Math.round((parseFloat(contrast) * 100 - 100));
 
             // Apply CSS filters to the OpenSeadragon viewer
-            document.querySelector('.openseadragon-canvas').style.filter = `brightness(${brightness}) contrast(${contrast})`;
+            document.querySelector(".openseadragon-canvas").style.filter = `brightness(${brightness}) contrast(${contrast})`;
         }
 
         // Function to reset brightness to default
         function resetBrightness() {
-            const brightnessSlider = document.getElementById('brightness');
+            const brightnessSlider = document.getElementById("brightness");
             brightnessSlider.value = 1;
             updateFilters();
         }
 
         // Function to reset contrast to default
         function resetContrast() {
-            const contrastSlider = document.getElementById('contrast');
+            const contrastSlider = document.getElementById("contrast");
             contrastSlider.value = 1;
             updateFilters();
         }
 
         // Initialize filters on page load
-        document.addEventListener('DOMContentLoaded', () => {
+        document.addEventListener("DOMContentLoaded", () => {
             updateFilters();
         });
 

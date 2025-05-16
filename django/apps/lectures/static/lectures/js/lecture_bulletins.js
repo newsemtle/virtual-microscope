@@ -1,23 +1,26 @@
-document.addEventListener('DOMContentLoaded', function (event) {
+document.addEventListener("DOMContentLoaded", function (event) {
 
-    const lectureItems = document.querySelectorAll('.lecture-item');
+    const lectureItems = document.querySelectorAll(".lecture-item");
 
     lectureItems.forEach(item => {
-        item.addEventListener('click', function (event) {
-            const actionElement = event.target.closest('[data-action]');
-            if (!actionElement) return;
+        item.addEventListener("click", function (event) {
+            const actionEl = event.target.closest("[data-action]");
+            if (!actionEl) return;
 
-            const action = actionElement.dataset.action;
+            const action = actionEl.dataset.action;
 
-            if (action === 'hide') {
+            if (action === "hide") {
                 event.preventDefault();
-                item.remove();
                 drfRequest({
-                    url: actionElement.dataset.url,
-                    method: 'PATCH',
+                    url: API_ROUTES.lectures.detail(actionEl.dataset.lectureId).toggle_status,
+                    method: "PATCH",
+                    onSuccess: (data) => {
+                        hideTooltips(...item.querySelectorAll("[data-bs-tooltip='tooltip']"));
+                        item.remove();
+                    },
                     onError: (error) => {
-                        showFeedback('Error hiding the lecture: ' + error.message, 'danger');
-                    }
+                        showFeedback(gettext("Failed to hide the lecture."), "danger");
+                    },
                 });
             }
         });

@@ -74,7 +74,7 @@ class PublishersAPIView(APIView):
                     {
                         "id": user.id,
                         "username": user.username,
-                        "full_name": user.get_korean_name(),
+                        "full_name": user.get_full_name(),
                     }
                     for user in group.user_set.all()
                 ],

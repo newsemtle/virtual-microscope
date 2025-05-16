@@ -23,9 +23,7 @@ class LectureBulletinsView(LoginRequiredMixin, PermissionRequiredMixin, ListView
     def get_queryset(self):
         user = self.request.user
         lectures = (
-            Lecture.objects.viewable(user)
-            .filter(is_active=True)
-            .order_by("-updated_at")
+            Lecture.objects.viewable(user).filter(is_open=True).order_by("-updated_at")
         )
         return lectures
 
@@ -142,7 +140,7 @@ class LectureView(
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["lecture"] = self.get_lecture()
-        context["editable"] = self.get_lecture().is_editable_by(self.request.user)
+        context["is_editable"] = self.get_lecture().is_editable_by(self.request.user)
         return context
 
 
@@ -175,7 +173,7 @@ class LectureEditView(
             profile__type=GroupProfile.Type.VIEWER
         )
 
-        base_folders = (
+        base_image_folders = (
             ImageFolder.objects.viewable(self.request.user, parent="root")
             .annotate(type=Value("folder", CharField()))
             .order_by("name")
@@ -185,6 +183,6 @@ class LectureEditView(
             .annotate(type=Value("image/slide", CharField()))
             .order_by("name")
         )
-        context["items"] = list(base_folders) + list(root_slides)
+        context["items"] = list(base_image_folders) + list(root_slides)
 
         return context

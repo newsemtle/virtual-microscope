@@ -1,6 +1,7 @@
 from django.conf import settings
 from django.db import models
 from django.db.models import AutoField
+from django.utils.translation import gettext_lazy as _lazy, pgettext_lazy
 from mptt.managers import TreeManager
 from mptt.models import MPTTModel, TreeForeignKey
 
@@ -39,19 +40,27 @@ class BaseFolderManager(TreeManager):
 
 class AbstractFolder(MPTTModel):
     id = AutoField(primary_key=True)
-    name = models.CharField(max_length=250)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    name = models.CharField(_lazy("name"), max_length=250)
+    created_at = models.DateTimeField(
+        pgettext_lazy("date", "created"),
+        auto_now_add=True,
+    )
+    updated_at = models.DateTimeField(
+        pgettext_lazy("date", "updated"),
+        auto_now=True,
+    )
 
     author = models.ForeignKey(
         settings.AUTH_USER_MODEL,
+        verbose_name=_lazy("author"),
         on_delete=models.SET_NULL,
-        related_name="%(class)ss",  # class ImageFolder -> imagefolders
+        related_name="%(class)ss",  # e.g., class ImageFolder -> imagefolders
         blank=True,
         null=True,
     )
     parent = TreeForeignKey(
         "self",
+        verbose_name=_lazy("parent"),
         on_delete=models.CASCADE,
         related_name="children",
         blank=True,
@@ -65,6 +74,8 @@ class AbstractFolder(MPTTModel):
 
     class Meta:
         abstract = True
+        verbose_name = _lazy("folder")
+        verbose_name_plural = _lazy("folders")
         unique_together = ("name", "parent")
         ordering = ("tree_id", "lft")
 

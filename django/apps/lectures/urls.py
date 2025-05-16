@@ -1,14 +1,14 @@
 from django.urls import path
 
-from . import views
+from .views import LectureBulletinsView, LectureDatabaseView, LectureView, LectureEditView
 
 app_name = "lectures"
 
 urlpatterns = [
-    path("", views.LectureBulletinsView.as_view(), name="lecture-bulletins"),
-    path("database/", views.LectureDatabaseView.as_view(), name="lecture-database"),
-    path("<int:lecture_id>/", views.LectureView.as_view(), name="lecture-view"),
+    path("", LectureBulletinsView.as_view(), name="lecture-bulletins"),
+    path("database/", LectureDatabaseView.as_view(), name="lecture-database"),
+    path("<int:lecture_id>/", LectureView.as_view(), name="lecture-view"),
     path(
-        "<int:lecture_id>/edit/", views.LectureEditView.as_view(), name="lecture-edit"
+        "<int:lecture_id>/edit/", LectureEditView.as_view(), name="lecture-edit"
     ),
 ]

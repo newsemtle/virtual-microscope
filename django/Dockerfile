@@ -15,7 +15,9 @@ RUN pip install --no-cache-dir --upgrade pip
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Expose the port Daphne will run on
+# (docker-compose can override this)
 EXPOSE 8000
 
 # Run Daphne
+# (docker-compose can override this)
 CMD ["daphne", "config.asgi:application", "-b", "0.0.0.0", "-p", "8000"]

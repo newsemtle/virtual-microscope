@@ -1,8 +1,9 @@
 from django.conf import settings
 from django.db import models
 from django.db.models import Value, BooleanField, Q, Case, When, F
+from django.utils.translation import gettext_lazy as _lazy, pgettext_lazy
 
-from apps.common.models import ManagerPermissionMixin, ModelPermissionMixin
+from apps.core.models import ManagerPermissionMixin, ModelPermissionMixin
 from apps.images.models import Slide
 from apps.lectures.models import Lecture
 
@@ -64,15 +65,21 @@ class AnnotationManager(ManagerPermissionMixin, models.Manager):
 
 class Annotation(ModelPermissionMixin, models.Model):
     id = models.AutoField(primary_key=True)
-    name = models.CharField(max_length=100, null=True)
+    name = models.CharField(max_length=100)
     description = models.TextField(
         blank=True,
         null=True,
-        help_text="Description of the annotation",
+        help_text=_lazy("Description of the annotation"),
     )
     data = models.JSONField(blank=True, null=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    created_at = models.DateTimeField(
+        pgettext_lazy("date", "created"),
+        auto_now_add=True,
+    )
+    updated_at = models.DateTimeField(
+        pgettext_lazy("date", "updated"),
+        auto_now=True,
+    )
 
     author = models.ForeignKey(
         settings.AUTH_USER_MODEL,

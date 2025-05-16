@@ -3,8 +3,9 @@ import logging
 from django.conf import settings
 from django.db import models
 from django.db.models import Q, Value, BooleanField, Case, When, F
+from django.utils.translation import gettext_lazy as _lazy, pgettext_lazy
 
-from apps.common.models import (
+from apps.core.models import (
     ManagerPermissionMixin,
     AbstractFolder,
     ModelPermissionMixin,
@@ -78,6 +79,7 @@ class LectureFolderManager(ManagerPermissionMixin, BaseFolderManager):
 class LectureFolder(ModelPermissionMixin, AbstractFolder):
     manager = models.ForeignKey(
         settings.AUTH_USER_MODEL,
+        verbose_name=_lazy("manager"),
         on_delete=models.SET_NULL,
         related_name="managing_lecturefolders",
         blank=True,
@@ -158,10 +160,10 @@ class LectureManager(ManagerPermissionMixin, models.Manager):
             qs = self.all()
         elif user.is_publisher():
             qs = self.filter(
-                Q(manager=user) | Q(viewer_groups__in=user.groups.all(), is_active=True)
+                Q(manager=user) | Q(viewer_groups__in=user.groups.all(), is_open=True)
             )
         elif user.is_viewer():
-            qs = self.filter(viewer_groups__in=user.groups.all(), is_active=True)
+            qs = self.filter(viewer_groups__in=user.groups.all(), is_open=True)
         else:
             qs = self.none()
 
@@ -194,11 +196,17 @@ class LectureManager(ManagerPermissionMixin, models.Manager):
 
 class Lecture(ModelPermissionMixin, models.Model):
     id = models.AutoField(primary_key=True)
-    name = models.CharField(max_length=100)
+    name = models.CharField(max_length=250)
     description = models.TextField(blank=True, null=True)
-    is_active = models.BooleanField(default=False)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    is_open = models.BooleanField(default=False)
+    created_at = models.DateTimeField(
+        pgettext_lazy("date", "created"),
+        auto_now_add=True,
+    )
+    updated_at = models.DateTimeField(
+        pgettext_lazy("date", "updated"),
+        auto_now=True,
+    )
 
     author = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -264,7 +272,7 @@ class Lecture(ModelPermissionMixin, models.Model):
         if self.is_editable_by(user):
             return True
 
-        return self.user_is_enrolled(user) and self.is_active
+        return self.user_is_enrolled(user) and self.is_open
 
     def is_managed_by(self, user):
         if user.is_admin():
@@ -276,11 +284,17 @@ class Lecture(ModelPermissionMixin, models.Model):
             pk__in=user.groups.values_list("id", flat=True)
         ).exists()
 
+    def image_count(self):
+        return self.contents.count()
+
 
 class LectureContent(ModelPermissionMixin, models.Model):
     id = models.AutoField(primary_key=True)
     order = models.PositiveSmallIntegerField(help_text="Order inside the lecture")
-    created_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(
+        pgettext_lazy("date", "created"),
+        auto_now_add=True,
+    )
 
     lecture = models.ForeignKey(
         "lectures.Lecture",

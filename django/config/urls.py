@@ -15,8 +15,6 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 
-from django.conf import settings
-from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import include, path
 from django.views.i18n import JavaScriptCatalog, set_language
@@ -24,19 +22,15 @@ from django.views.i18n import JavaScriptCatalog, set_language
 urlpatterns = [
     # Admin
     path("admin/", admin.site.urls),
-    # Urls from apps
-    path("", include("apps.common.urls")),
+    # app에 할당된 url
+    path("", include("apps.core.urls")),
     path("viewer/", include("apps.viewer.urls")),
     path("images/", include("apps.images.urls")),
     path("accounts/", include("apps.accounts.urls")),
     path("lectures/", include("apps.lectures.urls")),
     path("api/", include("config.api_urls")),
-    # Set language
+    # 언어 설정
     path("i18n/setlang/", set_language, name="set_language"),
-    # JavaScript catalog for JS translation
+    # js 번역을 위한 url. base.html에 포함됨.
     path("jsi18n/", JavaScriptCatalog.as_view(), name="javascript-catalog"),
 ]
-
-if settings.DEBUG:
-    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

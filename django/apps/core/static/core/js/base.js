@@ -1,25 +1,25 @@
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener("DOMContentLoaded", () => {
 
     loadFeedback();
     activateTooltips();
 
-    const logoutElement = document.getElementById('logout');
+    const logoutElement = document.getElementById("logout");
     logoutElement?.addEventListener("click", function (event) {
         drfRequest({
             url: this.dataset.url,
             method: "POST",
             onSuccess: (data) => {
-                window.location.href = '/';
+                window.location.href = "/";
             },
             onError: (error) => {
-                showFeedback(`Failed to logout: ${error}`, "danger");
-            }
+                showFeedback(gettext("Failed to logout."), "danger");
+            },
         });
     });
 
-    const sessionTimeElement = document.getElementById('session-time')
+    const sessionTimeElement = document.getElementById("session-time");
     if (sessionTimeElement) {
-        let timer = new Timer('session-time');
+        let timer = new Timer("session-time");
         let lastFetchTime = 0;
         const throttleDuration = 2000;
         sessionTimeElement.addEventListener("click", function (event) {
@@ -35,17 +35,17 @@ document.addEventListener('DOMContentLoaded', () => {
                     timer.start(new Date(data.expire) - Date.now());
                 },
                 onError: (error) => {
-                    showFeedback(`Failed to fetch session time: ${error}`, "danger");
-                }
+                    showFeedback(gettext("Failed to get session time."), "danger");
+                },
             });
         });
         sessionTimeElement.click();
     }
 
-    document.querySelectorAll('.modal')?.forEach(modalElement => {
-        modalElement.addEventListener('hidden.bs.modal', () => {
+    document.querySelectorAll(".modal")?.forEach(modalElement => {
+        modalElement.addEventListener("hidden.bs.modal", () => {
             unfreezeModal(modalElement);
-            const forms = modalElement.querySelectorAll('form');
+            const forms = modalElement.querySelectorAll("form");
             [...forms].forEach(form => {
                 form.reset();
                 clearFormErrors(form);
@@ -53,19 +53,19 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    document.getElementById('item-checkbox-all')?.addEventListener('click', function (event) {
-        const checkboxes = document.querySelectorAll('[name="item-checkbox"]');
+    document.getElementById("item-checkbox-all")?.addEventListener("click", function (event) {
+        const checkboxes = document.querySelectorAll("[name='item-checkbox']");
         checkboxes.forEach(checkbox => {
             checkbox.checked = this.checked;
         });
-    })
+    });
 
-    document.querySelectorAll('[name="item-checkbox"]')?.forEach((checkbox) => {
-        checkbox.addEventListener('click', function (event) {
-            const checkboxes = document.querySelectorAll('[name="item-checkbox"]');
-            document.getElementById('item-checkbox-all').checked = [...checkboxes].every(checkbox => checkbox.checked);
+    document.querySelectorAll("[name='item-checkbox']")?.forEach((checkbox) => {
+        checkbox.addEventListener("click", function (event) {
+            const checkboxes = document.querySelectorAll("[name='item-checkbox']");
+            document.getElementById("item-checkbox-all").checked = [...checkboxes].every(checkbox => checkbox.checked);
         });
-    })
+    });
 
 });
 
@@ -90,9 +90,9 @@ class Timer {
             }
 
             const seconds = Math.floor(this.timeRemaining / 1000);
-            const h = String(Math.floor(seconds / 3600)).padStart(2, '0');
-            const m = String(Math.floor((seconds % 3600) / 60)).padStart(2, '0');
-            const s = String(seconds % 60).padStart(2, '0');
+            const h = String(Math.floor(seconds / 3600)).padStart(2, "0");
+            const m = String(Math.floor((seconds % 3600) / 60)).padStart(2, "0");
+            const s = String(seconds % 60).padStart(2, "0");
 
             this.element.textContent = `${h}:${m}:${s}`;
             this.timeRemaining -= 1000;
@@ -116,12 +116,12 @@ class Timer {
 
 function getCookie(name) {
     let cookieValue = null;
-    if (document.cookie && document.cookie !== '') {
-        const cookies = document.cookie.split(';');
+    if (document.cookie && document.cookie !== "") {
+        const cookies = document.cookie.split(";");
         for (let i = 0; i < cookies.length; i++) {
             const cookie = cookies[i].trim();
             // Does this cookie string begin with the name we want?
-            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+            if (cookie.substring(0, name.length + 1) === (name + "=")) {
                 cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
                 break;
             }
@@ -135,15 +135,31 @@ function getQueryParam(key, url = window.location.href) {
     return searchParams.get(key);
 }
 
-function activateTooltips(element = null) {
+function activateTooltips(...elementList) {
     let tooltipTriggerList;
-    if (element) {
-        tooltipTriggerList = [element];
+    if (elementList.length > 0) {
+        tooltipTriggerList = elementList;
     } else {
-        tooltipTriggerList = document.querySelectorAll('[data-bs-tooltip="tooltip"]');
+        tooltipTriggerList = document.querySelectorAll("[data-bs-tooltip='tooltip']");
     }
     [...tooltipTriggerList].forEach(tooltipTriggerEl => {
-        new bootstrap.Tooltip(tooltipTriggerEl, {trigger: 'hover', delay: {"show": 500}});
+        // Create tooltip if not already present
+        bootstrap.Tooltip.getOrCreateInstance(tooltipTriggerEl, {
+            trigger: "hover",
+            delay: {show: 1000},
+        });
+    });
+}
+
+function hideTooltips(...elementList) {
+    let tooltipHideList;
+    if (elementList.length > 0) {
+        tooltipHideList = elementList;
+    } else {
+        tooltipHideList = document.querySelectorAll("[data-bs-tooltip='tooltip']");
+    }
+    [...tooltipHideList].forEach(tooltipTriggerEl => {
+        bootstrap.Tooltip.getInstance(tooltipTriggerEl)?.hide();
     });
 }
 
@@ -160,9 +176,9 @@ function loadFeedback() {
 function freezeModal(modalElement) {
     const modal = bootstrap.Modal.getOrCreateInstance(modalElement);
     modal._config.keyboard = false;
-    modal._config.backdrop = 'static';
+    modal._config.backdrop = "static";
 
-    modalElement.querySelectorAll('button').forEach(button => {
+    modalElement.querySelectorAll("button").forEach(button => {
         button.disabled = true;
     });
 }
@@ -172,7 +188,7 @@ function unfreezeModal(modalElement) {
     modal._config.keyboard = true;
     modal._config.backdrop = true;
 
-    modalElement.querySelectorAll('button').forEach(button => {
+    modalElement.querySelectorAll("button").forEach(button => {
         button.disabled = false;
     });
 }
@@ -183,14 +199,14 @@ function handleFormErrors(form, error) {
     const message = form.querySelector(`[data-type="message"]`);
     if (message) {
         message.innerHTML = `<i class="bi bi-exclamation-triangle"></i> ${error.message}`;
-        message.classList.remove('d-none');
+        message.classList.remove("d-none");
     }
 
     if (error.fieldErrors) {
         for (const [field, message] of Object.entries(error.fieldErrors)) {
             const input = form.querySelector(`#${field}`);
             if (input) {
-                input.classList.add('is-invalid');
+                input.classList.add("is-invalid");
             }
             const feedback = form.querySelector(`#${field}-feedback`);
             if (feedback) {
@@ -201,16 +217,16 @@ function handleFormErrors(form, error) {
 }
 
 function clearFormErrors(formElement) {
-    formElement.classList.remove('was-validated');
-    formElement.querySelectorAll('.is-invalid').forEach((input) => {
-        input.classList.remove('is-invalid');
+    formElement.classList.remove("was-validated");
+    formElement.querySelectorAll(".is-invalid").forEach((input) => {
+        input.classList.remove("is-invalid");
     });
-    formElement.querySelectorAll('.invalid-feedback').forEach((feedback) => {
-        feedback.textContent = '';
+    formElement.querySelectorAll(".invalid-feedback").forEach((feedback) => {
+        feedback.textContent = "";
     });
-    formElement.querySelectorAll('[data-type="message"]').forEach((message) => {
-        message.classList.add('d-none');
-        message.innerHTML = '';
+    formElement.querySelectorAll("[data-type='message']").forEach((message) => {
+        message.classList.add("d-none");
+        message.innerHTML = "";
     });
 }
 
@@ -221,7 +237,7 @@ function handleModalFormSubmit(formId) {
             form: this,
             onSuccess: (data) => {
                 location.reload();
-            }
+            },
         });
     });
 }
@@ -241,23 +257,23 @@ function handleMoveModalShow(modalId, formId, itemType) {
         drfRequest({
             url: button.dataset.urlTree,
             onSuccess: (data) => {
-                const treeContainer = this.querySelector('.folder-tree-container');
-                renderMoveTree(treeContainer, data, itemType, [button.dataset.itemId]);
+                const treeContainer = this.querySelector(".folder-tree-container");
+                populateMoveTree(treeContainer, data, itemType, [button.dataset.itemId]);
             },
             onError: (error) => {
-                showFeedback('Error fetching folder tree: ' + error.message, 'danger');
-            }
+                showFeedback(gettext("Failed to get folder tree."), "danger");
+            },
         });
     });
 }
 
-function renderMoveTree(container, data, itemType, movingFolderIds) {
-    container.innerHTML = '';
+function populateMoveTree(container, data, itemType, movingFolderIds) {
+    container.innerHTML = "";
     if (data.length === 0) {
-        const alert = document.createElement('div');
-        alert.classList.add('alert', 'alert-warning', 'mt-3');
-        alert.role = 'alert';
-        alert.textContent = 'No folders available.';
+        const alert = document.createElement("div");
+        alert.classList.add("alert", "alert-warning", "mt-3");
+        alert.role = "alert";
+        alert.textContent = gettext("No folders available.");
         container.appendChild(alert);
         return;
     }
@@ -330,7 +346,7 @@ function sendFeedback(message, type = "info") {
  */
 async function drfRequest({
                               url,
-                              method = 'GET',
+                              method = "GET",
                               headers = {},
                               data = null,
                               onSuccess = () => {
@@ -338,20 +354,20 @@ async function drfRequest({
                               onError = () => {
                               },
                               onNext: onFinally = () => {
-                              }
+                              },
                           }) {
     const options = {method, headers};
-    options.headers['X-CSRFToken'] = getCookie('csrftoken');
-    options.headers['Accept-Language'] = navigator.language;
+    options.headers["X-CSRFToken"] = getCookie("csrftoken");
+    options.headers["Accept-Language"] = navigator.language;
 
     if (data) {
         if (data instanceof FormData) {
             if ([...data.entries()].length !== 0) {
                 options.body = data;
             }
-        } else if (typeof data === 'object') {
+        } else if (typeof data === "object") {
             options.body = JSON.stringify(data);
-            options.headers['Content-Type'] = 'application/json';
+            options.headers["Content-Type"] = "application/json";
         } else {
             options.body = data;
         }
@@ -366,10 +382,10 @@ async function drfRequest({
                 try {
                     errorData = await response.json();
                 } catch {
-                    errorData = {detail: `API Error (status ${status})`};
+                    errorData = {detail: gettext("Invalid response")};
                 }
 
-                const classified = classifyError(errorData, status);
+                const classified = classifyError(errorData);
                 throw {...classified, status, raw: errorData};
             }
 
@@ -377,7 +393,7 @@ async function drfRequest({
         })
         .then(data => onSuccess(data))
         .catch(error => {
-            console.log(error);
+            console.error(error);
             onError(error);
         })
         .finally(() => onFinally());
@@ -397,17 +413,17 @@ function submitForm({
                         onSuccess = () => {
                         },
                         onError = () => {
-                        }
+                        },
                     }) {
     if (form.checkValidity()) {
-        form.classList.remove('was-validated');
+        form.classList.remove("was-validated");
     } else {
-        form.classList.add('was-validated');
-        form.querySelector('[data-type="message"]').classList.add('d-none');
-        form.querySelectorAll('.invalid-feedback').forEach((feedback) => {
-            feedback.textContent = 'This field is required.';
-        })
-        onError({message: 'Validation error'});
+        form.classList.add("was-validated");
+        form.querySelector("[data-type='message']").classList.add("d-none");
+        form.querySelectorAll(".invalid-feedback").forEach((feedback) => {
+            feedback.textContent = gettext("This field is required.");
+        });
+        onError({message: gettext("Validation error")});
         return;
     }
     drfRequest({
@@ -418,25 +434,37 @@ function submitForm({
         onError: (error) => {
             handleFormErrors(form, error);
             onError(error);
-        }
-    })
+        },
+    });
 }
 
 /**
- * Populates a definition list (`<dl>`) element with key-value pairs from a details object.
+ * Populates a definition list (dl element) with the provided details.
  *
  * @param {HTMLDListElement} dl - The definition list element to populate.
- * @param {Object} details - An object containing key-value pairs to display in the definition list.
- * @return {void} Does not return a value.
+ * @param {Map<string, string|HTMLElement|Map>} details - A map containing field names as keys and values as the corresponding content. Values can be strings, HTML elements, or nested maps for hierarchical data.
+ * @return {void} This function does not return a value.
  */
-function createDetailList(dl, details) {
-    for (const [key, value] of Object.entries(details)) {
-        const dt = document.createElement('dt');
-        dt.className = 'col-sm-3';
-        dt.textContent = key;
-        const dd = document.createElement('dd');
-        dd.className = 'col-sm-9';
-        dd.innerHTML = value;
+function populateDetailList(dl, details) {
+    for (const [field, content] of details) {
+        const dt = document.createElement("dt");
+        dt.className = "col-sm-3 mb-2";
+        dt.textContent = field;
+
+        const dd = document.createElement("dd");
+        dd.className = "col-sm-9";
+
+        if (content instanceof Map) {
+            const nestedDl = document.createElement("dl");
+            nestedDl.className = "row";
+            populateDetailList(nestedDl, content);
+            dd.appendChild(nestedDl);
+        } else if (content instanceof HTMLElement) {
+            dd.appendChild(content);
+        } else {
+            dd.textContent = content;
+        }
+
         dl.append(dt, dd);
     }
 }
@@ -451,8 +479,8 @@ function createDetailList(dl, details) {
  * @return {HTMLElement} An unordered list (ul) HTML element representing the move tree, with nested items and collapsible folders as applicable.
  */
 function createMoveTree(data, itemType, movingFolderIds = []) {
-    const ul = document.createElement('ul');
-    ul.className = 'list-unstyled mb-0';
+    const ul = document.createElement("ul");
+    ul.className = "list-unstyled mb-0";
 
     if (!["folder", "file"].includes(itemType)) return ul;
 
@@ -460,49 +488,49 @@ function createMoveTree(data, itemType, movingFolderIds = []) {
         const movingFolder = itemType === "folder" && movingFolderIds.includes(item.id?.toString());
         const showChildren = item.children?.length > 0 && !movingFolder;
 
-        const li = document.createElement('li');
+        const li = document.createElement("li");
 
-        const input = document.createElement('input');
-        input.className = 'form-check-input me-2';
-        input.type = 'radio';
+        const input = document.createElement("input");
+        input.className = "form-check-input me-2";
+        input.type = "radio";
         input.id = `folder-${item.id}`;
         input.name = itemType === "folder" ? "parent" : "folder";
         input.value = item.id;
         input.required = true;
         input.disabled = movingFolder || (itemType === "folder" && !item.id);
 
-        const icon = document.createElement('i');
-        icon.className = 'bi bi-chevron-right me-2 text-muted';
-        icon.type = 'button';
+        const icon = document.createElement("i");
+        icon.className = "bi bi-chevron-right me-2 text-muted";
+        icon.type = "button";
 
-        const label = document.createElement('label');
-        label.className = 'form-check-label';
+        const label = document.createElement("label");
+        label.className = "form-check-label";
         label.htmlFor = input.id;
         label.innerHTML = `<i class="bi bi-folder text-warning me-2"></i> ${item.name}`;
 
-        const ulChildContainer = document.createElement('div');
+        const ulChildContainer = document.createElement("div");
         if (showChildren) {
-            icon.classList.remove('text-muted');
-            icon.dataset.bsToggle = 'collapse';
-            icon.setAttribute('href', '#collapse-' + item.id);
-            icon.role = 'button';
+            icon.classList.remove("text-muted");
+            icon.dataset.bsToggle = "collapse";
+            icon.setAttribute("href", "#collapse-" + item.id);
+            icon.role = "button";
 
-            ulChildContainer.className = 'collapse';
-            ulChildContainer.id = 'collapse-' + item.id;
+            ulChildContainer.className = "collapse";
+            ulChildContainer.id = "collapse-" + item.id;
 
-            ulChildContainer.addEventListener('show.bs.collapse', function (event) {
+            ulChildContainer.addEventListener("show.bs.collapse", function (event) {
                 event.stopPropagation();
-                icon.classList.remove('bi-chevron-right');
-                icon.classList.add('bi-chevron-down');
+                icon.classList.remove("bi-chevron-right");
+                icon.classList.add("bi-chevron-down");
             });
-            ulChildContainer.addEventListener('hide.bs.collapse', function (event) {
+            ulChildContainer.addEventListener("hide.bs.collapse", function (event) {
                 event.stopPropagation();
-                icon.classList.remove('bi-chevron-down');
-                icon.classList.add('bi-chevron-right');
+                icon.classList.remove("bi-chevron-down");
+                icon.classList.add("bi-chevron-right");
             });
 
             const ulChild = createMoveTree(item.children, itemType, movingFolderIds);
-            ulChild.classList.add('ms-4');
+            ulChild.classList.add("ms-4");
             ulChildContainer.appendChild(ulChild);
         }
 
@@ -525,11 +553,11 @@ async function fetchResults(url) {
             pagination.innerHTML = "";
 
             if (data.results.length === 0) {
-                imageInfo.textContent = "No results found.";
+                imageInfo.textContent = gettext("No results found.");
                 return;
             }
 
-            let currentPage = parseInt(getQueryParam('page', window.location.origin + url));
+            let currentPage = parseInt(getQueryParam("page", window.location.origin + url));
             if (!currentPage) {
                 currentPage = 1;
             }
@@ -542,30 +570,54 @@ async function fetchResults(url) {
             const end = Math.min(currentPage * pageSize, data.count);
             const totalPages = Math.ceil(data.count / pageSize);
 
-            imageInfo.textContent = `Total: ${data.count} | Showing ${start}-${end} | Page ${currentPage} of ${totalPages}`;
+            imageInfo.textContent = interpolate(gettext("Total: %(count)s | Showing %(start)s-%(end)s | Page %(currentPage)s of %(totalPages)s"), {
+                count: data.count,
+                start,
+                end,
+                currentPage,
+                totalPages,
+            }, true);
 
             data.results.forEach(image => {
                 const listItem = document.createElement("li");
                 listItem.className = "list-group-item d-flex justify-content-between align-items-center";
                 listItem.dataset.slideId = image.id;
                 listItem.dataset.slideName = image.name;
-                listItem.innerHTML = `
-                    <div class="d-flex align-items-center">
-                        <img src="${image.thumbnail}" height=40 class="me-2" alt="">
-                        <a href="${image.view_url}" class="d-inline-block text-truncate text-decoration-none text-body"
-                           style="max-width: 200px;" target="_blank" rel="noopener noreferrer nofollow">
-                           ${image.name}
-                        </a>
-                    </div>
-                    <div class="btn-group btn-group-sm action-button-group">
-                        <a type="button" class="btn btn-outline-warning"
-                           href="/images/database/?folder=${image.folder}"
-                           target="_blank" rel="noopener noreferrer nofollow">
-                           DB
-                        </a>
-                    </div>
-                `;
+
+                const title = document.createElement("div");
+                title.className = "d-flex align-items-center";
+
+                const titleImg = document.createElement("img");
+                titleImg.src = image.thumbnail;
+                titleImg.height = 40;
+                titleImg.className = "me-2";
+                titleImg.alt = "";
+
+                const titleText = document.createElement("a");
+                titleText.className = "d-inline-block text-truncate text-decoration-none text-body";
+                titleText.href = image.view_url;
+                titleText.textContent = image.name;
+                titleText.target = "_blank";
+                titleText.rel = "noopener noreferrer nofollow";
+
+                const btnGroup = document.createElement("div");
+                btnGroup.className = "btn-group btn-group-sm action-button-group";
+
+                const dbBtn = document.createElement("a");
+                dbBtn.className = "btn btn-outline-warning";
+                dbBtn.href = `/images/database/?folder=${image.folder}`;
+                dbBtn.textContent = gettext("DB");
+                dbBtn.title = gettext("Open in DB");
+                dbBtn.dataset.bsTooltip = "tooltip";
+                dbBtn.target = "_blank";
+                dbBtn.rel = "noopener noreferrer nofollow";
+
+                title.append(titleImg, titleText);
+                btnGroup.appendChild(dbBtn);
+                listItem.append(title, btnGroup);
                 imageList.appendChild(listItem);
+
+                activateTooltips(...listItem.querySelectorAll("[data-bs-tooltip='tooltip']"));
             });
 
             // Pagination buttons
@@ -592,12 +644,12 @@ async function fetchResults(url) {
             }
         },
         onError: (error) => {
-            showFeedback('Error fetching images: ' + error.message, 'danger');
-        }
+            showFeedback(gettext("Failed to get results."), "danger");
+        },
     });
 }
 
-function classifyError(errorData, status) {
+function classifyError(errorData) {
     const generalErrors = [];
     const fieldErrors = {};
 
@@ -610,14 +662,36 @@ function classifyError(errorData, status) {
     }
 
     Object.entries(errorData || {}).forEach(([key, value]) => {
-        if (key !== 'non_field_errors' && key !== 'detail') {
-            fieldErrors[key] = Array.isArray(value) ? value.join('\n') : value;
+        if (key !== "non_field_errors" && key !== "detail") {
+            fieldErrors[key] = Array.isArray(value) ? value.join("\n") : value;
         }
     });
 
     return {
-        message: generalErrors.join('\n') || `Validation error. (Status: ${status})`,
+        message: generalErrors.join("\n") || gettext("Validation error"),
         generalErrors,
         fieldErrors,
     };
+}
+
+function formatDate(iso_string) {
+    const date = new Date(iso_string);
+    const year = date.getFullYear();
+    const month = (date.getMonth() + 1).toString().padStart(2, "0");
+    const day = date.getDate().toString().padStart(2, "0");
+    const hours = date.getHours().toString().padStart(2, "0");
+    const minutes = date.getMinutes().toString().padStart(2, "0");
+    const seconds = date.getSeconds().toString().padStart(2, "0");
+    return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+}
+
+function redirectToNextOrDefault(defaultUrl) {
+    const next = getQueryParam("next");
+    if (next && next.startsWith("/")) {
+        window.location.href = next;
+    } else if (defaultUrl.startsWith("/")) {
+        window.location.href = defaultUrl;
+    } else {
+        window.location.href = "/";
+    }
 }

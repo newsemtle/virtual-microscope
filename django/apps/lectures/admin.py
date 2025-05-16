@@ -24,8 +24,8 @@ class LectureContentInline(admin.StackedInline):
 
 @admin.register(Lecture)
 class LectureAdmin(admin.ModelAdmin):
-    list_display = ("name", "author", "created_at", "updated_at", "is_active")
-    list_filter = ("author", "is_active")
+    list_display = ("name", "author", "created_at", "updated_at", "is_open")
+    list_filter = ("author", "is_open")
     search_fields = ("name", "author__username")
     ordering = ("-updated_at",)
     filter_horizontal = ("viewer_groups",)

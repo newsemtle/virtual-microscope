@@ -1,6 +1,5 @@
 import logging
 
-from django.utils import timezone
 from rest_framework import viewsets
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.permissions import IsAuthenticated, DjangoModelPermissions
@@ -45,12 +44,6 @@ class AnnotationViewSet(viewsets.ModelViewSet):
         data.update(
             {
                 "slide_name": str(annotation.slide) or "-",
-                "created_at_formatted": timezone.localtime(
-                    annotation.created_at
-                ).strftime("%Y-%m-%d %H:%M:%S"),
-                "updated_at_formatted": timezone.localtime(
-                    annotation.updated_at
-                ).strftime("%Y-%m-%d %H:%M:%S"),
             }
         )
         return Response(data)

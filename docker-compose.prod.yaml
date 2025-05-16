@@ -23,8 +23,8 @@ services:
       - postgresql
       - redis
       - rabbitmq
-    ports:
-      - ${DJANGO_PORT}:${DJANGO_PORT}
+    expose:
+      - ${DJANGO_PORT}
     volumes:
       - ./django:/app
       - .env:/app/.env
@@ -46,8 +46,8 @@ services:
   postgresql:
     image: postgres:13
     restart: always
-    ports:
-      - ${POSTGRES_PORT}:${POSTGRES_PORT}
+    expose:
+      - ${POSTGRES_PORT}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     env_file:

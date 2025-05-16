@@ -1,3 +1,4 @@
+from django.utils.translation import gettext as _, gettext_lazy as _lazy
 from rest_framework import serializers
 from rest_framework.reverse import reverse
 
@@ -28,7 +29,7 @@ class LectureFolderSerializer(serializers.ModelSerializer):
             serializers.UniqueTogetherValidator(
                 queryset=LectureFolder.objects.all(),
                 fields=("name", "parent"),
-                message="The folder name already exists in this folder",
+                message=_lazy("The folder name already exists in this folder"),
             )
         ]
 
@@ -40,10 +41,10 @@ class LectureFolderSerializer(serializers.ModelSerializer):
         parent = attrs.get("parent")
 
         if parent_is_sent:
-            if not parent and not user.is_admin():
-                errors["detail"] = "You can't place folder at the root location."
+            if not parent:
+                errors["detail"] = _("You can't place folder at the root location.")
             elif parent and not parent.is_managed_by(user):
-                errors["detail"] = "You don't have permission to edit this folder."
+                errors["detail"] = _("You don't have permission to edit this folder.")
 
         if errors:
             raise serializers.ValidationError(errors)
@@ -83,7 +84,7 @@ class LectureSerializer(serializers.ModelSerializer):
             "folder",
             "contents",
             "viewer_groups",
-            "is_active",
+            "is_open",
             "created_at",
             "updated_at",
             "edit_url",
@@ -99,23 +100,23 @@ class LectureSerializer(serializers.ModelSerializer):
         folder = attrs.get("folder")
 
         if folder_is_sent:
-            if not folder and not user.is_admin():
-                errors["detail"] = "You can't place lecture at the root location."
+            if not folder:
+                errors["detail"] = _("You can't place lecture at the root location.")
             elif folder and not folder.is_managed_by(user):
-                errors["detail"] = "You don't have permission to edit this lecture."
+                errors["detail"] = _("You don't have permission to edit this lecture.")
 
         contents = attrs.get("contents", [])
         for index, content in enumerate(contents):
             slide = content.get("slide")
             annotation = content.get("annotation")
             if slide and not slide.is_viewable_by(user):
-                errors[f"detail"] = (
-                    f"You don't have permission to view slide '{slide.name}'."
-                )
+                errors[f"detail"] = _(
+                    "You don't have permission to view slide '{name}'."
+                ).format(name=slide.name)
             if annotation and not annotation.is_viewable_by(user):
-                errors[f"detail"] = (
-                    f"You don't have permission to view annotation '{annotation.name}'."
-                )
+                errors[f"detail"] = _(
+                    "You don't have permission to view annotation '{name}'."
+                ).format(name=annotation.name)
 
         if errors:
             raise serializers.ValidationError(errors)
