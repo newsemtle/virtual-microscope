@@ -18,8 +18,8 @@
     <script src="{% static 'OSDMeasure/openseadragon-fabricjs-overlay.js' %}"></script>
     <script src="{% static 'OSDMeasure/OSDMeasure.js' %}"></script>
     <!-- screenshot 플러그인 -->
-    <script src="{% static 'screenshot/FileSaver.js' %}"></script>
-    <script src="{% static 'screenshot/openseadragonScreenshot.js' %}"></script>
+    <script src="{% static 'screenshot/html2canvas.min.js' %}"></script>
+
 {% endblock extra_head %}
 
 
@@ -61,24 +61,26 @@
                     </button>
                     <ul class="dropdown-menu" aria-labelledby="btnGroupDrop_file">
                         <!-- 저장 버튼 -->
-                        <li>
-                            {% if can_edit_annotation %}
-                                <button class="dropdown-item" id="annotation-update-btn" title="Save"
-                                        data-annotation-id="{{ annotation.id }}"
-                                        data-url="{% url 'api:annotation-detail' pk=annotation.id %}">
-                                    <i class="bi bi-floppy"></i> Save
-                                </button>
-                            {% endif %}
-                            {% if can_create_annotation %}
-                                <button class="dropdown-item" title="Save As" data-bs-toggle="modal"
-                                        data-bs-target="#annotation-create-modal">
-                                    <i class="bi bi-floppy"></i> Save As..
-                                </button>
-                            {% endif %}
-                        </li>
-                        <li>
-                            <hr class="dropdown-divider" style="--bs-dropdown-divider-margin-y: 0">
-                        </li>
+                        {% if can_create_annotation or can_edit_annotation %}
+                            <li>
+                                {% if can_edit_annotation %}
+                                    <button class="dropdown-item" id="annotation-update-btn" title="Save"
+                                            data-annotation-id="{{ annotation.id }}"
+                                            data-url="{% url 'api:annotation-detail' pk=annotation.id %}">
+                                        <i class="bi bi-floppy"></i> Save
+                                    </button>
+                                {% endif %}
+                                {% if can_create_annotation %}
+                                    <button class="dropdown-item" title="Save As" data-bs-toggle="modal"
+                                            data-bs-target="#annotation-create-modal">
+                                        <i class="bi bi-floppy"></i> Save As..
+                                    </button>
+                                {% endif %}
+                            </li>
+                            <li>
+                                <hr class="dropdown-divider" style="--bs-dropdown-divider-margin-y: 0">
+                            </li>
+                        {% endif %}
                         <!-- 정보 버튼 -->
                         <li>
                             <button class="dropdown-item" title="Slide-Information" data-bs-toggle="modal"
@@ -132,6 +134,15 @@
                             <span id="contrast-value" class="filter-value">1.00</span>
                             <button type="button" onclick="resetContrast()">Reset</button>
                         </li>
+                        <!-- Saturate Control -->
+                        <li class="dropdown-item">
+                            <label for="saturate">채도:</label>
+                            <input type="range" id="saturate" min="0" max="2" step="0.01" value="1"
+                                oninput="updateFilters()">
+                            <span id="saturate-value" class="filter-value">1.00</span>
+                            <button type="button" onclick="resetSaturate()">Reset</button>
+                        </li>
+
                     </ul>
                 </div>
                 <!-- 배율 드롭다운 버튼 -->
@@ -263,12 +274,13 @@
             <div class="btn-group ms-auto nav-media-query" role="group">
                 <!-- Reset 버튼(이 이후로 오른쪽으로 밀림림) -->
                 <button class="btn btn btn-outline-light custom-button"
-                        onclick="viewer.viewport.goHome()" title="Reset View">
+                        onclick="viewer.viewport.goHome(true)" title="Reset View">
                     <i class="bi bi-house"></i>
                 </button>
                 <!-- 저장 버튼 -->
-                <button class="btn btn btn-outline-light custom-button" title="Save">
-                    <i class="bi bi-floppy"></i>
+                <button class="btn btn btn-outline-light custom-button"
+                        onclick="captureOpenSeadragonView()" title="Screenshot">
+                    <i class="bi bi-camera"></i>
                 </button>
             </div>
         </div>
@@ -283,12 +295,26 @@
 
 <!-- aside block -->
 {% block aside_content %}
-    <div class="position-relative d-flex justify-content-between align-items-center w-100">
+    <!-- 왼쪽 버튼 그룹들 -->
+    <div class="btn-group ms-auto nav-media-query" role="group">
         <button class="btn btn-outline-light custom-button" data-bs-tooltip="tooltip" data-bs-toggle="modal"
                 data-bs-target="#description-modal" aria-label="Edit" data-bs-original-title="Edit">
             <i class="bi bi-pencil"></i>
         </button>
-        <span class="position-absolute" style="left: 50%; transform: translateX(-50%);">Description</span>
+    </div>
+    <div class="text-center flex-grow-1">
+        {% if annotation %}
+        {{ annotation.name|slice:':20' }}
+        {% else %}
+        Description
+        {% endif %}
+    </div>
+    <!-- 오른쪽 버튼 그룹들 -->
+    <div class="btn-group ms-auto nav-media-query" role="group">
+        <!-- 저장 버튼 -->
+        <button class="btn btn-outline-light custom-button" onclick="" title="Save">
+            <i class="bi bi-floppy"></i>
+        </button>
     </div>
 {% endblock aside_content %}
 
@@ -459,26 +485,27 @@
             //네비게이션 컨트롤
             showNavigationControl: true,
             navigationControlAnchor: OpenSeadragon.ControlAnchor.TOP_RIGHT,
-            zoomInButton: "zoom-in",
-            zoomOutButton: "zoom-out",
-            homeButton: "home",
-            fullPageButton: "full-page",
-            nextButton: "next",
-            previousButton: "previous",
-            showRotationControl: true,
+            zoomInButton: 'zoom-in',
+            zoomOutButton: 'zoom-out',
+            homeButton: 'home',
+            fullPageButton: 'full-page',
+            nextButton: 'next',
+            previousButton: 'previous',
             maxZoomLevel: 52, //최대 줌 레벨 설정. 100X까지 되도록 설정함.
+            showRotationControl: true,
             gestureSettingsMouse: {
                 clickToZoom: false, //사용시 약간 불편해서 꺼둠 (250210)
                 dblClickToZoom: true,
                 pinchToZoom: true,
                 scrollToZoom: true,
-            },
+                pinchRotate: true
+            }
         });
 
         const raw_metadata = {{ slide.metadata|safe }};
         const slide_metadata = {
             mpp_x: parseFloat(raw_metadata["mpp-x"]).toFixed(3), // toFixed(3)를 사용하여 소수점 3자리 문자열로 만들 수도 있음
-            objective_power: parseInt(raw_metadata.objective_power),
+            sourceLens: parseInt(raw_metadata.sourceLens)
         };
 
         //Scalebar 추가
@@ -524,10 +551,10 @@
         });
 
         // Scale
-        //objective_power의 값과 baseImageZoom을 이용하여 배율 보정정
+        //sourceLens의 값과 baseImageZoom을 이용하여 배율 보정정
         function calculateZoomFactor(targetMagnification) {
-            const objective_power = slide_metadata.objective_power;
-            const baseImageZoom = viewer.viewport.viewportToImageZoom(objective_power);
+            const sourceLens = slide_metadata.sourceLens;
+            const baseImageZoom = viewer.viewport.viewportToImageZoom(sourceLens);
             const zoomFactor = targetMagnification / baseImageZoom;
             return zoomFactor;
         }
@@ -553,11 +580,12 @@
             plugin = new OSDMeasure(viewer, {
                 conversionFactor: slide_metadata.mpp_x,
                 units: "um",
-                fontSize: contentFactor / 40,
-                selectedColor: selectedColor,
+                fontSize: contentFactor / 50,
+                selectedColor: selectedColor
             });
         });
 
+        let currentMagnification;
         //현재 zoom을 추적, 버튼 업데이트 함수
         function trackZoomAndUpdateButton() {
             const scaleButton = document.getElementById("btnGroupDrop_scale"); // Scale 버튼 선택
@@ -570,9 +598,9 @@
             viewer.addHandler("zoom", function () {
                 let viewportZoom = viewer.viewport.getZoom();
                 let imageZoom = viewer.viewport.viewportToImageZoom(viewportZoom);
-                const objective_power = slide_metadata.objective_power;
+                const sourceLens = slide_metadata.sourceLens;
 
-                let currentMagnification = imageZoom * objective_power;
+                currentMagnification = imageZoom * sourceLens;
 
                 const predefinedMagnifications = [5, 10, 20, 40, 63, 100]; // 정수 배율 리스트
                 if (predefinedMagnifications.includes(Math.round(currentMagnification))) {
@@ -616,19 +644,21 @@
                 case "F":
                     toggleFullScreen(); //전체화면
                     break;
-                case "h":
-                case "H":
-                case "0":
-                    viewer.viewport.goHome(); //reset view
+                case 'h':
+                case 'H':
+                case '0':
+                    viewer.viewport.goHome(true); //reset view
                     break;
-                //case 'p':
-                //    viewer.screenshotInstance.takeScreenshot();
-                // case 'r':
-                // case 'R':
-                //     viewer.viewport.setRotation(90); //90도 회전 : 제대로 안됨. 보류
-                //     break;
-                // 숫자키 입력시 배율 조정정
-                case "1":
+                case 'p':
+                    captureOpenSeadragonView();
+                    break;
+                //case 'r':
+                //case 'R':
+                //    viewer.viewport.setRotation(90); //90도 회전 : 제대로 안됨. 보류
+                //    break;
+
+               //숫자키 입력시 배율 조정정
+                case '1':
                     setZoomLevel(1.25);
                     break;
                 case "2":
@@ -679,12 +709,6 @@
 
         OpenSeadragon.setString("Tooltips.ScreenshotToggle", "스크린샷 저장");
 
-        viewer.screenshotInstance = viewer.screenshot({
-            showOptions: false,
-            keyboardShortcut: "p",
-            showScreenshotControl: false,
-        });
-
         window.getScreenshotFilename = function () {
             function getFormattedTime() {
                 const now = new Date();
@@ -703,17 +727,23 @@
             return `${userId}_${timeStr}_${slideTitle}`;
         };
 
+        //const viewerElement = viewer.element; // 또는 document.getElementById('openseadragon-viewer')
+        //const offset = OpenSeadragon.getElementOffset(viewerElement);
+        //console.log(`뷰어 위치: x=${offset.x}, y=${offset.y}`);
+
 
         // Annotorious 초기화
         let anno;
-        let selectedColor = "#ff0000";
+        let anno2;
+        let selectedColor = '#ff0000'
         let editMode = false;
         document.getElementById("ink").style.color = selectedColor;
         anno = AnnotoriousOSD.createOSDAnnotator(viewer, {
-            userSelectAction: "{% if can_edit_annotation %}EDIT{% else %}NONE{% endif %}",
+            userSelectAction: "{% if can_create_annotation %}EDIT{% else %}NONE{% endif %}"
         });
 
-        {% if can_edit_annotation %}
+
+        {% if can_create_annotation %}
             const activeAnno = anno;
         {% else %}
             anno2 = AnnotoriousOSD.createOSDAnnotator(viewer);
@@ -834,16 +864,17 @@
                 strokeWidth: 3,
             };
         });
-        anno2.setStyle((annotation, state) => {
-            const color = annotation["motivation"];
-            return {
-                fillOpacity: 0,
-                stroke: color,
-                strokeOpacity: 1,
-                strokeWidth: 3,
-            };
-        });
-
+        if(anno2){
+            anno2.setStyle((annotation, state) => {
+                const color = annotation["motivation"];
+                return {
+                    fillOpacity: 0,
+                    stroke: color,
+                    strokeOpacity: 1,
+                    strokeWidth: 3
+                }
+            });
+        }
 
         function openPopup(annotation) {
             return new Promise((resolve, reject) => {
@@ -865,7 +896,7 @@
                     annotation["name"] = title;
                     annotation["description"] = comment;
 
-                    {% if can_edit_annotation %}
+                    {% if can_create_annotation %}
                         updateAnnotationDisplay(annotation);
                     {% endif %}
 
@@ -950,8 +981,8 @@
 
                 activeAnno.updateAnnotation(annotation);
 
-                {% if can_edit_annotation %}
-                    let bodyElem = document.getElementById("annotation-combined-" + annotation.id);
+                {% if can_create_annotation %}
+                    let bodyElem = document.getElementById('annotation-combined-' + annotation.id);
                     if (bodyElem) bodyElem.remove();
                     updateAnnotationDisplay(annotation);
                 {% endif %}
@@ -964,12 +995,14 @@
         document.getElementById("invisible-btn").addEventListener("click", function () {
             const icon = this.querySelector("i");
             // 현재 아이콘이 eye-slash이면 보이는 상태 => 숨기기
-            if (icon.classList.contains("bi-eye-slash")) {
-                anno.cancelSelected();
-                anno.setVisible(false); // 주석 숨기기
-                icon.classList.remove("bi-eye-slash");
-                icon.classList.add("bi-eye");
+            if (icon.classList.contains('bi-eye-slash')) {
+                activeAnno.cancelSelected();
+                activeAnno.setVisible(false); // 주석 숨기기
+                icon.classList.remove('bi-eye-slash');
+                icon.classList.add('bi-eye');
                 this.title = "Show Annotation";
+
+                plugin.deselectMeasurement();
                 plugin.measurements.forEach(m => {
                     if (m.line) m.line.visible = false;
                     if (m.textObject) m.textObject.visible = false;
@@ -980,9 +1013,9 @@
 
             } else {
                 // 현재 아이콘이 eye이면 안 보이는 상태 => 보이기
-                anno.setVisible(true); // 주석 보이기
-                icon.classList.remove("bi-eye");
-                icon.classList.add("bi-eye-slash");
+                activeAnno.setVisible(true); // 주석 보이기
+                icon.classList.remove('bi-eye');
+                icon.classList.add('bi-eye-slash');
                 this.title = "Hide Annotation";
 
                 plugin.measurements.forEach(m => {
@@ -1030,20 +1063,20 @@
         const csrftoken = getCookie("csrftoken");
 
 
-        // 주석 생성 이벤트 처리: 주석이 만들어지면 서버에 저장
-
 
         // Function to update filters based on slider values
         function updateFilters() {
-            const brightness = document.getElementById("brightness").value;
-            const contrast = document.getElementById("contrast").value;
+            const brightness = document.getElementById('brightness').value;
+            const contrast = document.getElementById('contrast').value;
+            const saturate = document.getElementById('saturate').value;
 
             // Update the displayed values
-            document.getElementById("brightness-value").textContent = Math.round((parseFloat(brightness) * 100 - 100));
-            document.getElementById("contrast-value").textContent = Math.round((parseFloat(contrast) * 100 - 100));
+            document.getElementById('brightness-value').textContent = Math.round((parseFloat(brightness) * 100 - 100));
+            document.getElementById('contrast-value').textContent = Math.round((parseFloat(contrast) * 100 - 100));
+            document.getElementById('saturate-value').textContent = Math.round((parseFloat(saturate) * 100 - 100));
 
             // Apply CSS filters to the OpenSeadragon viewer
-            document.querySelector(".openseadragon-canvas").style.filter = `brightness(${brightness}) contrast(${contrast})`;
+            document.querySelector('#openseadragon-container canvas').style.filter = `brightness(${brightness}) contrast(${contrast}) saturate(${saturate})`;
         }
 
         // Function to reset brightness to default
@@ -1060,10 +1093,105 @@
             updateFilters();
         }
 
+        function resetSaturate() {
+            const saturateSlider = document.getElementById('saturate');
+            saturateSlider.value = 1;
+            updateFilters();
+        }
+
         // Initialize filters on page load
         document.addEventListener("DOMContentLoaded", () => {
             updateFilters();
         });
+
+        function captureOpenSeadragonView() {
+            const viewerElement = viewer.element;
+            const canvas = document.querySelector('#openseadragon-container > div > div.openseadragon-canvas > canvas:nth-child(1)');
+            const filterValue = canvas.style.filter || 'none';
+            const ctx = canvas.getContext('2d');
+
+            const originalImageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = canvas.width;
+            tempCanvas.height = canvas.height;
+            const tempCtx = tempCanvas.getContext('2d');
+            tempCtx.filter = filterValue;
+            tempCtx.drawImage(canvas, 0, 0);
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.drawImage(tempCanvas, 0, 0);
+
+            viewer.setMouseNavEnabled(false);
+            viewer.setControlsEnabled(false);
+
+            html2canvas(viewerElement, {
+              useCORS: true,
+              backgroundColor: null,
+              scale: 2
+            }).then(originalCanvas => {
+              const filename = typeof getScreenshotFilename === 'function'
+                ? getScreenshotFilename()
+                : 'screenshot';
+
+              const now = new Date();
+              const dateString = now.toLocaleDateString('ko-KR'); // 예: 2025. 5. 12.
+              const timeString = now.toLocaleTimeString('ko-KR'); // 예: 14:23:45
+              const dateTimeString = `${dateString.replace(/\./g, '-').replace(/\s/g, '')} ${timeString}`;
+
+              // 💡 여백 추가할 캔버스 만들기
+              const marginHeight = 50; // 아래 여백 크기 (px)
+              const finalCanvas = document.createElement('canvas');
+              finalCanvas.width = originalCanvas.width;
+              finalCanvas.height = originalCanvas.height + marginHeight;
+
+              const finalCtx = finalCanvas.getContext('2d');
+
+              // 기존 이미지 그리기
+              finalCtx.drawImage(originalCanvas, 0, 0);
+
+              // 아래 여백 흰색 배경
+              finalCtx.fillStyle = 'white';
+              finalCtx.fillRect(0, originalCanvas.height, finalCanvas.width, marginHeight);
+
+              // 텍스트 작성
+              finalCtx.fillStyle = 'black';
+              finalCtx.font = '36px arial';
+              finalCtx.textBaseline = 'top';
+              const username = "{{ user.username }}";
+              const slideTitle = "{{ slide.name|slice:':30' }}".replace(/\s+/g, '_');
+
+              finalCtx.textAlign = 'left';
+              finalCtx.fillText(`${slideTitle}`, 10, originalCanvas.height + 5);
+              finalCtx.textAlign = 'center';
+              finalCtx.fillText(`배율: ${Math.round(currentMagnification)}X`, finalCanvas.width / 2, originalCanvas.height + 5);
+              finalCtx.textAlign = 'right';
+              finalCtx.fillText(`${username} | ${dateTimeString}`, finalCanvas.width - 10, originalCanvas.height + 5);
+
+              // 저장
+              finalCanvas.toBlob(blob => {
+                saveAs(blob, `${filename}.png`);
+
+                const item = new ClipboardItem({ 'image/png': blob });
+
+                navigator.clipboard.write([item]).then(() => {
+                    alert('이미지가 복사되었습니다! Ctrl+V로 붙여넣어보세요.');
+                }).catch(err => {
+                    console.error('클립보드 복사 실패:', err);
+                });
+              });
+
+              // 복원
+              ctx.putImageData(originalImageData, 0, 0);
+              viewer.setMouseNavEnabled(true);
+              viewer.setControlsEnabled(true);
+            }).catch(err => {
+              console.error('❌ 캡처 실패:', err);
+              ctx.putImageData(originalImageData, 0, 0);
+              viewer.setMouseNavEnabled(true);
+              viewer.setControlsEnabled(true);
+            });
+          }
 
     </script>
     <script src="{% static 'viewer/js/viewer.js' %}" type="text/javascript"></script>
