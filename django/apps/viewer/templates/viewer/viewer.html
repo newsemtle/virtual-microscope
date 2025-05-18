@@ -516,8 +516,9 @@
         const rawSlideMetadata = {{ slide.metadata|safe }};
 
         // 현재 연결된 annotation 정보. `undefined` 면 연결된 annotation 이 없다고 보면 됨.
+        let annotation;
         {% if annotation %}
-            let annotation = {
+            annotation = {
                 description: '{{ annotation.description|linebreaksbr }}',
                 data: {{ annotation.data|safe }},
             };
