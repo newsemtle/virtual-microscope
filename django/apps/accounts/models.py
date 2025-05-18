@@ -116,7 +116,10 @@ def update_group_profile(sender, instance, created, **kwargs):
                 author=User.objects.filter(is_superuser=True).first(),
                 manager_group=instance,
             )
-            profile.save(update_fields=["base_image_folder"])
+            if profile.pk:
+                profile.save(update_fields=["base_image_folder"])
+            else:
+                profile.save()
 
 
 class UserManager(BaseUserManager):
