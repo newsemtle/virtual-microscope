@@ -1,15 +1,16 @@
-{% extends 'common/base.html' %}
+{% extends 'core/base.html' %}
 {% load static %}
+{% load i18n %}
 
-{% block content %}
+{% block main_content %}
     <div class="row justify-content-center">
         <div class="col-md-4">
             <div class="card mt-5 shadow-sm">
                 <div class="card-body p-4">
-                    <h3 class="card-title text-center mb-4">Sign In</h3>
+                    <h3 class="card-title text-center mb-4">{% trans "Sign In" %}</h3>
                     <form id="login-form" data-url="{% url 'api:login' %}" data-method="POST" novalidate>
                         <div class="row align-items-center mb-3">
-                            <label for="username" class="col-sm-3 col-form-label fw-bold">Username</label>
+                            <label for="username" class="col-sm-3 col-form-label fw-bold">{% trans "Username" %}</label>
                             <div class="col-sm-9">
                                 <div class="input-group has-validation">
                                     <input type="text" id="username" name="username" class="form-control" required
@@ -19,7 +20,7 @@
                             </div>
                         </div>
                         <div class="row align-items-center mb-3">
-                            <label for="password" class="col-sm-3 col-form-label fw-bold">Password</label>
+                            <label for="password" class="col-sm-3 col-form-label fw-bold">{% trans "Password" %}</label>
                             <div class="col-sm-9">
                                 <div class="input-group has-validation">
                                     <input type="password" id="password" name="password" class="form-control"
@@ -34,7 +35,8 @@
                         <div class="align-items-center text-danger mb-3 d-none" data-type="message"></div>
                         <div class="d-grid gap-2">
                             <button type="submit" class="btn btn-primary">
-                                <i class="bi bi-box-arrow-in-right"></i> Sign In
+                                <i class="bi bi-box-arrow-in-right"></i>
+                                <span>{% trans "Sign In" %}</span>
                             </button>
                         </div>
                     </form>
@@ -42,9 +44,9 @@
             </div>
         </div>
     </div>
-{% endblock content %}
+{% endblock main_content %}
 
 
 {% block extra_js %}
-    <script src="{% static 'accounts/login.js' %}" type="text/javascript"></script>
+    <script src="{% static 'accounts/js/login.js' %}" type="text/javascript"></script>
 {% endblock extra_js %}

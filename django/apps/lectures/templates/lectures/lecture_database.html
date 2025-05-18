@@ -1,21 +1,21 @@
-{% extends "common/base.html" %}
+{% extends "core/base.html" %}
 {% load static %}
+{% load i18n %}
 
 {% block extra_css %}
-    <link rel="stylesheet" href="{% static 'common/css/breadcrumb.css' %}">
+    <link rel="stylesheet" href="{% static 'core/css/breadcrumb.css' %}">
     <link rel="stylesheet" href="{% static 'lectures/css/lecture_database.css' %}">
 {% endblock %}
 
 
-<!-- 화면 상단 중앙에 DB/Lecture인 거 표시하기(css에 slide-text 추가해 줘야함)-->
-{% block slide_name %}
-    DB/Lecture
-{% endblock slide_name %}
+{% block navbar_title %}
+    DB/{% trans "Lecture" %}
+{% endblock navbar_title %}
 
-{% block content %}
+{% block main_content %}
     <!-- Breadcrumb -->
-    <nav class="breadcrumbs" aria-label="breadcrumb">
-        <a href="{% url 'common:home' %}" class="breadcrumbs__item">Home</a>
+    <nav class="breadcrumbs">
+        <a href="{% url 'core:home' %}" class="breadcrumbs__item">{% trans "Home" %}</a>
         {% for crumb in breadcrumbs %}
             {% if forloop.last %}
                 <!-- 마지막 항목은 is-active 클래스 추가 -->
@@ -40,18 +40,20 @@
                  style="background-color:#edf1f5;">
                 <div class="d-flex align-items-center">
                     <input class="form-check-input m-0 me-2" type="checkbox" id="item-checkbox-all">
-                    <div class="dropdown me-2">
+                    <div class="dropdown-center me-2">
                         <i class="dropdown-toggle" type="button" data-bs-toggle="dropdown"
                            aria-expanded="false"></i>
-                        <ul class="dropdown-menu p-0" style="min-width: 0;">
+                        <ul class="dropdown-menu" style="min-width: 0;">
                             <li>
                                 <button class="dropdown-item" data-bs-toggle="modal"
-                                        data-bs-target="#bulk-move-modal" data-type="move">Move
+                                        data-bs-target="#bulk-move-modal" data-type="move">
+                                    {% trans "Move" %}
                                 </button>
                             </li>
                             <li>
                                 <button class="dropdown-item" data-bs-toggle="modal"
-                                        data-bs-target="#confirmation-modal" data-type="delete">Delete
+                                        data-bs-target="#confirmation-modal" data-type="delete">
+                                    {% trans "Delete" %}
                                 </button>
                             </li>
                         </ul>
@@ -60,7 +62,7 @@
                         {% if current_folder and current_folder != user.base_lecture_folder %}
                             {{ current_folder.name }}
                         {% else %}
-                            DB/Lecture
+                            DB/{% trans "Lecture" %}
                         {% endif %}
                     </h4>
                 </div>
@@ -69,12 +71,12 @@
                         <button type="button" class="btn btn-warning" data-bs-toggle="modal"
                                 data-bs-target="#folder-create-modal">
                             <i class="bi bi-folder-plus"></i>
-                            <span class="d-none d-sm-inline">New Folder</span>
+                            <span class="d-none d-sm-inline">{% trans "New Folder" %}</span>
                         </button>
                         <button type="button" class="btn btn-primary" data-bs-toggle="modal"
                                 data-bs-target="#lecture-create-modal">
                             <i class="bi bi-journal-plus"></i>
-                            <span class="d-none d-sm-inline">New Lecture</span>
+                            <span class="d-none d-sm-inline">{% trans "New Lecture" %}</span>
                         </button>
                     {% endif %}
                 </div>
@@ -112,7 +114,6 @@
             <div class="d-flex justify-content-center">
                 <div class="card border-0 rounded-0 mb-0 card-hover"
                      style="height : 100%; max-height: 150px; width : 100%; max-width: 1024px; {% if not forloop.counter|divisibleby:"2" %}background-color: #edf1f5;{% endif %}">
-                    <!-- lecture url-->
                     <div class="d-flex w-100 h-100" style=" width: 100%;">
                         <div class="d-flex align-items-center justify-content-center ps-2">
                             {% if item.is_editable %}
@@ -135,75 +136,89 @@
                             {% if item.type == "folder" %}
                                 <h3 class="mb-0 name-truncate">
                                     <a href="{% url 'lectures:lecture-database' %}?folder={{ item.id }}"
-                                       style="text-decoration: none; color: inherit;"
-                                       class="stretched-link">{{ item.name }}</a>
+                                       style="text-decoration: none; color: inherit;" class="stretched-link">
+                                        {{ item.name }}
+                                    </a>
                                 </h3>
                                 <h6 class="mb-0 text-secondary">
                                     <i class="bi bi-journal-text"></i>
-                                    {{ item.file_count }} Lectures
+                                    {{ item.file_count }} {% trans "Lectures" %}
                                 </h6>
                             {% else %}
                                 <h3 class="mb-0 name-truncate">
-                                    <a href="{% url 'lectures:lecture-edit' lecture_id=item.id %}"
-                                       style="text-decoration: none; color: inherit;"
-                                       class="stretched-link">{{ item.name }}</a>
+                                    <a href="{% url 'lectures:lecture-edit' lecture_id=item.id %}?next={{ request.get_full_path }}"
+                                       style="text-decoration: none; color: inherit;" class="stretched-link">
+                                        {{ item.name }}
+                                    </a>
                                 </h3>
                                 <h6 class="mb-0 information-truncate" style="color: rgba(68, 66, 66, 0.38);">
                                     {{ item.description }}
                                 </h6>
-                                <h6 class="mb-0 group-truncate"><i class="bi bi-people-fill"></i>
-                                    {% for group in item.groups.all %}
-                                        {{ group.name }}{% if not forloop.last %}, {% endif %}
-                                    {% empty %}No groups.
+                                <h6 class="mb-0 group-truncate">
+                                    <i class="bi bi-people-fill"></i>
+                                    {% for group in item.viewer_groups.all %}
+                                        <span>{{ group.name }}{% if not forloop.last %}, {% endif %}</span>
+                                    {% empty %}
+                                        <span class="text-secondary">{% trans "No viewer groups." %}</span>
                                     {% endfor %}
                                 </h6>
                             {% endif %}
                         </div>
                         <!-- 3영역 날짜 /flex-item-right / 20% -->
                         <div class="d-flex flex-column p-2 flex-item-right" style="width: 20%;">
-                            <p class="mb-0" style="font-size: 15px"><i
-                                    class="bi bi-person-fill-up fs-5"></i> {{ item.author }}</p>
-                            <p class="mb-0" style="font-size: 15px">created: {{ item.created_at|date:"Y-m-d H:i" }}</p>
-                            <p class="mb-0" style="font-size: 15px">updated: {{ item.updated_at|date:"Y-m-d H:i" }}</p>
+                            <p class="mb-0" style="font-size: 15px">
+                                <i class="bi bi-person-fill-up fs-5"></i>
+                                {{ item.author }}
+                            </p>
+                            <p class="mb-0" style="font-size: 15px">
+                                <i class="bi bi-calendar"></i>
+                                {{ item.created_at|date:"Y-m-d H:i:s" }}
+                            </p>
+                            <p class="mb-0" style="font-size: 15px">
+                                <i class="bi bi-clock-history"></i>
+                                {{ item.updated_at|date:"Y-m-d H:i:s" }}
+                            </p>
+                            {% if item.type != "folder" %}
+                                <p class="mb-0" style="font-size: 15px">
+                                    <i class="bi bi-images"></i>
+                                    {{ item.image_count }} {% trans "Images" %}
+                                </p>
+                            {% endif %}
                         </div>
-                        <!-- 4영역 Edit 버튼 /flex-item-edit / 10%-->
+                        <!-- 4영역 Edit 버튼 /flex-item-edit / 10% -->
                         <div class="d-flex  align-items-center justify-content-center flex-column p-2 flex-item-edit"
                              style="width: 10%;">
                             {% if item.type == 'folder' %}
                                 <div class="btn-group-vertical btn-group-sm">
                                     <!-- detail 버튼 -->
                                     <button type="button" class="btn btn-outline-dark btn-sm rounded-0"
-                                            data-bs-toggle="modal"
-                                            data-bs-target="#folder-detail-modal" data-bs-tooltip="tooltip"
-                                            title="Details"
+                                            title="{% trans "Details" %}" data-bs-tooltip="true"
+                                            data-bs-toggle="modal" data-bs-target="#folder-detail-modal"
                                             data-url="{% url 'api:lecture-folder-detail' pk=item.id %}">
-                                        Details
+                                        {% trans "Details" %}
                                     </button>
                                     {% if item.is_editable %}
                                         <button type="button" class="btn btn-outline-dark btn-sm rounded-0"
-                                                data-bs-toggle="modal"
-                                                data-bs-target="#folder-rename-modal" data-bs-tooltip="tooltip"
-                                                title="Rename"
+                                                title="{% trans "Rename" %}" data-bs-tooltip="true"
+                                                data-bs-toggle="modal" data-bs-target="#folder-rename-modal"
                                                 data-url="{% url 'api:lecture-folder-detail' pk=item.id %}">
-                                            Rename
+                                            {% trans "Rename" %}
                                         </button>
                                         <button type="button" class="btn btn-outline-dark btn-sm rounded-0"
-                                                data-bs-toggle="modal"
-                                                data-bs-target="#folder-move-modal" data-bs-tooltip="tooltip"
-                                                title="Move"
+                                                title="{% trans "Move" %}" data-bs-tooltip="true"
+                                                data-bs-toggle="modal" data-bs-target="#folder-move-modal"
                                                 data-url="{% url 'api:lecture-folder-detail' pk=item.id %}"
                                                 data-url-tree="{% url 'api:lecture-folder-tree' %}"
                                                 data-item-id="{{ item.id }}">
-                                            Move
+                                            {% trans "Move" %}
                                         </button>
                                     {% endif %}
                                     {% if item.is_deletable %}
                                         <button type="button" class="btn btn-outline-dark btn-sm rounded-0"
-                                                data-bs-toggle="modal"
-                                                data-bs-target="#folder-delete-modal" data-bs-tooltip="tooltip"
-                                                title="Delete"
+                                                title="{% trans "Delete" %}" data-bs-tooltip="true"
+                                                data-bs-toggle="modal" data-bs-target="#folder-delete-modal"
                                                 data-url="{% url 'api:lecture-folder-detail' pk=item.id %}">
-                                            Delete
+                                            {% trans "Delete" %}
                                         </button>
                                     {% endif %}
                                 </div>
@@ -211,74 +226,81 @@
                                 <div class="btn-group-vertical btn-group-sm">
                                     <!-- detail 버튼 -->
                                     <button type="button" class="btn btn-outline-dark btn-sm rounded-0"
+                                            title="{% trans "Details" %}" data-bs-tooltip="true"
                                             data-bs-toggle="modal" data-bs-target="#lecture-detail-modal"
-                                            data-bs-tooltip="tooltip" title="Details"
                                             data-url="{% url 'api:lecture-detail' pk=item.id %}">
-                                        Details
+                                        {% trans "Details" %}
                                     </button>
                                     {% if item.is_editable %}
                                         <!-- preview 버튼 -->
                                         <a type="button" class="btn btn-outline-dark btn-sm rounded-0"
                                            href="{% url 'lectures:lecture-view' lecture_id=item.id %}"
-                                           data-bs-tooltip="tooltip" title="Preview">
-                                            Preview
+                                           title="{% trans "Preview" %}" data-bs-tooltip="true">
+                                            {% trans "Preview" %}
                                         </a>
                                         <!-- move 버튼 -->
                                         <button type="button" class="btn btn-outline-dark btn-sm rounded-0"
+                                                title="{% trans "Move" %}" data-bs-tooltip="true"
                                                 data-bs-toggle="modal" data-bs-target="#lecture-move-modal"
-                                                data-bs-tooltip="tooltip" title="Move"
                                                 data-url="{% url 'api:lecture-detail' pk=item.id %}"
                                                 data-url-tree="{% url 'api:lecture-folder-tree' %}">
-                                            Move
+                                            {% trans "Move" %}
                                         </button>
                                     {% endif %}
                                     {% if item.is_deletable %}
                                         <!-- delete 버튼 -->
                                         <button type="button" class="btn btn-outline-dark btn-sm rounded-0"
+                                                title="{% trans "Delete" %}" data-bs-tooltip="true"
                                                 data-bs-toggle="modal" data-bs-target="#lecture-delete-modal"
-                                                data-bs-tooltip="tooltip" title="Delete"
                                                 data-url="{% url 'api:lecture-detail' pk=item.id %}">
-                                            Delete
+                                            {% trans "Delete" %}
                                         </button>
                                     {% endif %}
                                 </div>
                             {% endif %}
                         </div>
-                        <!-- 5영역 visibility /flex-item-visibility / 10% -->
+                        <!-- 5영역 visibility / flex-item-visibility / 10% -->
                         <div class="d-flex align-items-center justify-content-center flex-column p-2 flex-item-visibility"
                              style="width: 10%;">
-                            {% if item.type != "folder" and item.is_editable %}
-                                <button type="button" class="btn btn-sm btn-outline-primary toggle-activity-btn"
-                                        data-bs-tooltip="tooltip" title="Toggle Activity"
-                                        data-url="{% url 'api:lecture-toggle-activity' pk=item.id %}">
-                                    <i class="bi bi-toggle-{% if item.is_active %}on{% else %}off{% endif %}"></i>
-                                    {% if item.is_active %}On{% else %}Off{% endif %}
-                                </button>
-                                <button type="button" class="btn btn-sm btn-outline-dark"
-                                        data-bs-toggle="modal" data-bs-target="#lecture-copy-modal"
-                                        data-bs-tooltip="tooltip" title="Copy"
-                                        data-duplicate-url="{% url 'api:lecture-duplicate' pk=item.id %}"
-                                        data-send-url="{% url 'api:lecture-send' pk=item.id %}"
-                                        data-url-users="{% url 'api:publishers' %}">
-                                    Copy
-                                </button>
-                            {% endif %}
+                            <div class="btn-group-vertical btn-group-sm">
+                                {% if item.type != "folder" and item.is_editable %}
+                                    <button type="button" class="btn btn-outline-danger toggle-status-btn"
+                                            title="Toggle Status" data-bs-tooltip="true"
+                                            data-lecture-id="{{ item.id }}">
+                                        {% if item.is_open %}
+                                            <i class="bi bi-toggle-on"></i>
+                                            <span>{% trans "Open" %}</span>
+                                        {% else %}
+                                            <i class="bi bi-toggle-off"></i>
+                                            <span>{% trans "Closed" %}</span>
+                                        {% endif %}
+                                    </button>
+                                    <button type="button" class="btn btn-outline-dark"
+                                            title="{% trans "Copy" %}" data-bs-tooltip="true"
+                                            data-bs-toggle="modal" data-bs-target="#lecture-copy-modal"
+                                            data-duplicate-url="{% url 'api:lecture-duplicate' pk=item.id %}"
+                                            data-send-url="{% url 'api:lecture-send' pk=item.id %}"
+                                            data-url-users="{% url 'api:publishers' %}">
+                                        {% trans "Copy" %}
+                                    </button>
+                                {% endif %}
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
         {% endfor %}
     {% endif %}
-{% endblock content %}
+{% endblock main_content %}
 
 
-{% block extra_modal %}
+{% block extra_overlay %}
     <!-- Folder Create Modal -->
     <div class="modal fade" id="folder-create-modal" tabindex="-1">
         <div class="modal-dialog modal-dialog-scrollable">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Create New Folder</h5>
+                    <h5 class="modal-title">{% trans "New Folder" %}</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <form id="folder-create-form" data-url="{% url 'api:lecture-folder-list' %}" data-method="POST"
@@ -286,15 +308,17 @@
                     <div class="modal-body">
                         <input type="hidden" name="parent" value="{{ current_folder.id }}">
                         <div class="mb-2">
-                            <label for="folder-create-name" class="form-label">Folder Name</label>
+                            <label for="folder-create-name" class="form-label">{% trans "Folder Name" %}</label>
                             <input type="text" class="form-control" id="folder-create-name" name="name" required>
                             <div class="invalid-feedback" id="name-feedback"></div>
                         </div>
                         <div class="align-items-center text-danger d-none" data-type="message"></div>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                        <button type="submit" class="btn btn-primary">Create</button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                            {% trans "Cancel" %}
+                        </button>
+                        <button type="submit" class="btn btn-primary">{% trans "Create" %}</button>
                     </div>
                 </form>
             </div>
@@ -305,21 +329,23 @@
         <div class="modal-dialog modal-dialog-scrollable">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Rename Folder</h5>
+                    <h5 class="modal-title">{% trans "Rename Folder" %}</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <form id="folder-rename-form" data-url="" data-method="PATCH" novalidate>
                     <div class="modal-body">
                         <div class="mb-2">
-                            <label for="folder-rename-name" class="form-label mt-2">New Name</label>
+                            <label for="folder-rename-name" class="form-label mt-2">{% trans "Folder Name" %}</label>
                             <input type="text" class="form-control" id="folder-rename-name" name="name" required>
                             <div class="invalid-feedback" id="name-feedback"></div>
                         </div>
                         <div class="align-items-center text-danger d-none" data-type="message"></div>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                        <button type="submit" class="btn btn-primary">Rename</button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                            {% trans "Cancel" %}
+                        </button>
+                        <button type="submit" class="btn btn-primary">{% trans "Rename" %}</button>
                     </div>
                 </form>
             </div>
@@ -330,7 +356,7 @@
         <div class="modal-dialog modal-dialog-scrollable">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Move Folder</h5>
+                    <h5 class="modal-title">{% trans "Move Folder" %}</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <form id="folder-move-form" data-url="" data-method="PATCH">
@@ -340,8 +366,10 @@
                         <div class="align-items-center text-danger d-none" data-type="message"></div>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                        <button type="submit" class="btn btn-warning">Move</button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                            {% trans "Cancel" %}
+                        </button>
+                        <button type="submit" class="btn btn-warning">{% trans "Move" %}</button>
                     </div>
                 </form>
             </div>
@@ -352,17 +380,19 @@
         <div class="modal-dialog modal-dialog-scrollable">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Delete Folder</h5>
+                    <h5 class="modal-title">{% trans "Delete Folder" %}</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <form id="folder-delete-form" data-url="" data-method="DELETE">
                     <div class="modal-body">
-                        <p>Are you sure to delete this folder?</p>
+                        <p class="text-danger">{% trans "Are you sure you want to delete this folder?" %}</p>
                         <div class="align-items-center text-danger d-none" data-type="message"></div>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                        <button type="submit" class="btn btn-danger">Delete</button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                            {% trans "Cancel" %}
+                        </button>
+                        <button type="submit" class="btn btn-danger">{% trans "Delete" %}</button>
                     </div>
                 </form>
             </div>
@@ -373,14 +403,16 @@
         <div class="modal-dialog modal-dialog-scrollable">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Folder Details</h5>
+                    <h5 class="modal-title">{% trans "Folder Details" %}</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
                     <dl class="row" id="folder-detail-list"></dl>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        {% trans "Close" %}
+                    </button>
                 </div>
             </div>
         </div>
@@ -390,15 +422,15 @@
         <div class="modal-dialog modal-dialog-scrollable">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">New Lecture</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <h5 class="modal-title">{% trans "New Lecture" %}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <form id="lecture-create-form" data-url="{% url 'api:lecture-list' %}" data-method="POST" novalidate>
                     <div class="modal-body">
                         <div class="mb-3">
                             <input type="hidden" name="folder" value="{{ current_folder.id }}">
                             <div class="mb-2">
-                                <label for="lecture-create-name" class="form-label">Lecture Name</label>
+                                <label for="lecture-create-name" class="form-label">{% trans "Lecture Name" %}</label>
                                 <input type="text" class="form-control" id="lecture-create-name" name="name" required>
                                 <div class="invalid-feedback" id="name-feedback"></div>
                             </div>
@@ -406,8 +438,10 @@
                         </div>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                        <button type="submit" class="btn btn-primary">Create</button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                            {% trans "Cancel" %}
+                        </button>
+                        <button type="submit" class="btn btn-primary">{% trans "Create" %}</button>
                     </div>
                 </form>
             </div>
@@ -418,7 +452,7 @@
         <div class="modal-dialog modal-dialog-scrollable">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Move Lecture</h5>
+                    <h5 class="modal-title">{% trans "Move Lecture" %}</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <form id="lecture-move-form" data-url="" data-method="PATCH">
@@ -428,8 +462,10 @@
                         <div class="align-items-center text-danger d-none" data-type="message"></div>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                        <button type="submit" class="btn btn-warning">Move</button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                            {% trans "Cancel" %}
+                        </button>
+                        <button type="submit" class="btn btn-warning">{% trans "Move" %}</button>
                     </div>
                 </form>
             </div>
@@ -440,7 +476,7 @@
         <div class="modal-dialog modal-lg modal-dialog-scrollable">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Copy Lecture</h5>
+                    <h5 class="modal-title">{% trans "Copy Lecture" %}</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
@@ -449,16 +485,17 @@
                             <form id="lecture-duplicate-form" data-url="" data-method="POST">
                                 <div class="card h-100">
                                     <div class="card-header">
-                                        <h5>복제</h5>
+                                        <h5>{% trans "Duplicate" %}</h5>
                                     </div>
                                     <div class="card-body">
-                                        <p>현재 폴더에 복제본을 생성할까요?</p>
-                                        <div class="align-items-center text-danger d-none"
-                                             data-type="message"></div>
+                                        <p>{% trans "Do you want to create copy in this folder?" %}</p>
+                                        <div class="align-items-center text-danger d-none" data-type="message"></div>
                                     </div>
                                     <div class="card-footer">
                                         <div class="d-flex justify-content-end">
-                                            <button type="submit" class="btn btn-primary">Duplicate</button>
+                                            <button type="submit" class="btn btn-primary">
+                                                {% trans "Duplicate" %}
+                                            </button>
                                         </div>
                                     </div>
                                 </div>
@@ -469,24 +506,27 @@
                                   data-manager-id="{{ current_folder.manager.id }}">
                                 <div class="card h-100">
                                     <div class="card-header">
-                                        <h5>복사본 보내기</h5>
+                                        <h5>{% trans "Send Copy" %}</h5>
                                     </div>
                                     <div class="card-body">
-                                        <p class="text-danger">
-                                            <i class="bi bi-exclamation-triangle"></i>
-                                            다른 그룹에게 전달하는 경우 주의 해주세요.
-                                        </p>
                                         <div class="border rounded p-3 mb-2 users-container"
                                              style="max-height: 300px; overflow-y: auto;"></div>
-                                        <p class="text-muted">*상대방이 볼 수 없는 슬라이드가 포함되어있는 경우, 해당 항목은 제거된 채로
-                                            전달됩니다.</p>
-                                        <p class="text-muted">*상대방의 최상위 폴더로 전달됩니다.</p>
+                                        <p class="text-danger">
+                                            <i class="bi bi-exclamation-triangle"></i>
+                                            {% trans "Be careful when sending to the user in other groups." %}
+                                        </p>
+                                        <p class="text-muted">
+                                            *{% trans "Images that aren't accessible to the user will be removed from copy." %}
+                                        </p>
+                                        <p class="text-muted">
+                                            *{% trans "It will be sent to the base folder." %}
+                                        </p>
                                         <div class="align-items-center text-danger d-none"
                                              data-type="message"></div>
                                     </div>
                                     <div class="card-footer">
                                         <div class="d-flex justify-content-end">
-                                            <button type="submit" class="btn btn-warning">Send</button>
+                                            <button type="submit" class="btn btn-warning">{% trans "Send" %}</button>
                                         </div>
                                     </div>
                                 </div>
@@ -502,17 +542,19 @@
         <div class="modal-dialog modal-dialog-scrollable">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Delete Lecture</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <h5 class="modal-title">{% trans "Delete Lecture" %}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <form id="lecture-delete-form" data-url="" data-method="DELETE">
                     <div class="modal-body">
-                        <p>Are you sure you want to delete this lecture?</p>
+                        <p class="text-danger">{% trans "Are you sure you want to delete this lecture?" %}</p>
                         <div class="align-items-center text-danger d-none" data-type="message"></div>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                        <button type="submit" class="btn btn-danger">Delete</button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                            {% trans "Cancel" %}
+                        </button>
+                        <button type="submit" class="btn btn-danger">{% trans "Delete" %}</button>
                     </div>
                 </form>
             </div>
@@ -523,14 +565,16 @@
         <div class="modal-dialog modal-dialog-scrollable">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Lecture Details</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <h5 class="modal-title">{% trans "Lecture Details" %}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
                     <dl class="row" id="lecture-detail-list"></dl>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        {% trans "Close" %}
+                    </button>
                 </div>
             </div>
         </div>
@@ -540,7 +584,7 @@
         <div class="modal-dialog modal-dialog-scrollable">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">선택 항목 이동</h5>
+                    <h5 class="modal-title">{% trans "Move Selected Items" %}</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
@@ -548,9 +592,11 @@
                     <div class="align-items-center text-danger d-none" data-type="message"></div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">닫기</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        {% trans "Cancel" %}
+                    </button>
                     <button type="button" class="btn btn-primary continue" data-type="">
-                        다음
+                        {% trans "Next" %}
                     </button>
                 </div>
             </div>
@@ -566,9 +612,11 @@
                 </div>
                 <div class="modal-body"></div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">닫기</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        {% trans "Cancel" %}
+                    </button>
                     <button type="button" class="btn continue" data-type="" data-bs-toggle="modal"
-                            data-bs-target="#action-progress-modal" data-destination=""></button>
+                            data-bs-target="#action-progress-modal"></button>
                 </div>
             </div>
         </div>
@@ -590,7 +638,7 @@
             </div>
         </div>
     </div>
-{% endblock extra_modal %}
+{% endblock extra_overlay %}
 
 
 {% block extra_js %}

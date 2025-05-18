@@ -85,7 +85,7 @@ LOGGING = {
     },
     "loggers": {
         "django": {
-            "handlers": ["file"],
+            "handlers": ["file", "console"],
             "level": "INFO",
             "propagate": True,
         },
@@ -95,28 +95,33 @@ LOGGING = {
 # Application definition
 
 INSTALLED_APPS = [
+    # ASGI server integration
     "daphne",
+    # Django core apps
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    # Third-party apps
+    "channels",
     "rest_framework",
     "django_filters",
-    "channels",
-    "apps.common",
+    "import_export",
+    "mptt",
+    # Custom apps
+    "apps.core",
     "apps.accounts",
     "apps.images",
     "apps.lectures",
     "apps.viewer",
-    "import_export",
-    "mptt",
 ]
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
+    "django.middleware.locale.LocaleMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
@@ -129,7 +134,7 @@ ROOT_URLCONF = "config.urls"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        # "DIRS": [os.path.join(BASE_DIR, "templates")],
+        "DIRS": [],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
@@ -193,6 +198,18 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/5.1/topics/i18n/
 
+LANGUAGES = [
+    ("en", "English"),
+    ("ko", "Korean"),
+]
+
+# Django에 내장된 번역을 덮어쓸 수 있습니다.
+# 번역 적용 순서에 관한 자세한 내용은 아래를 참고해주세요.
+# https://docs.djangoproject.com/en/5.2/topics/i18n/translation/#how-django-discovers-translations
+LOCALE_PATHS = [
+    BASE_DIR / "locale",
+]
+
 LANGUAGE_CODE = "en-us"
 USE_I18N = True
 
@@ -220,8 +237,6 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 AUTH_USER_MODEL = "accounts.User"
 LOGIN_URL = "/accounts/login/"
-LOGIN_REDIRECT_URL = "/"
-LOGOUT_REDIRECT_URL = "/"
 
 # Session
 
@@ -248,6 +263,7 @@ DEFAULT_RENDERER_CLASSES = [
 ]
 if DEBUG:
     DEFAULT_RENDERER_CLASSES.append("rest_framework.renderers.BrowsableAPIRenderer")
+
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
         "rest_framework.authentication.SessionAuthentication",
@@ -264,7 +280,7 @@ REST_FRAMEWORK = {
     "PAGE_SIZE": 10,
 }
 
-# Bootstrap Messages
+# Bootstrap Messages와 호환을 위한 태그 변경
 
 messages.DEFAULT_TAGS.update(
     {

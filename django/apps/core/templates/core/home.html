@@ -1,0 +1,115 @@
+{% extends 'core/base.html' %}
+{% load i18n %}
+
+{% block extra_head %}
+    <style>
+        .feature {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            height: 4rem;
+            width: 4rem;
+            font-size: 2rem;
+        }
+    </style>
+{% endblock %}
+
+{% block main_content %}
+    <div>
+        {% if user.is_authenticated %}
+            <div class="py-5" style="background: #8fa1b9;">
+                <div class="container px-5">
+                    <div class="row gx-5 justify-content-center">
+                        <div class="col-lg-6">
+                            <div class="text-center my-5">
+                                <h1 class="display-5 fw-bolder text-white mb-2">
+                                    {% blocktrans trimmed with name=user.get_full_name %}
+                                        Welcome, {{ name }}
+                                    {% endblocktrans %}
+                                </h1>
+                                <div class="d-grid grid gap-sm-3 d-sm-flex justify-content-sm-center">
+                                    <h4 class="fs-6 fw-normal text-white">
+                                        <i class="bi bi-person-fill"></i>
+                                        {% trans "username" %}: {{ user.username }}
+                                    </h4>
+                                    <h4 class="fs-6 fw-normal text-white">
+                                        <i class="bi bi-people-fill"></i>
+                                        {% trans "group" %}: {{ user.groups.all|join:", "|default:"-" }}
+                                    </h4>
+                                </div>
+                                <div class="d-grid grid gap-sm-3 d-sm-flex justify-content-sm-center">
+                                    <h4 class="fs-6 fw-normal text-white">
+                                        <i class="bi bi-calendar-date-fill"></i>
+                                        {% trans "last login" %}: {{ user.last_login|date:"Y-m-d H:i:s" }}
+                                    </h4>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="py-5" id="features">
+                <div class="container px-5 my-5">
+                    <div class="row g-5 justify-content-center">
+                        {% if user.is_admin or user.is_publisher %}
+                            <div class="col-md-4 position-relative">
+                                <div class="feature bg-primary bg-gradient text-white rounded-3 mb-3">
+                                    <i class="bi bi-folder"></i>
+                                </div>
+                                <h2 class="h4 fw-bolder">DB/{% trans "Image" %}</h2>
+                                <p>{% trans "Navigate all uploaded images with a folder structure" %}</p>
+                                <a class="text-decoration-none stretched-link" href="{% url 'images:image-database' %}">
+                                    {% trans "View DB/Image" %}
+                                    <i class="bi bi-arrow-right"></i>
+                                </a>
+                            </div>
+                            <div class="col-md-4 position-relative">
+                                <div class="feature bg-primary bg-gradient text-white rounded-3 mb-3">
+                                    <i class="bi bi-folder"></i>
+                                </div>
+                                <h2 class="h4 fw-bolder">DB/{% trans "Lecture" %}</h2>
+                                <p>{% trans "Navigate all your lectures with a folder structure." %}</p>
+                                <a class="text-decoration-none stretched-link"
+                                   href="{% url 'lectures:lecture-database' %}">
+                                    {% trans "View DB/Lecture" %}
+                                    <i class="bi bi-arrow-right"></i>
+                                </a>
+                            </div>
+                        {% endif %}
+                        <div class="col-md-4 position-relative">
+                            <div class="feature bg-primary bg-gradient text-white rounded-3 mb-3">
+                                <i class="bi bi-journal-text"></i>
+                            </div>
+                            <h2 class="h4 fw-bolder">{% trans "Lectures" context "home" %}</h2>
+                            <p>{% trans "View all opened lectures." %}</p>
+                            <a class="text-decoration-none stretched-link"
+                               href="{% url 'lectures:lecture-bulletins' %}">
+                                {% trans "View Lectures" context "home" %}
+                                <i class="bi bi-arrow-right"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% else %}
+            <div class="py-5" style="background: #8fa1b9;">
+                <div class="container px-5">
+                    <div class="row gx-5 justify-content-center">
+                        <div class="col-lg-6">
+                            <div class="text-center my-5">
+                                <h1 class="display-5 fw-bolder text-white mb-2">{% trans "Welcome to MediView" %}</h1>
+                                <p class="lead text-white-50 mb-4">{% trans "Please log in to access all features." %}</p>
+                                <div class="d-grid gap-3 d-sm-flex justify-content-sm-center">
+                                    <a class="btn btn-primary btn-lg px-4 me-sm-3" href="{% url 'accounts:login' %}">
+                                        {% trans "Login" %}
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+{% endblock main_content %}

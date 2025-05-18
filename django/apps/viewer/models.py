@@ -1,8 +1,9 @@
 from django.conf import settings
 from django.db import models
 from django.db.models import Value, BooleanField, Q, Case, When, F
+from django.utils.translation import gettext_lazy as _lazy, pgettext_lazy
 
-from apps.common.models import ManagerPermissionMixin, ModelPermissionMixin
+from apps.core.models import ManagerPermissionMixin, ModelPermissionMixin
 from apps.images.models import Slide
 from apps.lectures.models import Lecture
 
@@ -64,18 +65,31 @@ class AnnotationManager(ManagerPermissionMixin, models.Manager):
 
 class Annotation(ModelPermissionMixin, models.Model):
     id = models.AutoField(primary_key=True)
-    name = models.CharField(max_length=100, null=True)
+    name = models.CharField(_lazy("name"), max_length=100)
     description = models.TextField(
+        _lazy("description"),
         blank=True,
         null=True,
-        help_text="Description of the annotation",
+        help_text=_lazy("General description of the slide."),
     )
-    data = models.JSONField(blank=True, null=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    data = models.JSONField(
+        _lazy("data"),
+        blank=True,
+        null=True,
+        help_text=_lazy("Data of drawn annotation."),
+    )
+    created_at = models.DateTimeField(
+        pgettext_lazy("date", "created"),
+        auto_now_add=True,
+    )
+    updated_at = models.DateTimeField(
+        pgettext_lazy("date", "updated"),
+        auto_now=True,
+    )
 
     author = models.ForeignKey(
         settings.AUTH_USER_MODEL,
+        verbose_name=_lazy("author"),
         on_delete=models.CASCADE,
         related_name="annotations",
         blank=True,
@@ -83,6 +97,7 @@ class Annotation(ModelPermissionMixin, models.Model):
     )
     slide = models.ForeignKey(
         "images.Slide",
+        verbose_name=_lazy("slide"),
         on_delete=models.CASCADE,
         related_name="annotations",
     )
@@ -90,6 +105,8 @@ class Annotation(ModelPermissionMixin, models.Model):
     objects = AnnotationManager()
 
     class Meta:
+        verbose_name = _lazy("annotation")
+        verbose_name_plural = _lazy("annotations")
         unique_together = ("name", "author", "slide")
         ordering = ("created_at",)
 

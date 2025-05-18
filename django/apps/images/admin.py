@@ -1,20 +1,17 @@
 from django.contrib import admin
+from django.utils.translation import gettext as _, gettext_lazy as _lazy
 
-from .models import (
-    ImageFolder,
-    Slide,
-    Tag,
-)
+from .models import ImageFolder, Slide, Tag
 
 
 class RootFolderFilter(admin.SimpleListFilter):
-    title = "Root Folder"
+    title = _lazy("Root Folder")
     parameter_name = "parent"
 
     def lookups(self, request, model_admin):
         return (
-            (True, "Yes"),
-            (False, "No"),
+            (True, _("Root Folder")),
+            (False, _("Non-Root Folder")),
         )
 
     def queryset(self, request, queryset):
@@ -27,7 +24,7 @@ class RootFolderFilter(admin.SimpleListFilter):
 class FolderAdmin(admin.ModelAdmin):
     list_display = (
         "name",
-        "is_root_node",
+        "parent",
         "author",
         "manager_group",
         "created_at",

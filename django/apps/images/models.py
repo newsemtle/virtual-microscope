@@ -1,19 +1,22 @@
 import logging
 import os
 import shutil
+from datetime import datetime
 
 from asgiref.sync import async_to_sync
 from celery import shared_task
 from channels.layers import get_channel_layer
 from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
+from django.core.validators import FileExtensionValidator
 from django.db import models
 from django.db.models import Value, BooleanField, Case, When, Q, F
+from django.utils.translation import gettext as _, gettext_lazy as _lazy, pgettext_lazy
 from mptt.models import MPTTModel
 from openslide import OpenSlide
 from openslide.deepzoom import DeepZoomGenerator
 
-from apps.common.models import (
+from apps.core.models import (
     AbstractFolder,
     BaseFolderManager,
     ManagerPermissionMixin,
@@ -90,6 +93,7 @@ class ImageFolderManager(ManagerPermissionMixin, BaseFolderManager):
 class ImageFolder(ModelPermissionMixin, AbstractFolder):
     manager_group = models.ForeignKey(
         "auth.Group",
+        verbose_name=_lazy("manager group"),
         on_delete=models.SET_NULL,
         related_name="managing_imagefolders",
         blank=True,
@@ -231,36 +235,53 @@ class SlideManager(ManagerPermissionMixin, models.Manager):
 
 class Slide(ModelPermissionMixin, models.Model):
     class BuildStatus(models.TextChoices):
-        PENDING = ("pending", "Pending")
-        PROCESSING = ("processing", "Processing")
-        DONE = ("done", "Done")
-        FAILED = ("failed", "Failed")
+        PENDING = ("pending", _lazy("Pending"))
+        PROCESSING = ("processing", _lazy("Processing"))
+        DONE = ("done", _lazy("Done"))
+        FAILED = ("failed", _lazy("Failed"))
+
+    ALLOWED_EXTENSIONS = ["ndpi", "svs"]
+    TILE_FORMAT = "jpeg"  # jpeg or png
 
     id = models.AutoField(primary_key=True)
-    name = models.CharField(max_length=250)
-    information = models.TextField(blank=True, null=True)
-    file = models.FileField(upload_to="protected/slides/", verbose_name="Image file")
-    metadata = models.JSONField(blank=True, null=True)
+    name = models.CharField(_lazy("name"), max_length=250)
+    information = models.TextField(_lazy("information"), blank=True, null=True)
+    file = models.FileField(
+        _lazy("file"),
+        upload_to="protected/slides/",
+        validators=[FileExtensionValidator(ALLOWED_EXTENSIONS)],
+    )
+    metadata = models.JSONField(_lazy("metadata"), blank=True, null=True)
     image_root = models.CharField(
+        _lazy("image root"),
         max_length=250,
         blank=True,
-        help_text="Relative path to the image directory.",
+        help_text=_lazy("Relative path to the image directory."),
     )
     is_public = models.BooleanField(
+        _lazy("public"),
         default=False,
-        help_text="Whether the slide is public or not.",
+        help_text=_lazy("Whether the slide is public or private (manager group)."),
     )
     build_status = models.CharField(
+        _lazy("build status"),
         max_length=10,
         choices=BuildStatus.choices,
         default=BuildStatus.PENDING,
-        help_text="Status of the slide processing.",
+        help_text=_lazy("Status of the slide processing."),
     )
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    created_at = models.DateTimeField(
+        pgettext_lazy("date", "created"),
+        auto_now_add=True,
+    )
+    updated_at = models.DateTimeField(
+        pgettext_lazy("date", "updated"),
+        auto_now=True,
+    )
 
     author = models.ForeignKey(
         settings.AUTH_USER_MODEL,
+        verbose_name=_lazy("author"),
         on_delete=models.SET_NULL,
         related_name="slides",
         blank=True,
@@ -268,6 +289,7 @@ class Slide(ModelPermissionMixin, models.Model):
     )
     folder = models.ForeignKey(
         "images.ImageFolder",
+        verbose_name=_lazy("folder"),
         on_delete=models.SET_NULL,
         related_name="slides",
         blank=True,
@@ -275,6 +297,7 @@ class Slide(ModelPermissionMixin, models.Model):
     )
     manager_group = models.ForeignKey(
         "auth.Group",
+        verbose_name=_lazy("manager group"),
         on_delete=models.SET_NULL,
         related_name="managing_images",
         null=True,
@@ -284,6 +307,8 @@ class Slide(ModelPermissionMixin, models.Model):
     objects = SlideManager()
 
     class Meta:
+        verbose_name = _lazy("slide")
+        verbose_name_plural = _lazy("slides")
         ordering = ("folder", "name")
 
     def __str__(self):
@@ -296,7 +321,7 @@ class Slide(ModelPermissionMixin, models.Model):
                 if old_instance.file != self.file:
                     self.build_status = self.BuildStatus.PENDING
                     old_instance.file.delete()
-                    self._delete_directory(old_instance.get_image_directory())
+                    self._delete_directory(old_instance.image_directory_path)
                 if (
                     old_instance.manager_group != self.manager_group
                     or old_instance.is_public != self.is_public
@@ -331,7 +356,7 @@ class Slide(ModelPermissionMixin, models.Model):
     def delete(self, *args, **kwargs):
         try:
             self.file.delete(False)
-            self._delete_directory(self.get_image_directory())
+            self._delete_directory(self.image_directory_path)
 
             super().delete(*args, **kwargs)
 
@@ -373,34 +398,12 @@ class Slide(ModelPermissionMixin, models.Model):
 
     def build_slide(self):
         try:
-            self._delete_directory(self.get_image_directory())
+            self._delete_directory(self.image_directory_path)
             with OpenSlide(self.file.path) as slide:
                 self._initialize_slide(slide)
                 self._generate_tiles(slide)
         except Exception as e:
             raise Exception(f"Failed to process slide: {str(e)}")
-
-    def get_image_directory(self):
-        """Get the path to the image directory"""
-        return os.path.join(settings.MEDIA_ROOT, self.image_root)
-
-    def get_dzi_path(self):
-        """Get the path to the DZI file"""
-        return os.path.join(settings.MEDIA_ROOT, self.image_root, "deepzoom.dzi")
-
-    def get_tile_directory(self):
-        """Get the path to the tiles directory"""
-        return os.path.join(settings.MEDIA_ROOT, self.image_root, "tiles")
-
-    def get_thumbnail_path(self):
-        """Get the URL of the thumbnail image"""
-        return os.path.join(settings.MEDIA_ROOT, self.image_root, "thumbnail.png")
-
-    def get_associated_image_path(self):
-        """Get the path to the associated image"""
-        return os.path.join(
-            settings.MEDIA_ROOT, self.image_root, "associated_image.png"
-        )
 
     def building(self):
         if self.build_status == self.BuildStatus.PENDING:
@@ -408,6 +411,47 @@ class Slide(ModelPermissionMixin, models.Model):
         if self.build_status == self.BuildStatus.PROCESSING:
             return True
         return False
+
+    @property
+    def file_name(self):
+        """Get the name of the file"""
+        return os.path.basename(self.file.name)
+
+    @property
+    def file_extension(self):
+        """Get the extension of the file"""
+        _, extension = os.path.splitext(self.file.name)
+        return extension.lower()[1:]
+
+    @property
+    def image_directory_path(self):
+        """Get the path to the image directory"""
+        return os.path.join(settings.MEDIA_ROOT, self.image_root)
+
+    @property
+    def tile_directory_path(self):
+        """Get the path to the tile directory"""
+        return os.path.join(settings.MEDIA_ROOT, self.image_root, "tiles")
+
+    @property
+    def associated_image_directory_path(self):
+        """Get the path to the associated image directory"""
+        return os.path.join(settings.MEDIA_ROOT, self.image_root, "associated_images")
+
+    @property
+    def associated_image_names(self):
+        """Get the names of the associated images"""
+        return os.listdir(self.associated_image_directory_path)
+
+    @property
+    def dzi_path(self):
+        """Get the path to the DZI file"""
+        return os.path.join(settings.MEDIA_ROOT, self.image_root, "deepzoom.dzi")
+
+    @property
+    def thumbnail_path(self):
+        """Get the URL of the thumbnail image"""
+        return os.path.join(settings.MEDIA_ROOT, self.image_root, "thumbnail.png")
 
     def _initialize_slide(self, slide: OpenSlide):
         channel_layer = get_channel_layer()
@@ -417,29 +461,36 @@ class Slide(ModelPermissionMixin, models.Model):
                 {
                     "type": "slide.initialize",
                     "completed": False,
-                    "status": "Initializing slide",
+                    "status": _("Initializing slide"),
                 },
             )
 
             # Setup directory
-            image_directory = self.get_image_directory()
+            image_directory = self.image_directory_path
+            associated_image_directory = self.associated_image_directory_path
             os.makedirs(image_directory, exist_ok=True)
+            os.makedirs(associated_image_directory, exist_ok=True)
 
             # Save thumbnail
             thumbnail_size = (256, 256)
             thumbnail = slide.get_thumbnail(thumbnail_size)
-            thumbnail.resize(thumbnail_size).save(self.get_thumbnail_path())
+            thumbnail.resize(thumbnail_size).save(self.thumbnail_path)
 
-            # Save associated image
-            slide.associated_images.get("macro").save(self.get_associated_image_path())
+            # Save associated images
+            for name, image in slide.associated_images.items():
+                image_path = os.path.join(associated_image_directory, f"{name}.png")
+                image.save(image_path)
 
             # Save metadata
             full_metadata = slide.properties
             metadata = {
                 "mpp-x": float(full_metadata.get("openslide.mpp-x")),
                 "mpp-y": float(full_metadata.get("openslide.mpp-y")),
-                "sourceLens": int(full_metadata.get("hamamatsu.SourceLens")),
-                "created": full_metadata.get("hamamatsu.Created"),
+                "objective_power": int(full_metadata.get("openslide.objective-power")),
+                "vendor": full_metadata.get("openslide.vendor"),
+                "created": self._get_format_specific_metadata(
+                    full_metadata, self.file_extension
+                ),
             }
             self.__class__.objects.filter(pk=self.pk).update(metadata=metadata)
             self.metadata = metadata
@@ -449,7 +500,7 @@ class Slide(ModelPermissionMixin, models.Model):
                 {
                     "type": "slide.initialize",
                     "completed": True,
-                    "status": "Slide initialized",
+                    "status": _("Slide initialized"),
                 },
             )
 
@@ -457,15 +508,11 @@ class Slide(ModelPermissionMixin, models.Model):
             raise Exception(f"Failed to setup slide: {str(e)}")
 
     def _generate_tiles(self, slide: OpenSlide):
-        """Generate related images for the slide"""
-
-        tile_format = "jpeg"  # jpeg or png
-
         channel_layer = get_channel_layer()
 
         try:
             # Setup directory
-            tile_directory = self.get_tile_directory()
+            tile_directory = self.tile_directory_path
             os.makedirs(tile_directory, exist_ok=True)
 
             deepzoom = DeepZoomGenerator(slide)
@@ -475,12 +522,12 @@ class Slide(ModelPermissionMixin, models.Model):
                 {
                     "type": "progress.update",
                     "progress": 5,
-                    "status": "Creating DZI file",
+                    "status": _("Creating DZI file"),
                 },
             )
             # Create DZI file
-            dzi = deepzoom.get_dzi(tile_format)
-            with open(self.get_dzi_path(), "w") as f:
+            dzi = deepzoom.get_dzi(Slide.TILE_FORMAT)
+            with open(self.dzi_path, "w") as f:
                 f.write(dzi)
 
             # Get the total number of tiles
@@ -503,12 +550,13 @@ class Slide(ModelPermissionMixin, models.Model):
                                 {
                                     "type": "progress.update",
                                     "progress": progress,
-                                    "status": f"Processing tiles ({processed_tiles}/{total_tiles})",
+                                    "status": _("Processing tiles")
+                                    + f" ({processed_tiles}/{total_tiles})",
                                 },
                             )
 
                         tile_path = os.path.join(
-                            level_dir, f"{col}_{row}.{tile_format}"
+                            level_dir, f"{col}_{row}.{Slide.TILE_FORMAT}"
                         )
                         tile = deepzoom.get_tile(level, (col, row))
                         tile.save(tile_path)
@@ -519,7 +567,7 @@ class Slide(ModelPermissionMixin, models.Model):
                 {
                     "type": "progress.update",
                     "progress": 100,
-                    "status": "Tile generation complete",
+                    "status": _("Tile generation complete"),
                 },
             )
 
@@ -529,10 +577,10 @@ class Slide(ModelPermissionMixin, models.Model):
                 {
                     "type": "progress.update",
                     "progress": -1,
-                    "status": f"Error: {str(e)}",
+                    "status": _("Failed to generate tiles"),
                 },
             )
-            raise Exception(f"Failed to generate images: {str(e)}")
+            logger.error(f"Failed to generate tiles for slide {self.pk}: {str(e)}")
 
     @staticmethod
     def _delete_directory(image_directory):
@@ -540,22 +588,60 @@ class Slide(ModelPermissionMixin, models.Model):
             if os.path.exists(image_directory):
                 shutil.rmtree(image_directory)
         except Exception as e:
-            raise Exception(f"Failed to delete image directory: {str(e)}")
+            logger.error(
+                f"Failed to delete image directory '{image_directory}': {str(e)}"
+            )
+
+    @staticmethod
+    def _get_format_specific_metadata(full_metadata, vendor_name):
+        vendor_name = vendor_name.lower()
+        if vendor_name == "ndpi":
+            created_raw = full_metadata.get("hamamatsu.Created")
+            if created_raw:
+                try:
+                    return datetime.strptime(created_raw, "%Y/%m/%d").strftime(
+                        "%Y-%m-%d"
+                    )
+                except ValueError:
+                    return created_raw
+            else:
+                return None
+        elif vendor_name == "svs":
+            created_raw = full_metadata.get("aperio.Date")
+            if created_raw:
+                try:
+                    return datetime.strptime(created_raw, "%m/%d/%y").strftime(
+                        "%Y-%m-%d"
+                    )
+                except ValueError:
+                    return created_raw
+            else:
+                return None
+        else:
+            return None
 
 
 class Tag(models.Model):
     id = models.AutoField(primary_key=True)
-    name = models.CharField(max_length=100, unique=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    name = models.CharField(_lazy("name"), max_length=100)
+    created_at = models.DateTimeField(
+        pgettext_lazy("date", "created"),
+        auto_now_add=True,
+    )
+    updated_at = models.DateTimeField(
+        pgettext_lazy("date", "updated"),
+        auto_now=True,
+    )
 
     slides = models.ManyToManyField(
         "images.Slide",
+        verbose_name=_lazy("slides"),
         related_name="tags",
         blank=True,
     )
     author = models.ForeignKey(
         settings.AUTH_USER_MODEL,
+        verbose_name=_lazy("author"),
         on_delete=models.CASCADE,
         related_name="tags",
         blank=True,
@@ -563,8 +649,9 @@ class Tag(models.Model):
     )
 
     class Meta:
-        verbose_name = "Tag"
-        verbose_name_plural = "Tags"
+        verbose_name = _lazy("Tag")
+        verbose_name_plural = _lazy("Tags")
+        unique_together = ("name", "author")
         ordering = ("name",)
 
     def __str__(self):
@@ -585,6 +672,5 @@ def build_slide_task(slide_id):
             slide = Slide.objects.get(pk=slide_id)
             slide.build_status = Slide.BuildStatus.FAILED
             slide.save(update_fields=["build_status"])
-            raise Exception(f"Failed to process slide {slide_id}: {str(e)}")
-        except Exception as e:
+        finally:
             logger.error(f"Failed to process slide {slide_id}: {str(e)}")

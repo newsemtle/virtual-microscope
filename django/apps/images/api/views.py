@@ -6,7 +6,7 @@ from django.http import FileResponse
 from django.shortcuts import get_object_or_404
 from django.template.defaultfilters import filesizeformat
 from django.urls import reverse
-from django.utils import timezone
+from django.utils.translation import gettext as _, gettext_noop as _noop
 from rest_framework import viewsets, filters
 from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied
@@ -47,7 +47,7 @@ class ImageFolderViewSet(viewsets.ModelViewSet):
         self._check_delete_permissions(instance)
 
         if instance.file_count() > 0:
-            raise PermissionDenied("Folder is not empty. Cannot delete.")
+            raise PermissionDenied(_("Folder is not empty. Cannot delete."))
 
         name = instance.name
         instance.delete()
@@ -59,15 +59,9 @@ class ImageFolderViewSet(viewsets.ModelViewSet):
         data.update(
             {
                 "parent_path": (
-                    folder.parent.get_full_path() if folder.parent else "Root"
+                    folder.parent.get_full_path() if folder.parent else _("Root")
                 ),
-                "created_at_formatted": timezone.localtime(folder.created_at).strftime(
-                    "%Y-%m-%d %H:%M:%S"
-                ),
-                "updated_at_formatted": timezone.localtime(folder.updated_at).strftime(
-                    "%Y-%m-%d %H:%M:%S"
-                ),
-                "child_count": folder.children.all().count(),
+                "child_count": folder.children.count(),
                 "file_count": folder.file_count(cumulative=False),
                 "total_file_count": folder.file_count(cumulative=True),
             }
@@ -78,19 +72,19 @@ class ImageFolderViewSet(viewsets.ModelViewSet):
     def tree(self, request):
         user = request.user
         if not user.has_perm("images.view_imagefolder"):
-            raise PermissionDenied("You don't have permission to view folders.")
+            raise PermissionDenied(_("You don't have permission to view folders."))
 
         root_folders = ImageFolder.objects.user_root_folders(user)
         tree = [self._serialize_folders(folder) for folder in root_folders]
         if user.is_admin():
-            tree = [{"id": None, "name": "Root", "children": tree}]
+            tree = [{"id": None, "name": _("Root"), "children": tree}]
 
         return Response(tree)
 
     @action(detail=True, methods=["get"])
     def items(self, request, pk):
         if not request.user.has_perms(["images.view_imagefolder", "images.view_slide"]):
-            raise PermissionDenied("You don't have permission to view folder items.")
+            raise PermissionDenied(_("You don't have permission to view folder items."))
 
         folder = self.get_object()
         children = ImageFolder.objects.viewable(request.user, parent=folder)
@@ -104,11 +98,13 @@ class ImageFolderViewSet(viewsets.ModelViewSet):
 
     def _check_delete_permissions(self, folder):
         if not folder.is_deletable_by(self.request.user):
-            raise PermissionDenied("You don't have permission to delete this folder.")
+            raise PermissionDenied(
+                _("You don't have permission to delete this folder.")
+            )
 
     def _check_edit_permissions(self, folder):
         if not folder.is_editable_by(self.request.user):
-            raise PermissionDenied("You don't have permission to edit this folder.")
+            raise PermissionDenied(_("You don't have permission to edit this folder."))
 
     def _serialize_folders(self, folder):
         return {
@@ -150,7 +146,7 @@ class SlideViewSet(viewsets.ModelViewSet):
         data = self.get_serializer(slide).data
         data.update(
             {
-                "folder_name": str(slide.folder) if slide.folder else "Root",
+                "folder_name": str(slide.folder) if slide.folder else _("Root"),
                 "file_details": {
                     "name": os.path.basename(slide.file.name),
                     "size": filesizeformat(slide.file.size),
@@ -160,12 +156,7 @@ class SlideViewSet(viewsets.ModelViewSet):
                     ),
                     "building": slide.building(),
                 },
-                "created_at_formatted": timezone.localtime(slide.created_at).strftime(
-                    "%Y-%m-%d %H:%M:%S"
-                ),
-                "updated_at_formatted": timezone.localtime(slide.updated_at).strftime(
-                    "%Y-%m-%d %H:%M:%S"
-                ),
+                "associated_image_names": slide.associated_image_names,
             }
         )
         return Response(data)
@@ -174,7 +165,7 @@ class SlideViewSet(viewsets.ModelViewSet):
     def annotations(self, request, pk):
         if not request.user.has_perm("viewer.view_annotation"):
             raise PermissionDenied(
-                "You don't have permission to view slide annotations."
+                _("You don't have permission to view slide annotations.")
             )
 
         slide = self.get_object()
@@ -189,37 +180,41 @@ class SlideViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=["get"])
     def thumbnail(self, request, pk):
-        return self._serve_image_file("get_thumbnail_path", "Thumbnail not found.")
-
-    @action(detail=True, methods=["get"])
-    def associated_image(self, request, pk):
-        return self._serve_image_file(
-            "get_associated_image_path", "Associated image not found."
-        )
-
-    def _serve_image_file(self, path_method, error_message):
         slide = self.get_object()
         self._check_view_permission(slide)
 
-        path = getattr(slide, path_method)()
+        path = slide.thumbnail_path
 
         if not os.path.exists(path):
-            logger.error(f"{error_message}: {path}")
-            return Response({"detail": error_message}, status=404)
+            return Response({"detail": _("Thumbnail not found.")}, status=404)
 
         return FileResponse(open(path, "rb"), content_type="image/png")
 
+    @action(
+        detail=True, methods=["get"], url_path="associated_image/(?P<filename>[^/]+)"
+    )
+    def associated_image(self, request, pk, filename):
+        slide = self.get_object()
+        self._check_view_permission(slide)
+
+        file_path = os.path.join(slide.associated_image_directory_path, filename)
+
+        if not os.path.exists(file_path):
+            return Response({"detail": _("Image not found.")}, status=404)
+
+        return FileResponse(open(file_path, "rb"), content_type="image/png")
+
     def _check_delete_permissions(self, slide):
         if not slide.is_deletable_by(self.request.user):
-            raise PermissionDenied("You don't have permission to delete this slide.")
+            raise PermissionDenied(_("You don't have permission to delete this slide."))
 
     def _check_edit_permissions(self, slide):
         if not slide.is_editable_by(self.request.user):
-            raise PermissionDenied("You don't have permission to edit this slide.")
+            raise PermissionDenied(_("You don't have permission to edit this slide."))
 
     def _check_view_permission(self, slide):
         if not slide.is_viewable_by(self.request.user):
-            raise PermissionDenied("You don't have permission to view this slide.")
+            raise PermissionDenied(_("You don't have permission to view this slide."))
 
 
 class SlideDBSearchAPIView(ListAPIView):
@@ -241,11 +236,12 @@ class SlideDZIAPIView(APIView):
         slide = get_object_or_404(Slide, pk=pk)
         _check_slide_view_permission(request.user, slide)
 
-        path = slide.get_dzi_path()
+        path = slide.dzi_path
 
         if not os.path.exists(path):
-            logger.error(f"DZI file not found: {path}")
-            return Response({"detail": "DZI file not found"}, status=404)
+            message = _noop("DZI file not found")
+            logger.error(f"{message}: {path}")
+            return Response({"detail": _("DZI file not found")}, status=404)
 
         return FileResponse(open(path, "rb"), content_type="application/xml")
 
@@ -258,12 +254,11 @@ class SlideTileAPIView(APIView):
         _check_slide_view_permission(request.user, slide)
 
         tile_path = os.path.join(
-            slide.get_tile_directory(), str(level), f"{col}_{row}.{tile_format}"
+            slide.tile_directory_path, str(level), f"{col}_{row}.{tile_format}"
         )
 
         if not os.path.exists(tile_path):
-            logger.error(f"Tile not found: {tile_path}")
-            return Response({"detail": "Tile not found"}, status=404)
+            return Response({"detail": _("Tile not found")}, status=404)
 
         response = FileResponse(
             open(tile_path, "rb"), content_type=f"image/{tile_format}"
@@ -281,8 +276,7 @@ class SlideFileAPIView(APIView):
 
         path = slide.file.path
         if not os.path.exists(path):
-            logger.error(f"Slide file not found: {path}")
-            return Response({"detail": "Slide file not found"}, status=404)
+            return Response({"detail": _("Slide file not found")}, status=404)
 
         return FileResponse(slide.file, as_attachment=True)
 
@@ -295,15 +289,16 @@ class SlideRebuildAPIView(APIView):
         _check_slide_edit_permission(request.user, slide)
 
         if slide.building():
-            return Response({"detail": "Slide cannot be rebuilt"}, status=400)
+            return Response({"detail": _("Slide cannot be repaired")}, status=400)
 
         try:
             slide.build_status = slide.BuildStatus.PENDING
             slide.save(update_fields=["build_status"])
-            return Response({"detail": "Tiles rebuilt successfully"})
+            return Response({"detail": _("Slide repaired successfully")})
         except Exception as e:
-            logger.error(f"Failed to rebuild tiles: {str(e)}")
-            return Response({"detail": str(e)}, status=500)
+            message = _noop("Failed to rebuild slide")
+            logger.error(f"{message}: {str(e)}")
+            return Response({"detail": _(message)}, status=500)
 
 
 def _check_slide_view_permission(user, slide):
@@ -313,11 +308,11 @@ def _check_slide_view_permission(user, slide):
         return
 
     if not user.has_perm("images.view_slide") or not slide.is_viewable_by(user):
-        raise PermissionDenied("You don't have permission to view this slide.")
+        raise PermissionDenied(_("You don't have permission to view this slide."))
 
     cache.set(cache_key, True, timeout=60 * 10)  # 10 minutes
 
 
 def _check_slide_edit_permission(user, slide):
     if not user.has_perm("images.change_slide") or not slide.is_editable_by(user):
-        raise PermissionDenied("You don't have permission to edit this slide.")
+        raise PermissionDenied(_("You don't have permission to edit this slide."))

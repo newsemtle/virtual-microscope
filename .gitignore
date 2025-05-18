@@ -10,20 +10,18 @@ logs/
 .env
 db.sqlite3
 
+# Internationalization
+*.mo
+
 # NGINX
-*.crt
-*.key
+certs/
 
 # Configuration
 .idea/
 .vscode/
 
-# Slides
-slides/
-
 # Mac Environment
 .DS_Store
 
-# Old
-secrets.json
-staticfiles/
+# Slides
+slides/

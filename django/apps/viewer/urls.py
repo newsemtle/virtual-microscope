@@ -1,9 +1,9 @@
 from django.urls import path
 
-from . import views
+from .views import ImageViewerView
 
 app_name = "viewer"
 
 urlpatterns = [
-    path("<int:slide_id>/", views.ImageViewerView.as_view(), name="image-viewer"),
+    path("<int:slide_id>/", ImageViewerView.as_view(), name="image-viewer"),
 ]

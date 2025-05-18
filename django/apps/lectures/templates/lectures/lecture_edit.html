@@ -1,23 +1,23 @@
-{% extends "common/base.html" %}
+{% extends "core/base.html" %}
 {% load static %}
+{% load i18n %}
 
-{% block content %}
+{% block main_content %}
     <!-- Breadcrumb -->
-    <nav aria-label="breadcrumb">
-        <ol class="breadcrumb">
-            <li class="breadcrumb-item">
-                <a href="{% url 'lectures:lecture-database' %}?folder={{ lecture.folder.id }}">{{ lecture.folder.name }}</a>
-            </li>
-        </ol>
+    <nav>
+        <button class="btn btn-sm btn-outline-secondary" onclick="redirectToNextOrDefault(`/lectures/database/`);">
+            <i class="bi bi-arrow-left"></i>
+            {% trans "Back" %}
+        </button>
     </nav>
-    <form id="lecture-form" data-url="{% url 'api:lecture-detail' pk=lecture.id %}">
+    <form id="lecture-form" data-url="{% url 'api:lecture-detail' pk=lecture.id %}" data-method="PATCH">
         <!-- Header -->
         <div class="d-flex justify-content-between align-items-center mb-3">
             <h4 class="mb-0">
-                Edit Lecture
+                {% trans "Edit Lecture" %}
             </h4>
             <button class="btn btn-primary" type="submit">
-                <i class="bi bi-save"></i> Save Changes
+                <i class="bi bi-save"></i> {% trans "Save Changes" %}
             </button>
         </div>
         <!-- Contents -->
@@ -26,44 +26,47 @@
                 <div class="row g-3">
                     <div class="col-md">
                         <div class="mb-3">
-                            <label for="lecture-name" class="form-label">Name</label>
+                            <label for="lecture-name" class="form-label">{% trans "Name" %}</label>
                             <input type="text" class="form-control" id="lecture-name" name="name"
                                    value="{{ lecture.name }}">
                         </div>
                         <div>
-                            <label for="lecture-description" class="form-label">Description</label>
-                            <textarea class="form-control" id="lecture-description" name="description"
-                                      rows="2">{{ lecture.description|default:"" }}</textarea>
+                            <label for="lecture-description" class="form-label">{% trans "Description" %}</label>
+                            <textarea class="form-control" id="lecture-description" name="description" rows="2">
+                                {{ lecture.description|default:"" }}
+                            </textarea>
                         </div>
                     </div>
                     <div class="col-md">
-                        <label class="form-label fw-bold">Viewer Groups</label>
-                        <span class="text-muted">(Select the groups that can view this lecture.)</span>
+                        <label class="form-label fw-bold">{% trans "Viewer Groups" %}</label>
+                        <span class="text-muted">({% trans "Select the groups that can view this lecture." %})</span>
                         <div class="row g-1">
                             <div class="col-sm">
-                                <label class="form-label text-decoration-underline">Publishers</label>
+                                <label class="form-label text-decoration-underline">{% trans "Publishers" %}</label>
                                 <div class="overflow-scroll" style="max-height: 150px;">
                                     {% for publisher in publishers %}
                                         <div class="form-check ms-2">
                                             <input class="form-check-input" type="checkbox" name="viewer_groups[]"
                                                    id="group-{{ publisher.id }}" value="{{ publisher.id }}"
                                                    {% if publisher in lecture.viewer_groups.all %}checked{% endif %}>
-                                            <label class="form-check-label"
-                                                   for="group-{{ publisher.id }}">{{ publisher.name }}</label>
+                                            <label class="form-check-label" for="group-{{ publisher.id }}">
+                                                {{ publisher.name }}
+                                            </label>
                                         </div>
                                     {% endfor %}
                                 </div>
                             </div>
                             <div class="col-sm">
-                                <label class="form-label text-decoration-underline">Viewers</label>
+                                <label class="form-label text-decoration-underline">{% trans "Viewers" %}</label>
                                 <div class="overflow-scroll" style="max-height: 150px;">
                                     {% for viewer in viewers %}
                                         <div class="form-check ms-2">
                                             <input class="form-check-input" type="checkbox" name="viewer_groups[]"
                                                    id="group-{{ viewer.id }}" value="{{ viewer.id }}"
                                                    {% if viewer in lecture.viewer_groups.all %}checked{% endif %}>
-                                            <label class="form-check-label"
-                                                   for="group-{{ viewer.id }}">{{ viewer.name }}</label>
+                                            <label class="form-check-label" for="group-{{ viewer.id }}">
+                                                {{ viewer.name }}
+                                            </label>
                                         </div>
                                     {% endfor %}
                                 </div>
@@ -77,46 +80,50 @@
             <div class="col-md-6">
                 <div class="card">
                     <div class="card-header d-flex align-items-baseline">
-                        <h5 class="card-title">Lecture Contents</h5>
-                        <span class="text-muted ms-2">(These images will be added to the lecture.)</span>
+                        <h5 class="card-title">{% trans "Lecture Contents" %}</h5>
+                        <span class="text-muted ms-2">({% trans "These images will be added to the lecture." %})</span>
                     </div>
                     <div class="card-body">
                         <ul class="list-group" id="content-list">
                             {% for content in contents %}
-                                <li class="list-group-item d-flex align-items-center"
-                                    data-slide-id="{{ content.slide.id }}">
-                                    <input type="hidden" name="contents[][order]" value="{{ forloop.counter }}">
-                                    <input type="hidden" name="contents[][slide]" value="{{ content.slide.id }}">
-                                    <span class="bg-secondary-subtle rounded me-2 content-list-order">{{ forloop.counter }}</span>
-                                    <div class="d-flex flex-column me-2">
-                                        <i class="bi bi-caret-up" role="button" data-action="up"></i>
-                                        <i class="bi bi-caret-down" role="button" data-action="down"></i>
-                                    </div>
-                                    <img src="{% url 'api:slide-thumbnail' pk=content.slide.id %}"
-                                         height=40 class="me-2" alt="">
-                                    <a href="{% url 'viewer:image-viewer' slide_id=content.slide.id %}"
-                                       class="text-decoration-none text-body" target="_blank"
-                                       rel="noopener noreferrer nofollow">{{ content.slide.name }}</a>
-                                    <div class="ms-auto col-3">
-                                        <label for="annotation-for-{{ content.slide.id }}">Annotation:</label>
-                                        <select class="form-select" id="annotation-for-{{ content.slide.id }}"
-                                                name="contents[][annotation]" data-action="loadAnnotation"
-                                                data-url="{% url 'api:slide-annotations' pk=content.slide.id %}">
-                                            {% if content.annotation %}
-                                                <option value="">None</option>
-                                                <option value="{{ content.annotation.id }}"
-                                                        selected>{{ content.annotation.name }}
-                                                    ({{ content.annotation.author.username }})
-                                                </option>
-                                            {% else %}
-                                                <option value="" selected>None</option>
-                                            {% endif %}
-                                        </select>
-                                    </div>
-                                    <button class="btn btn-sm" title="Remove" data-action="remove">
-                                        <i class="bi bi-trash3"></i>
-                                    </button>
-                                </li>
+                                {% with slide=content.slide annotation=content.annotation %}
+                                    <li class="list-group-item d-flex align-items-center"
+                                        data-slide-id="{{ slide.id }}">
+                                        <input type="hidden" name="contents[][order]" value="{{ forloop.counter }}">
+                                        <input type="hidden" name="contents[][slide]" value="{{ slide.id }}">
+                                        <span class="bg-secondary-subtle rounded me-2 content-list-order">{{ forloop.counter }}</span>
+                                        <div class="d-flex flex-column me-2">
+                                            <i class="bi bi-caret-up" role="button" data-action="up"></i>
+                                            <i class="bi bi-caret-down" role="button" data-action="down"></i>
+                                        </div>
+                                        <img src="{% url 'api:slide-thumbnail' pk=slide.id %}" height="50" class="me-2"
+                                             alt="">
+                                        <a href="{% url 'viewer:image-viewer' slide_id=slide.id %}"
+                                           class="text-decoration-none text-body" target="_blank"
+                                           rel="noopener noreferrer nofollow">
+                                            {{ slide.name }}
+                                        </a>
+                                        <div class="ms-auto col-3">
+                                            <label for="annotation-for-{{ slide.id }}">{% trans "Annotation" %}</label>
+                                            <select class="form-select" id="annotation-for-{{ slide.id }}"
+                                                    name="contents[][annotation]" data-action="loadAnnotation"
+                                                    data-url="{% url 'api:slide-annotations' pk=slide.id %}">
+                                                {% if annotation %}
+                                                    <option value="">{% trans "None" %}</option>
+                                                    <option value="{{ annotation.id }}" selected>
+                                                        {{ annotation.name }} ({{ annotation.author.username }})
+                                                    </option>
+                                                {% else %}
+                                                    <option value="" selected>{% trans "None" %}</option>
+                                                {% endif %}
+                                            </select>
+                                        </div>
+                                        <button class="btn btn-sm" title="{% trans "Remove" %}"
+                                                data-bs-tooltip="true" data-action="remove">
+                                            <i class="bi bi-trash3"></i>
+                                        </button>
+                                    </li>
+                                {% endwith %}
                             {% endfor %}
                         </ul>
                     </div>
@@ -126,13 +133,13 @@
                 <div class="card">
                     <div class="card-header d-flex align-items-center justify-content-between">
                         <div class="d-flex align-items-baseline">
-                            <h5 class="card-title">DB/Image</h5>
-                            <span class="text-muted ms-2">(Select images to add.)</span>
+                            <h5 class="card-title">DB/{% trans "Image" %}</h5>
+                            <span class="text-muted ms-2">({% trans "Select images to add." %})</span>
                         </div>
                         <button class="btn btn-primary btn-sm" type="button" data-bs-toggle="offcanvas"
                                 data-bs-target="#slide-search-sidebar">
                             <i class="bi bi-search"></i>
-                            <span class="d-none d-sm-inline">Search</span>
+                            <span class="d-none d-sm-inline">{% trans "Search" %}</span>
                         </button>
                     </div>
                     <div class="card-body">
@@ -153,21 +160,23 @@
                                         <li class="list-group-item"
                                             data-annotations-url="{% url 'api:slide-annotations' pk=item.id %}"
                                             data-slide-id="{{ item.id }}" data-slide-name="{{ item.name }}">
-                                            <i class="bi bi-plus-circle me-2" role="button"
-                                               data-bs-tooltip="tooltip"
-                                               title="Add" data-action="add"></i>
+                                            <i class="bi bi-plus-circle me-2" role="button" title="{% trans "Add" %}"
+                                               data-bs-tooltip="true" data-action="add"></i>
                                             <img src="{% url 'api:slide-thumbnail' pk=item.id %}"
-                                                 height=40 class="me-2" alt="">
+                                                 height="40" class="me-2" alt="">
                                             <a href="{% url 'viewer:image-viewer' slide_id=item.id %}"
                                                class="text-decoration-none text-body" target="_blank"
-                                               rel="noopener noreferrer nofollow">{{ item.name }}</a>
+                                               rel="noopener noreferrer nofollow">
+                                                {{ item.name }}
+                                            </a>
                                         </li>
                                     {% endif %}
                                 {% endfor %}
                             </ul>
                         {% else %}
                             <div class="alert alert-info" role="alert">
-                                <i class="bi bi-info-circle me-2"></i>There's nothing in database.
+                                <i class="bi bi-info-circle me-2"></i>
+                                {% trans "There's nothing in database." %}
                             </div>
                         {% endif %}
                     </div>
@@ -177,17 +186,18 @@
     </form>
     <div class="offcanvas offcanvas-end" data-bs-scroll="true" tabindex="-1" id="slide-search-sidebar">
         <div class="offcanvas-header">
-            <h5 class="offcanvas-title">DB/Image Search</h5>
+            <h5 class="offcanvas-title">{% trans "Search" %}</h5>
             <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
         </div>
         <div class="offcanvas-body">
             <form id="image-search-form" data-url="{% url 'api:slide-dbsearch' %}">
                 <div class="mb-2">
-                    <label for="image-search-input" class="form-label">Search</label>
                     <div class="input-group">
-                        <input type="text" class="form-control" id="image-search-input" placeholder="name, author"
-                               name="search" required>
-                        <button type="submit" class="btn btn-outline-secondary"><i class="bi bi-search"></i></button>
+                        <input type="text" class="form-control" id="image-search-input" name="search"
+                               placeholder="{% trans "name" %}, {% trans "author" %}" required>
+                        <button type="submit" class="btn btn-outline-secondary">
+                            <i class="bi bi-search"></i>
+                        </button>
                     </div>
                 </div>
                 <div class="align-items-center text-danger mb-2 d-none" data-type="message"></div>
@@ -199,7 +209,7 @@
             </form>
         </div>
     </div>
-{% endblock content %}
+{% endblock main_content %}
 
 
 {% block extra_js %}

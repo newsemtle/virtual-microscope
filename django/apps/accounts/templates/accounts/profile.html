@@ -1,71 +1,71 @@
-{% extends 'common/base.html' %}
+{% extends 'core/base.html' %}
 {% load static %}
+{% load i18n %}
 
-{% block content %}
+{% block main_content %}
     <div class="row justify-content-center">
-        <div class="col-md-6">
+        <div class="col-md-4">
             <div class="card">
                 <div class="card-header">
-                    <h3 class="card-title mb-0">Profile Information</h3>
+                    <h4 class="card-title mb-0">{% trans "Profile Information" %}</h4>
                 </div>
                 <div class="card-body">
                     <div class="row mb-3">
-                        <div class="col-sm-2">
+                        <div class="col-sm-3">
                             {% if user.profile_image %}
-                                <img class="img-fluid" src="{{ user.profile_image.url }}" alt="profile image">
+                                <img class="img-thumbnail" src="{{ user.profile_image.url }}" alt=""
+                                     style="max-height: 150px">
                             {% else %}
-                                <img class="img-fluid" src="{% static 'common/img/default_profile_image.png' %}"
-                                     alt="profile image">
+                                <img class="img-thumbnail" src="{% static 'accounts/img/default_profile_image.png' %}"
+                                     alt="" style="max-height: 150px">
                             {% endif %}
                         </div>
                     </div>
                     <div class="row mb-3">
-                        <div class="col-sm-3">
-                            <strong>Username:</strong>
+                        <div class="col-sm-3 text-sm-center">
+                            <strong>{% trans "Username" %}</strong>
                         </div>
                         <div class="col-sm-9">
                             {{ user.username }}
                         </div>
                     </div>
                     <div class="row mb-3">
-                        <div class="col-sm-3">
-                            <strong>First Name:</strong>
+                        <div class="col-sm-3 text-sm-center">
+                            <strong>{% trans "Name" %}</strong>
                         </div>
                         <div class="col-sm-9">
-                            {{ user.first_name|default:"-" }}
+                            {{ user.get_full_name|default:"-" }}
                         </div>
                     </div>
                     <div class="row mb-3">
-                        <div class="col-sm-3">
-                            <strong>Last Name:</strong>
-                        </div>
-                        <div class="col-sm-9">
-                            {{ user.last_name|default:"-" }}
-                        </div>
-                    </div>
-                    <div class="row mb-3">
-                        <div class="col-sm-3">
-                            <strong>Group:</strong>
+                        <div class="col-sm-3 text-sm-center">
+                            <strong>{% trans "Group" %}</strong>
                         </div>
                         <div class="col-sm-9">
                             {{ user.groups.all|join:", "|default:"-" }}
                         </div>
                     </div>
                     <div class="row mb-3">
-                        <div class="col-sm-3">
-                            <strong>Email:</strong>
+                        <div class="col-sm-3 text-sm-center">
+                            <strong>{% trans "Email" %}</strong>
                         </div>
                         <div class="col-sm-9">
                             {{ user.email|default:"-" }}
                         </div>
                     </div>
                     <div class="d-grid gap-2">
-                        <a href="{% url 'accounts:password_change' %}" class="btn btn-primary">
-                            Change Password
+                        <a href="{% url 'accounts:profile-edit' %}" class="btn btn-primary">
+                            {% trans "Edit Profile" %}
                         </a>
+                        <a href="{% url 'accounts:password_change' %}" class="btn btn-warning">
+                            {% trans "Change Password" %}
+                        </a>
+                        <button class="btn btn-outline-secondary" onclick="redirectToNextOrDefault('/')">
+                            {% trans "Back" %}
+                        </button>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-{% endblock content %}
+{% endblock main_content %}

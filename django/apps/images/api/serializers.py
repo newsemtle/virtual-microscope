@@ -1,6 +1,7 @@
 import os
 
 from django.urls import reverse
+from django.utils.translation import gettext as _, gettext_lazy as _lazy
 from rest_framework import serializers
 
 from apps.images.models import Slide, ImageFolder, Tag
@@ -32,7 +33,9 @@ class ImageFolderSerializer(serializers.ModelSerializer):
             serializers.UniqueTogetherValidator(
                 queryset=ImageFolder.objects.all(),
                 fields=("name", "parent"),
-                message="The folder name already exists in this folder",
+                message=_lazy(
+                    "The folder with the name already exists in this location."
+                ),
             )
         ]
 
@@ -44,10 +47,10 @@ class ImageFolderSerializer(serializers.ModelSerializer):
         errors = {}
 
         if parent_is_sent:
-            if not parent and not user.is_admin():
-                errors["detail"] = "You can't place folder at the root location."
+            if not parent:
+                errors["detail"] = _("You can't place folder at the root location.")
             elif parent and not parent.is_managed_by(user):
-                errors["detail"] = "You don't have permission to edit this folder."
+                errors["detail"] = _("You don't have permission to edit this folder.")
         if errors:
             raise serializers.ValidationError(errors)
 
@@ -85,7 +88,6 @@ class SlideSerializer(serializers.ModelSerializer):
         source="manager_group.name", default=None, read_only=True
     )
     thumbnail = serializers.SerializerMethodField()
-    associated_image = serializers.SerializerMethodField()
     tags = TagSerializer(many=True, read_only=True)
     url = serializers.SerializerMethodField()
     view_url = serializers.SerializerMethodField()
@@ -103,7 +105,6 @@ class SlideSerializer(serializers.ModelSerializer):
             "file",
             "image_root",
             "thumbnail",
-            "associated_image",
             "metadata",
             "is_public",
             "tags",
@@ -122,7 +123,7 @@ class SlideSerializer(serializers.ModelSerializer):
 
         folder = attrs.get("folder")
         if folder and not folder.is_managed_by(user):
-            errors["detail"] = "You don't have permission to edit this folder."
+            errors["detail"] = _("You don't have permission to edit this slide.")
 
         if errors:
             raise serializers.ValidationError(errors)
@@ -140,9 +141,6 @@ class SlideSerializer(serializers.ModelSerializer):
 
     def get_thumbnail(self, obj):
         return reverse("api:slide-thumbnail", kwargs={"pk": obj.pk})
-
-    def get_associated_image(self, obj):
-        return reverse("api:slide-associated-image", kwargs={"pk": obj.pk})
 
     def get_url(self, obj):
         return reverse("api:slide-detail", kwargs={"pk": obj.pk})
