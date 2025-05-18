@@ -251,6 +251,11 @@ document.addEventListener("DOMContentLoaded", function (event) {
         const continueButton = this.querySelector(".continue");
         continueButton.classList.remove("btn-warning", "btn-danger");
 
+        const button = event.relatedTarget;
+        if (button) {
+            continueButton.dataset.type = button.dataset.type;
+        }
+
         const title = this.querySelector(".modal-title");
         const body = this.querySelector(".modal-body");
         body.innerHTML = "";
@@ -338,7 +343,7 @@ document.addEventListener("DOMContentLoaded", function (event) {
                 const icon = document.createElement("i");
                 icon.className = "bi bi-journal-text text-primary ps-1 me-2";
                 icon.style.width = "25px";
-                listItem.append(icon);
+                title.append(icon);
             }
 
             const listItemName = document.createElement("span");
@@ -432,7 +437,7 @@ function processBulkAction(items, actionType, destinationId = null) {
                 if (currentItem.type === "folder") {
                     url = API_ROUTES.lectureFolders.detail(currentItem.id).base;
                     method = "DELETE";
-                } else if (currentItem.type === "slide") {
+                } else if (currentItem.type === "lecture") {
                     url = API_ROUTES.lectures.detail(currentItem.id).base;
                     method = "DELETE";
                 }
