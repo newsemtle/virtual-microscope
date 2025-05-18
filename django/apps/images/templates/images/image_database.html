@@ -2,19 +2,21 @@
 {% load static %}
 {% load i18n %}
 
+
 {% block extra_css %}
     <link rel="stylesheet" href="{% static 'core/css/breadcrumb.css' %}">
     <link rel="stylesheet" href="{% static 'images/css/image_database.css' %}">
 {% endblock %}
 
-<!-- 화면 상단 중앙에 DB/Image인 거 표시하기(css에 slide-text 추가해 줘야함)-->
-{% block slide_name %}
-    DB/{% trans "Image" %}
-{% endblock slide_name %}
 
-{% block content %}
+{% block navbar_title %}
+    DB/{% trans "Image" %}
+{% endblock navbar_title %}
+
+
+{% block main_content %}
     <!-- Breadcrumb -->
-    <nav class="breadcrumbs" aria-label="breadcrumb">
+    <nav class="breadcrumbs">
         <a href="{% url 'core:home' %}" class="breadcrumbs__item">{% trans "Home" %}</a>
         {% for crumb in breadcrumbs %}
             {% if forloop.last %}
@@ -201,8 +203,8 @@
                                     {% if item.building %}
                                         <div class="progress bg-secondary bg-opacity-50 slide-upload-progress"
                                              id="slide-{{ item.id }}-progress" role="progressbar"
-                                             title="{% trans "Wait" %}"
-                                             data-bs-tooltip="tooltip" data-slide-id="{{ item.id }}">
+                                             title="{% trans "Wait" %}" data-bs-tooltip="true"
+                                             data-slide-id="{{ item.id }}">
                                             <div class="progress-bar progress-bar-striped progress-bar-animated"
                                                  id="slide-{{ item.id }}-progress-bar">
                                             </div>
@@ -215,8 +217,8 @@
                                     {% elif item.build_status == 'failed' %}
                                         <div class="progress bg-danger bg-opacity-50 slide-upload-progress"
                                              id="slide-{{ item.id }}-progress" role="progressbar"
-                                             title="{% trans "Failed" %}"
-                                             data-bs-tooltip="tooltip" data-slide-id="{{ item.id }}">
+                                             title="{% trans "Failed" %}" data-bs-tooltip="true"
+                                             data-slide-id="{{ item.id }}">
                                             <div class="progress-bar progress-bar-striped progress-bar-animated"
                                                  id="slide-{{ item.id }}-progress-bar">
                                             </div>
@@ -239,20 +241,20 @@
                                     <!-- detail 버튼 -->
                                     <button type="button" class="btn btn-outline-dark btn-sm rounded-0"
                                             data-bs-toggle="modal" data-bs-target="#folder-detail-modal"
-                                            data-bs-tooltip="tooltip" title="{% trans "Details" %}"
+                                            data-bs-tooltip="true" title="{% trans "Details" %}"
                                             data-url="{% url 'api:image-folder-detail' pk=item.id %}">
                                         {% trans "Details" %}
                                     </button>
                                     {% if item.is_editable %}
                                         <button type="button" class="btn btn-outline-dark btn-sm rounded-0"
                                                 data-bs-toggle="modal" data-bs-target="#folder-rename-modal"
-                                                data-bs-tooltip="tooltip" title="{% trans "Rename" %}"
+                                                data-bs-tooltip="true" title="{% trans "Rename" %}"
                                                 data-url="{% url 'api:image-folder-detail' pk=item.id %}">
                                             {% trans "Rename" %}
                                         </button>
                                         <button type="button" class="btn btn-outline-dark btn-sm rounded-0"
                                                 data-bs-toggle="modal" data-bs-target="#folder-move-modal"
-                                                data-bs-tooltip="tooltip" title="{% trans "Move" %}"
+                                                data-bs-tooltip="true" title="{% trans "Move" %}"
                                                 data-url="{% url 'api:image-folder-detail' pk=item.id %}"
                                                 data-url-tree="{% url 'api:image-folder-tree' %}"
                                                 data-item-id="{{ item.id }}">
@@ -262,7 +264,7 @@
                                     {% if item.is_deletable %}
                                         <button type="button" class="btn btn-outline-dark btn-sm rounded-0"
                                                 data-bs-toggle="modal" data-bs-target="#folder-delete-modal"
-                                                data-bs-tooltip="tooltip" title="{% trans "Delete" %}"
+                                                data-bs-tooltip="true" title="{% trans "Delete" %}"
                                                 data-url="{% url 'api:image-folder-detail' pk=item.id %}">
                                             {% trans "Delete" %}
                                         </button>
@@ -274,7 +276,7 @@
                                     <!-- detail 버튼 -->
                                     <button type="button" class="btn btn-outline-dark btn-sm rounded-0"
                                             data-bs-toggle="modal" data-bs-target="#image-detail-modal"
-                                            data-bs-tooltip="tooltip" title="{% trans "Details" %}"
+                                            data-bs-tooltip="true" title="{% trans "Details" %}"
                                             data-url="{% url 'api:slide-detail' pk=item.id %}">
                                         {% trans "Details" %}
                                     </button>
@@ -282,14 +284,14 @@
                                         <!-- edit 버튼 -->
                                         <button type="button" class="btn btn-outline-dark btn-sm rounded-0"
                                                 data-bs-toggle="modal" data-bs-target="#image-edit-modal"
-                                                data-bs-tooltip="tooltip" title="{% trans "Edit" %}"
+                                                data-bs-tooltip="true" title="{% trans "Edit" %}"
                                                 data-url="{% url 'api:slide-detail' pk=item.id %}">
                                             {% trans "Edit" %}
                                         </button>
                                         <!-- move 버튼 -->
                                         <button type="button" class="btn btn-outline-dark btn-sm rounded-0"
                                                 data-bs-toggle="modal" data-bs-target="#image-move-modal"
-                                                data-bs-tooltip="tooltip" title="{% trans "Move" %}"
+                                                data-bs-tooltip="true" title="{% trans "Move" %}"
                                                 data-url="{% url 'api:slide-detail' pk=item.id %}"
                                                 data-url-tree="{% url 'api:image-folder-tree' %}">
                                             {% trans "Move" %}
@@ -299,7 +301,7 @@
                                         <!-- delete 버튼 -->
                                         <button type="button" class="btn btn-outline-dark btn-sm rounded-0"
                                                 data-bs-toggle="modal" data-bs-target="#image-delete-modal"
-                                                data-bs-tooltip="tooltip" title="{% trans "Delete" %}"
+                                                data-bs-tooltip="true" title="{% trans "Delete" %}"
                                                 data-url="{% url 'api:slide-detail' pk=item.id %}">
                                             {% trans "Delete" %}
                                         </button>
@@ -313,7 +315,7 @@
                             <div class="btn-group-vertical btn-group-sm">
                                 {% if item.type != "folder" and item.is_editable %}
                                     <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal"
-                                            data-bs-target="#annotation-manage-modal" data-bs-tooltip="tooltip"
+                                            data-bs-target="#annotation-manage-modal" data-bs-tooltip="true"
                                             title="{% trans "Annotations" %}"
                                             data-url="{% url 'api:slide-annotations' pk=item.id %}">
                                         {% trans "Annotations" %} ({{ item.annotations.count }})
@@ -326,6 +328,11 @@
             </div>
         {% endfor %}
     {% endif %}
+{% endblock main_content %}
+
+
+{% block extra_overlay %}
+    <!-- Search Sidebar -->
     <div class="offcanvas offcanvas-end" data-bs-scroll="true" tabindex="-1" id="slide-search-sidebar">
         <div class="offcanvas-header">
             <h5 class="offcanvas-title">{% trans "Search" %}</h5>
@@ -351,10 +358,6 @@
             </form>
         </div>
     </div>
-{% endblock content %}
-
-
-{% block extra_modal %}
     <!-- Folder Create Modal -->
     <div class="modal fade" id="folder-create-modal" tabindex="-1">
         <div class="modal-dialog modal-dialog-scrollable">
@@ -747,7 +750,7 @@
                 </div>
                 <form id="annotation-delete-form" data-url="" data-method="DELETE">
                     <div class="modal-body">
-                        <p>{% trans "Are you sure you want to delete this annotation?" %}</p>
+                        <p class="text-danger">{% trans "Are you sure you want to delete this annotation?" %}</p>
                         <div class="align-items-center text-danger d-none" data-type="message"></div>
                     </div>
                     <div class="modal-footer">
@@ -819,7 +822,7 @@
             </div>
         </div>
     </div>
-{% endblock extra_modal %}
+{% endblock extra_overlay %}
 
 
 {% block extra_js %}

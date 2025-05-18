@@ -53,7 +53,7 @@ class LectureFolderViewSet(viewsets.ModelViewSet):
         data.update(
             {
                 "parent_path": (
-                    folder.parent.get_full_path() if folder.parent else "Root"
+                    folder.parent.get_full_path() if folder.parent else _("Root")
                 ),
                 "child_count": folder.children.count(),
                 "file_count": folder.file_count(cumulative=False),
@@ -66,7 +66,7 @@ class LectureFolderViewSet(viewsets.ModelViewSet):
     def tree(self, request):
         user = request.user
         if not user.has_perm("lectures.view_lecturefolder"):
-            raise PermissionDenied(_("You do not have permission to view folders."))
+            raise PermissionDenied(_("You don't have permission to view folders."))
 
         root_folders = LectureFolder.objects.user_root_folders(user)
         tree = [self._serialize_folders(folder) for folder in root_folders]
@@ -75,12 +75,12 @@ class LectureFolderViewSet(viewsets.ModelViewSet):
     def _check_delete_permissions(self, folder):
         if not folder.is_deletable_by(self.request.user):
             raise PermissionDenied(
-                _("You do not have permission to delete this folder.")
+                _("You don't have permission to delete this folder.")
             )
 
     def _check_edit_permissions(self, folder):
         if not folder.is_editable_by(self.request.user):
-            raise PermissionDenied(_("You do not have permission to edit this folder."))
+            raise PermissionDenied(_("You don't have permission to edit this folder."))
 
     def _serialize_folders(self, folder):
         return {
@@ -122,7 +122,7 @@ class LectureViewSet(viewsets.ModelViewSet):
         data = self.get_serializer(lecture).data
         data.update(
             {
-                "folder_name": str(lecture.folder) if lecture.folder else "Root",
+                "folder_name": str(lecture.folder) if lecture.folder else _("Root"),
                 "viewer_group_names": [
                     group.name for group in lecture.viewer_groups.all()
                 ],
@@ -136,11 +136,9 @@ class LectureViewSet(viewsets.ModelViewSet):
         lecture = self.get_object()
 
         if not request.user.has_perm("lectures.change_lecture"):
-            raise PermissionDenied(_("You do not have permission to edit lectures."))
+            raise PermissionDenied(_("You don't have permission to edit lectures."))
         if not lecture.is_editable_by(request.user):
-            raise PermissionDenied(
-                _("You do not have permission to edit this lecture.")
-            )
+            raise PermissionDenied(_("You don't have permission to edit this lecture."))
 
         lecture.is_open = not lecture.is_open
         lecture.save()
@@ -223,11 +221,9 @@ class LectureViewSet(viewsets.ModelViewSet):
     def _check_delete_permissions(self, lecture):
         if not lecture.is_deletable_by(self.request.user):
             raise PermissionDenied(
-                _("You do not have permission to delete this lecture.")
+                _("You don't have permission to delete this lecture.")
             )
 
     def _check_edit_permissions(self, lecture):
         if not lecture.is_editable_by(self.request.user):
-            raise PermissionDenied(
-                _("You do not have permission to edit this lecture.")
-            )
+            raise PermissionDenied(_("You don't have permission to edit this lecture."))

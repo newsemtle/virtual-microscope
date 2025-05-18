@@ -1,0 +1,136 @@
+{% extends 'core/base.html' %}
+{% load static %}
+{% load i18n %}
+
+{% block main_content %}
+    <div class="row justify-content-center">
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="card-title mb-0">{% trans "Edit Profile" %}</h4>
+                </div>
+                <div class="card-body">
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        {% if form.non_field_errors %}
+                            <div class="alert alert-danger" role="alert">
+                                {% for error in form.non_field_errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        {% if messages %}
+                            <div class="alert alert-success" role="alert">
+                                {% for message in messages %}
+                                    {{ message }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        <div class="mb-3">
+                            {% with profile_image=form.profile_image %}
+                                <div class="d-flex justify-content-between">
+                                    <label for="{{ profile_image.id_for_label }}" class="form-label">
+                                        {% trans "Profile Image" %}
+                                    </label>
+                                    <div class="form-check">
+                                        {% with delete_image=form.delete_image %}
+                                            <input type="checkbox" class="form-check-input"
+                                                   id="{{ delete_image.id_for_label }}"
+                                                   name="{{ delete_image.html_name }}">
+                                            <label class="form-check-label" for="{{ delete_image.id_for_label }}">
+                                                {{ delete_image.label }}
+                                            </label>
+                                        {% endwith %}
+                                    </div>
+                                </div>
+                                {% if profile_image_url %}
+                                    <img id="profile-image-preview" class="img-thumbnail mb-2"
+                                         src="{{ profile_image_url }}" alt="" style="max-height: 100px">
+                                {% else %}
+                                    <img id="profile-image-preview" class="img-thumbnail mb-2"
+                                         src="{% static 'accounts/img/default_profile_image.png' %}" alt=""
+                                         style="max-height: 100px">
+                                {% endif %}
+                                <canvas id="resize-canvas" style="display:none;"></canvas>
+                                <input type="file" name="{{ profile_image.html_name }}" accept=".png, .jpg, .jpeg"
+                                       class="form-control {% if profile_image.errors %}is-invalid{% endif %}"
+                                       id="{{ profile_image.id_for_label }}" title="Maximum file size: 5MB"
+                                       data-bs-tooltip="true">
+                                {% for error in profile_image.errors %}
+                                    <div class="invalid-feedback">{{ error }}</div>
+                                {% endfor %}
+                                {% if profile_image.help_text %}
+                                    <div class="form-text">
+                                        {{ profile_image.help_text|safe }}
+                                    </div>
+                                {% endif %}
+                            {% endwith %}
+                        </div>
+                        <div class="mb-3">
+                            {% with email=form.email %}
+                                <label for="{{ email.id_for_label }}" class="form-label">
+                                    {% trans "Email" %}
+                                </label>
+                                <input type="email" name="{{ email.html_name }}"
+                                       class="form-control {% if email.errors %}is-invalid{% endif %}"
+                                       id="{{ email.id_for_label }}" placeholder="name@example.com"
+                                       value="{{ email_value|default:"" }}" required>
+                                {% for error in email.errors %}
+                                    <div class="invalid-feedback">{{ error }}</div>
+                                {% endfor %}
+                            {% endwith %}
+                        </div>
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-success">{% trans "Save Changes" %}</button>
+                            <button class="btn btn-outline-secondary" onclick="history.back()">
+                                {% trans "Cancel" %}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+
+{% block extra_js %}
+    <script>
+        const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+
+        document.getElementById("id_profile_image").onchange = function () {
+            const file = this.files[0];
+            if (file.size > MAX_FILE_SIZE) {
+                this.value = "";
+                alert("File size exceeds 5MB limit");
+                return;
+            }
+            const reader = new FileReader();
+
+            reader.onload = function (e) {
+                const img = new Image();
+                img.onload = function () {
+                    const canvas = document.getElementById("resize-canvas");
+                    const ctx = canvas.getContext("2d");
+
+                    // Step 1: Crop the center square
+                    const minSize = Math.min(img.width, img.height);
+                    const sx = (img.width - minSize) / 2;
+                    const sy = (img.height - minSize) / 2;
+
+                    canvas.width = 256;
+                    canvas.height = 256;
+
+                    // Step 2: Draw the cropped square resized to 256x256
+                    ctx.drawImage(img, sx, sy, minSize, minSize, 0, 0, 256, 256);
+
+                    // Step 3: Set the resized image to preview
+                    document.getElementById("profile-image-preview").src = canvas.toDataURL("image/png");
+                };
+                img.src = e.target.result;
+            };
+
+            reader.readAsDataURL(file);
+        };
+    </script>
+{% endblock extra_js %}

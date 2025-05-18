@@ -20,15 +20,18 @@ const API_ROUTES = {
         return {
             list: {
                 base: `${base}/`,
-                search: (query) => `${base}/?search=${query}`,
+                search: (query) => `${base}/dbsearch/?search=${query}`,
             },
             detail: (id) => {
                 const detailBase = `${base}/${id}`;
                 return {
                     base: `${detailBase}/`,
-                    annotations: `${detailBase}/annotations/`,
+                    dzi: `${detailBase}.dzi/`,
+                    file: `${detailBase}/file/`,
                     thumbnail: `${detailBase}/thumbnail/`,
                     associated_image: (filename) => `${detailBase}/associated_image/${filename}/`,
+                    annotations: `${detailBase}/annotations/`,
+                    rebuild: `${detailBase}/rebuild/`,
                 };
             },
         };
@@ -82,7 +85,7 @@ const API_ROUTES = {
         };
     })(),
     annotations: (() => {
-        const base = `${API_BASE_URL}/annotations`;
+        const base = `${API_BASE_URL}/viewer/annotations`;
         return {
             list: {
                 base: `${base}/`,

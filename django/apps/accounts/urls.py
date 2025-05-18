@@ -1,13 +1,14 @@
 from django.contrib.auth import views as auth_views
 from django.urls import path
 
-from .views import ProfileView, LoginView
+from .views import ProfileView, LoginView, ProfileEditView
 
 app_name = "accounts"
 
 urlpatterns = [
-    path("profile/", ProfileView.as_view(), name="profile"),
     path("login/", LoginView.as_view(), name="login"),
+    path("profile/", ProfileView.as_view(), name="profile"),
+    path("profile/edit/", ProfileEditView.as_view(), name="profile-edit"),
     # 비밀번호 변경은 Django에 내장된 뷰를 사용하고 있습니다.
     path(
         "password_change/",

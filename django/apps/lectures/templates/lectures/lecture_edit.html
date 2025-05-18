@@ -2,7 +2,7 @@
 {% load static %}
 {% load i18n %}
 
-{% block content %}
+{% block main_content %}
     <!-- Breadcrumb -->
     <nav>
         <button class="btn btn-sm btn-outline-secondary" onclick="redirectToNextOrDefault(`/lectures/database/`);">
@@ -26,7 +26,7 @@
                 <div class="row g-3">
                     <div class="col-md">
                         <div class="mb-3">
-                            <label for="lecture-name" class="form-label">Name</label>
+                            <label for="lecture-name" class="form-label">{% trans "Name" %}</label>
                             <input type="text" class="form-control" id="lecture-name" name="name"
                                    value="{{ lecture.name }}">
                         </div>
@@ -119,7 +119,7 @@
                                             </select>
                                         </div>
                                         <button class="btn btn-sm" title="{% trans "Remove" %}"
-                                                data-bs-tooltip="tooltip" data-action="remove">
+                                                data-bs-tooltip="true" data-action="remove">
                                             <i class="bi bi-trash3"></i>
                                         </button>
                                     </li>
@@ -161,7 +161,7 @@
                                             data-annotations-url="{% url 'api:slide-annotations' pk=item.id %}"
                                             data-slide-id="{{ item.id }}" data-slide-name="{{ item.name }}">
                                             <i class="bi bi-plus-circle me-2" role="button" title="{% trans "Add" %}"
-                                               data-bs-tooltip="tooltip" data-action="add"></i>
+                                               data-bs-tooltip="true" data-action="add"></i>
                                             <img src="{% url 'api:slide-thumbnail' pk=item.id %}"
                                                  height="40" class="me-2" alt="">
                                             <a href="{% url 'viewer:image-viewer' slide_id=item.id %}"
@@ -209,7 +209,7 @@
             </form>
         </div>
     </div>
-{% endblock content %}
+{% endblock main_content %}
 
 
 {% block extra_js %}

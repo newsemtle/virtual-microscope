@@ -8,6 +8,7 @@ from django.core.exceptions import PermissionDenied
 from django.db.models import CharField, Value
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse_lazy
+from django.utils.translation import gettext as _
 from django.views.generic import ListView
 
 from apps.accounts.models import GroupProfile
@@ -65,7 +66,7 @@ class LectureDatabaseView(
                 reverse_lazy("lectures:lecture-database") + f"?folder={folder.id}"
             )
         else:
-            raise PermissionDenied("You do not have permission to access this page.")
+            raise PermissionDenied(_("You don't have permission to access this page."))
 
     def get_queryset(self):
         user = self.request.user
@@ -112,7 +113,7 @@ class LectureDatabaseView(
             breadcrumbs.append({"id": current.id, "name": current.name})
             current = current.parent
         if self.request.user.is_admin():
-            breadcrumbs.append({"id": "", "name": "Root"})
+            breadcrumbs.append({"id": "", "name": _("Root")})
 
         breadcrumbs.reverse()
         return breadcrumbs

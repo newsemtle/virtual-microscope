@@ -11,10 +11,10 @@ document.addEventListener("DOMContentLoaded", function (event) {
 
                 icon.classList.toggle("bi-toggle-on", isOpen);
                 icon.classList.toggle("bi-toggle-off", !isOpen);
-                text.textContent = isOpen ? "Open" : "Closed";
+                text.textContent = isOpen ? gettext("Open") : gettext("Closed");
             },
             onError: (error) => {
-                showFeedback(gettext("Failed to toggle lecture activity."), "danger");
+                showFeedback(gettext("Failed to toggle lecture status."), "danger");
             },
         });
     }));
@@ -46,7 +46,7 @@ document.addEventListener("DOMContentLoaded", function (event) {
                     [gettext("Content"), `${data.children_count || 0} ${gettext("Folders")}, ${data.total_file_count || 0} ${gettext("Lectures")}`],
                     [gettext("Author"), data.author || "-"],
                     [gettext("Manager"), data.manager || "-"],
-                    [gettext("Parent"), data.parent_path || "-"],
+                    [pgettext("folder", "Parent"), data.parent_path || "-"],
                     [pgettext("date", "Created"), formatDate(data.created_at) || "-"],
                     [pgettext("date", "Updated"), formatDate(data.updated_at) || "-"],
                 ]);

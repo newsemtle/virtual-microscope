@@ -97,7 +97,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     [gettext("Content"), `${data.children_count || 0} ${gettext("Folders")}, ${data.total_file_count || 0} ${gettext("Images")}`],
                     [gettext("Author"), data.author || "-"],
                     [gettext("Manager Group"), data.manager_group || "-"],
-                    [gettext("Parent"), data.parent_path || "-"],
+                    [pgettext("folder", "Parent"), data.parent_path || "-"],
                     [pgettext("date", "Created"), formatDate(data.created_at) || "-"],
                     [pgettext("date", "Updated"), formatDate(data.updated_at) || "-"],
                 ]);
@@ -146,7 +146,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
                 const metadataDetails = new Map([
                     [gettext("Vendor"), data.metadata.vendor || "-"],
-                    [gettext("Created"), data.metadata.created || "-"],
+                    [pgettext("date", "Created"), data.metadata.created || "-"],
                     [gettext("Objective Power"), data.metadata.objective_power || "-"],
                 ]);
 
@@ -251,7 +251,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     if (annotation.editable) {
                         const editButton = document.createElement("button");
                         editButton.className = "btn btn-outline-primary";
-                        editButton.dataset.bsToogle = "modal";
+                        editButton.dataset.bsToggle = "modal";
                         editButton.dataset.bsTarget = "#annotation-rename-modal";
                         editButton.dataset.url = annotation.url;
                         editButton.innerHTML = "<i class='bi bi-pencil'></i>";
@@ -585,7 +585,7 @@ function processBulkAction(items, actionType, destinationId = null) {
                     itemStatus.classList.remove("text-muted", "bi-circle");
                     itemStatus.classList.add("text-danger", "bi-x-circle");
                     itemStatus.title = error.message;
-                    itemStatus.dataset.bsTooltip = "tooltip";
+                    itemStatus.dataset.bsTooltip = "true";
                     activateTooltips(itemStatus);
                     checkDone();
                 },

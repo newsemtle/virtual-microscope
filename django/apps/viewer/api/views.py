@@ -1,5 +1,6 @@
 import logging
 
+from django.utils.translation import gettext as _
 from rest_framework import viewsets
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.permissions import IsAuthenticated, DjangoModelPermissions
@@ -43,7 +44,7 @@ class AnnotationViewSet(viewsets.ModelViewSet):
         data = self.get_serializer(annotation).data
         data.update(
             {
-                "slide_name": str(annotation.slide) or "-",
+                "slide_name": str(annotation.slide),
             }
         )
         return Response(data)
@@ -51,9 +52,11 @@ class AnnotationViewSet(viewsets.ModelViewSet):
     def _check_delete_permissions(self, annotation):
         if not annotation.is_deletable_by(self.request.user):
             raise PermissionDenied(
-                "You don't have permission to delete this annotation."
+                _("You don't have permission to delete this annotation.")
             )
 
     def _check_edit_permissions(self, annotation):
         if not annotation.is_editable_by(self.request.user):
-            raise PermissionDenied("You don't have permission to edit this annotation.")
+            raise PermissionDenied(
+                _("You don't have permission to edit this annotation.")
+            )

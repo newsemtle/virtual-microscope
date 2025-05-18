@@ -14,7 +14,7 @@
     </style>
 {% endblock %}
 
-{% block content %}
+{% block main_content %}
     <div>
         {% if user.is_authenticated %}
             <div class="py-5" style="background: #8fa1b9;">
@@ -81,11 +81,11 @@
                             <div class="feature bg-primary bg-gradient text-white rounded-3 mb-3">
                                 <i class="bi bi-journal-text"></i>
                             </div>
-                            <h2 class="h4 fw-bolder">{% trans "Lectures" %}</h2>
-                            <p>{% trans "View all lectures that you can explore." %}</p>
+                            <h2 class="h4 fw-bolder">{% trans "Lectures" context "home" %}</h2>
+                            <p>{% trans "View all opened lectures." %}</p>
                             <a class="text-decoration-none stretched-link"
                                href="{% url 'lectures:lecture-bulletins' %}">
-                                {% trans "View Lectures" %}
+                                {% trans "View Lectures" context "home" %}
                                 <i class="bi bi-arrow-right"></i>
                             </a>
                         </div>
@@ -112,4 +112,4 @@
             </div>
         {% endif %}
     </div>
-{% endblock content %}
+{% endblock main_content %}

@@ -8,15 +8,14 @@
 {% endblock %}
 
 
-<!-- 화면 상단 중앙에 DB/Lecture인 거 표시하기(css에 slide-text 추가해 줘야함)-->
-{% block slide_name %}
+{% block navbar_title %}
     DB/{% trans "Lecture" %}
-{% endblock slide_name %}
+{% endblock navbar_title %}
 
-{% block content %}
+{% block main_content %}
     <!-- Breadcrumb -->
-    <nav class="breadcrumbs" aria-label="breadcrumb">
-        <a href="{% url 'core:home' %}" class="breadcrumbs__item">Home</a>
+    <nav class="breadcrumbs">
+        <a href="{% url 'core:home' %}" class="breadcrumbs__item">{% trans "Home" %}</a>
         {% for crumb in breadcrumbs %}
             {% if forloop.last %}
                 <!-- 마지막 항목은 is-active 클래스 추가 -->
@@ -193,20 +192,20 @@
                                 <div class="btn-group-vertical btn-group-sm">
                                     <!-- detail 버튼 -->
                                     <button type="button" class="btn btn-outline-dark btn-sm rounded-0"
-                                            title="{% trans "Details" %}" data-bs-tooltip="tooltip"
+                                            title="{% trans "Details" %}" data-bs-tooltip="true"
                                             data-bs-toggle="modal" data-bs-target="#folder-detail-modal"
                                             data-url="{% url 'api:lecture-folder-detail' pk=item.id %}">
                                         {% trans "Details" %}
                                     </button>
                                     {% if item.is_editable %}
                                         <button type="button" class="btn btn-outline-dark btn-sm rounded-0"
-                                                title="{% trans "Rename" %}" data-bs-tooltip="tooltip"
+                                                title="{% trans "Rename" %}" data-bs-tooltip="true"
                                                 data-bs-toggle="modal" data-bs-target="#folder-rename-modal"
                                                 data-url="{% url 'api:lecture-folder-detail' pk=item.id %}">
                                             {% trans "Rename" %}
                                         </button>
                                         <button type="button" class="btn btn-outline-dark btn-sm rounded-0"
-                                                title="{% trans "Move" %}" data-bs-tooltip="tooltip"
+                                                title="{% trans "Move" %}" data-bs-tooltip="true"
                                                 data-bs-toggle="modal" data-bs-target="#folder-move-modal"
                                                 data-url="{% url 'api:lecture-folder-detail' pk=item.id %}"
                                                 data-url-tree="{% url 'api:lecture-folder-tree' %}"
@@ -216,7 +215,7 @@
                                     {% endif %}
                                     {% if item.is_deletable %}
                                         <button type="button" class="btn btn-outline-dark btn-sm rounded-0"
-                                                title="{% trans "Delete" %}" data-bs-tooltip="tooltip"
+                                                title="{% trans "Delete" %}" data-bs-tooltip="true"
                                                 data-bs-toggle="modal" data-bs-target="#folder-delete-modal"
                                                 data-url="{% url 'api:lecture-folder-detail' pk=item.id %}">
                                             {% trans "Delete" %}
@@ -227,7 +226,7 @@
                                 <div class="btn-group-vertical btn-group-sm">
                                     <!-- detail 버튼 -->
                                     <button type="button" class="btn btn-outline-dark btn-sm rounded-0"
-                                            title="{% trans "Details" %}" data-bs-tooltip="tooltip"
+                                            title="{% trans "Details" %}" data-bs-tooltip="true"
                                             data-bs-toggle="modal" data-bs-target="#lecture-detail-modal"
                                             data-url="{% url 'api:lecture-detail' pk=item.id %}">
                                         {% trans "Details" %}
@@ -236,12 +235,12 @@
                                         <!-- preview 버튼 -->
                                         <a type="button" class="btn btn-outline-dark btn-sm rounded-0"
                                            href="{% url 'lectures:lecture-view' lecture_id=item.id %}"
-                                           title="{% trans "Preview" %}" data-bs-tooltip="tooltip">
+                                           title="{% trans "Preview" %}" data-bs-tooltip="true">
                                             {% trans "Preview" %}
                                         </a>
                                         <!-- move 버튼 -->
                                         <button type="button" class="btn btn-outline-dark btn-sm rounded-0"
-                                                title="{% trans "Move" %}" data-bs-tooltip="tooltip"
+                                                title="{% trans "Move" %}" data-bs-tooltip="true"
                                                 data-bs-toggle="modal" data-bs-target="#lecture-move-modal"
                                                 data-url="{% url 'api:lecture-detail' pk=item.id %}"
                                                 data-url-tree="{% url 'api:lecture-folder-tree' %}">
@@ -251,7 +250,7 @@
                                     {% if item.is_deletable %}
                                         <!-- delete 버튼 -->
                                         <button type="button" class="btn btn-outline-dark btn-sm rounded-0"
-                                                title="{% trans "Delete" %}" data-bs-tooltip="tooltip"
+                                                title="{% trans "Delete" %}" data-bs-tooltip="true"
                                                 data-bs-toggle="modal" data-bs-target="#lecture-delete-modal"
                                                 data-url="{% url 'api:lecture-detail' pk=item.id %}">
                                             {% trans "Delete" %}
@@ -266,7 +265,7 @@
                             <div class="btn-group-vertical btn-group-sm">
                                 {% if item.type != "folder" and item.is_editable %}
                                     <button type="button" class="btn btn-outline-danger toggle-status-btn"
-                                            title="Toggle Status" data-bs-tooltip="tooltip"
+                                            title="Toggle Status" data-bs-tooltip="true"
                                             data-lecture-id="{{ item.id }}">
                                         {% if item.is_open %}
                                             <i class="bi bi-toggle-on"></i>
@@ -277,7 +276,7 @@
                                         {% endif %}
                                     </button>
                                     <button type="button" class="btn btn-outline-dark"
-                                            title="{% trans "Copy" %}" data-bs-tooltip="tooltip"
+                                            title="{% trans "Copy" %}" data-bs-tooltip="true"
                                             data-bs-toggle="modal" data-bs-target="#lecture-copy-modal"
                                             data-duplicate-url="{% url 'api:lecture-duplicate' pk=item.id %}"
                                             data-send-url="{% url 'api:lecture-send' pk=item.id %}"
@@ -292,10 +291,10 @@
             </div>
         {% endfor %}
     {% endif %}
-{% endblock content %}
+{% endblock main_content %}
 
 
-{% block extra_modal %}
+{% block extra_overlay %}
     <!-- Folder Create Modal -->
     <div class="modal fade" id="folder-create-modal" tabindex="-1">
         <div class="modal-dialog modal-dialog-scrollable">
@@ -424,7 +423,7 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title">{% trans "New Lecture" %}</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <form id="lecture-create-form" data-url="{% url 'api:lecture-list' %}" data-method="POST" novalidate>
                     <div class="modal-body">
@@ -544,7 +543,7 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title">{% trans "Delete Lecture" %}</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <form id="lecture-delete-form" data-url="" data-method="DELETE">
                     <div class="modal-body">
@@ -567,7 +566,7 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title">{% trans "Lecture Details" %}</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
                     <dl class="row" id="lecture-detail-list"></dl>
@@ -639,7 +638,7 @@
             </div>
         </div>
     </div>
-{% endblock extra_modal %}
+{% endblock extra_overlay %}
 
 
 {% block extra_js %}

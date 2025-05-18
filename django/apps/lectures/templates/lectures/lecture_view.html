@@ -9,7 +9,7 @@
 {% endblock %}
 
 
-{% block content %}
+{% block main_content %}
     <!-- Breadcrumb -->
     <nav class="breadcrumbs">
         <a href="{% url 'core:home' %}" class="breadcrumbs__item">{% trans "Home" %}</a>
@@ -111,4 +111,4 @@
             {% endwith %}
         {% endfor %}
     {% endif %}
-{% endblock content %}
+{% endblock main_content %}

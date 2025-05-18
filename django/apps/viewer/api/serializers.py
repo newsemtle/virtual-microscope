@@ -1,4 +1,5 @@
 from django.urls import reverse
+from django.utils.translation import gettext as _
 from rest_framework import serializers
 
 from apps.viewer.models import Annotation
@@ -33,7 +34,7 @@ class AnnotationSerializer(serializers.ModelSerializer):
 
         slide = attrs.get("slide")
         if slide and not slide.is_viewable_by(user):
-            errors["slide"] = "You don't have permission to view this slide."
+            errors["slide"] = _("You don't have permission to view this slide.")
 
         if errors:
             raise serializers.ValidationError(errors)

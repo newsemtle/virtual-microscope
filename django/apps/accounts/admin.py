@@ -70,7 +70,9 @@ class UserResource(resources.ModelResource):
         if missing_columns:
             # 사용자(admin)에게 전달되는 에러메시지
             raise ValidationError(
-                _("Missing required columns: {}").format(", ".join(missing_columns))
+                _("Missing required columns: {columns}").format(
+                    columns=", ".join(missing_columns)
+                )
             )
 
         super().before_import(dataset, **kwargs)
@@ -81,7 +83,7 @@ class UserResource(resources.ModelResource):
         for col in required_columns:
             if not row.get(col):
                 # 사용자(admin)에게 전달되는 에러메시지
-                raise ValidationError(_("{} is required").format(col))
+                raise ValidationError(_("{column} is required").format(column=col))
 
         super().before_import_row(row, **kwargs)
 
@@ -105,7 +107,7 @@ class UserAdmin(ImportExportMixin, BaseUserAdmin):
     change_password_form = AdminPasswordChangeForm
     resource_class = UserResource
 
-    list_display = ("username", "first_name", "last_name", "is_staff")
+    list_display = ("username", "get_full_name", "email", "get_type", "is_staff")
     list_filter = ("groups",)
     fieldsets = [
         (
@@ -113,7 +115,7 @@ class UserAdmin(ImportExportMixin, BaseUserAdmin):
             {"fields": ("username", "password")},
         ),
         (
-            _lazy("Info"),
+            _lazy("Information"),
             {"fields": ("first_name", "last_name", "email", "profile_image")},
         ),
         (
@@ -146,6 +148,22 @@ class UserAdmin(ImportExportMixin, BaseUserAdmin):
     ordering = ["username"]
     filter_horizontal = ("groups",)
     readonly_fields = ("base_lecture_folder",)
+
+    def get_full_name(self, obj):
+        return obj.get_full_name()
+
+    def get_type(self, obj):
+        if obj.is_admin():
+            return "Admin"
+        elif obj.is_publisher():
+            return "Publisher"
+        elif obj.is_viewer():
+            return "Viewer"
+        else:
+            return None
+
+    get_full_name.short_description = _lazy("Name")
+    get_type.short_description = _lazy("Type")
 
     def get_fieldsets(self, request, obj=None):
         if obj is None:

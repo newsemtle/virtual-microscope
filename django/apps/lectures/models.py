@@ -196,9 +196,13 @@ class LectureManager(ManagerPermissionMixin, models.Manager):
 
 class Lecture(ModelPermissionMixin, models.Model):
     id = models.AutoField(primary_key=True)
-    name = models.CharField(max_length=250)
-    description = models.TextField(blank=True, null=True)
-    is_open = models.BooleanField(default=False)
+    name = models.CharField(_lazy("name"), max_length=250)
+    description = models.TextField(_lazy("description"), blank=True, null=True)
+    is_open = models.BooleanField(
+        _lazy("open"),
+        default=False,
+        help_text=_lazy("Whether the lecture is open for viewer groups or not."),
+    )
     created_at = models.DateTimeField(
         pgettext_lazy("date", "created"),
         auto_now_add=True,
@@ -210,6 +214,7 @@ class Lecture(ModelPermissionMixin, models.Model):
 
     author = models.ForeignKey(
         settings.AUTH_USER_MODEL,
+        verbose_name=_lazy("author"),
         on_delete=models.SET_NULL,
         related_name="lectures",
         blank=True,
@@ -217,6 +222,7 @@ class Lecture(ModelPermissionMixin, models.Model):
     )
     folder = models.ForeignKey(
         "lectures.LectureFolder",
+        verbose_name=_lazy("folder"),
         on_delete=models.CASCADE,
         related_name="lectures",
         blank=False,
@@ -224,6 +230,7 @@ class Lecture(ModelPermissionMixin, models.Model):
     )
     manager = models.ForeignKey(
         settings.AUTH_USER_MODEL,
+        verbose_name=_lazy("manager"),
         on_delete=models.SET_NULL,
         related_name="managing_lectures",
         blank=True,
@@ -231,13 +238,17 @@ class Lecture(ModelPermissionMixin, models.Model):
     )
     viewer_groups = models.ManyToManyField(
         "auth.Group",
+        verbose_name=_lazy("viewer groups"),
         related_name="lectures",
         blank=True,
+        help_text=_lazy("The groups that can view the lecture."),
     )
 
     objects = LectureManager()
 
     class Meta:
+        verbose_name = _lazy("lecture")
+        verbose_name_plural = _lazy("lectures")
         ordering = ("created_at",)
 
     def __str__(self):
@@ -290,7 +301,10 @@ class Lecture(ModelPermissionMixin, models.Model):
 
 class LectureContent(ModelPermissionMixin, models.Model):
     id = models.AutoField(primary_key=True)
-    order = models.PositiveSmallIntegerField(help_text="Order inside the lecture")
+    order = models.PositiveSmallIntegerField(
+        _lazy("order"),
+        help_text=_lazy("Order inside the lecture"),
+    )
     created_at = models.DateTimeField(
         pgettext_lazy("date", "created"),
         auto_now_add=True,
@@ -298,16 +312,19 @@ class LectureContent(ModelPermissionMixin, models.Model):
 
     lecture = models.ForeignKey(
         "lectures.Lecture",
+        verbose_name=_lazy("lecture"),
         on_delete=models.CASCADE,
         related_name="contents",
     )
     slide = models.ForeignKey(
         "images.Slide",
+        verbose_name=_lazy("slide"),
         on_delete=models.CASCADE,
         related_name="lecture_contents",
     )
     annotation = models.ForeignKey(
         "viewer.Annotation",
+        verbose_name=_lazy("annotation"),
         on_delete=models.SET_NULL,
         related_name="lecture_contents",
         blank=True,
@@ -315,6 +332,8 @@ class LectureContent(ModelPermissionMixin, models.Model):
     )
 
     class Meta:
+        verbose_name = _lazy("lecture content")
+        verbose_name_plural = _lazy("lecture contents")
         unique_together = ("lecture", "order")
         ordering = ("created_at",)
 

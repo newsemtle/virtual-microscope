@@ -38,9 +38,9 @@ class AdminUserChangeForm(auth_forms.UserChangeForm):
 
 
 class AdminPasswordChangeForm(forms.Form):
-    password1 = forms.CharField(label=_lazy("New password"), widget=forms.PasswordInput)
+    password1 = forms.CharField(label=_lazy("New Password"), widget=forms.PasswordInput)
     password2 = forms.CharField(
-        label=_lazy("New password confirmation"), widget=forms.PasswordInput
+        label=_lazy("New Password Confirmation"), widget=forms.PasswordInput
     )
 
     def __init__(self, user, *args, **kwargs):
@@ -65,3 +65,11 @@ class AdminPasswordChangeForm(forms.Form):
         if commit:
             self.user.save()
         return self.user
+
+
+class UserChangeForm(forms.ModelForm):
+    delete_image = forms.BooleanField(required=False, label=_lazy("Delete Image"))
+
+    class Meta:
+        model = User
+        fields = ["email", "profile_image"]

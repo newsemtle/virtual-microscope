@@ -60,7 +60,7 @@ class AbstractFolder(MPTTModel):
     )
     parent = TreeForeignKey(
         "self",
-        verbose_name=_lazy("parent"),
+        verbose_name=pgettext_lazy("folder", "parent"),
         on_delete=models.CASCADE,
         related_name="children",
         blank=True,

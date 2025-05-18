@@ -95,23 +95,27 @@ LOGGING = {
 # Application definition
 
 INSTALLED_APPS = [
+    # ASGI server integration
     "daphne",
+    # Django core apps
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    # Third-party apps
+    "channels",
     "rest_framework",
     "django_filters",
-    "channels",
+    "import_export",
+    "mptt",
+    # Custom apps
     "apps.core",
     "apps.accounts",
     "apps.images",
     "apps.lectures",
     "apps.viewer",
-    "import_export",
-    "mptt",
 ]
 
 MIDDLEWARE = [

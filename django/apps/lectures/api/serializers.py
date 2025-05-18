@@ -29,7 +29,9 @@ class LectureFolderSerializer(serializers.ModelSerializer):
             serializers.UniqueTogetherValidator(
                 queryset=LectureFolder.objects.all(),
                 fields=("name", "parent"),
-                message=_lazy("The folder name already exists in this folder"),
+                message=_lazy(
+                    "The folder with the name already exists in this location."
+                ),
             )
         ]
 

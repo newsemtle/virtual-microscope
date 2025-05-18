@@ -1,6 +1,7 @@
 import logging
 import re
 
+from PIL import Image
 from django.contrib.auth import user_logged_out
 from django.contrib.auth.models import (
     AbstractBaseUser,
@@ -46,12 +47,12 @@ class GroupProfile(models.Model):
     )
     base_image_folder = models.OneToOneField(
         "images.ImageFolder",
-        verbose_name=_lazy("base folder"),
+        verbose_name=_lazy("base image folder"),
         on_delete=models.CASCADE,
         related_name="groupprofile",
         blank=True,
         null=True,
-        help_text=_lazy("Base folder for the publisher group."),
+        help_text=_lazy("Base image folder for the publisher group."),
     )
 
     def __str__(self):
@@ -189,6 +190,7 @@ class User(AbstractBaseUser, PermissionsMixin):
         upload_to="public/profile_images",
         blank=True,
         null=True,
+        help_text=_lazy("Resized to 256x256 px. If blank, default image will be used."),
     )
     is_staff = models.BooleanField(
         _lazy("staff status"),
@@ -222,8 +224,8 @@ class User(AbstractBaseUser, PermissionsMixin):
     REQUIRED_FIELDS = ("first_name", "last_name")
 
     class Meta:
-        verbose_name = _("user")
-        verbose_name_plural = _("users")
+        verbose_name = _lazy("user")
+        verbose_name_plural = _lazy("users")
         ordering = ["username"]
 
     def save(self, *args, **kwargs):
@@ -247,6 +249,31 @@ class User(AbstractBaseUser, PermissionsMixin):
             self.__class__.objects.filter(pk=self.pk).update(
                 base_lecture_folder=self.base_lecture_folder
             )
+
+        if self.profile_image:
+            image_path = self.profile_image.path
+            try:
+                with Image.open(image_path) as img:
+                    img = img.convert("RGB")
+
+                    # Crop to center square
+                    width, height = img.size
+                    min_dim = min(width, height)
+                    left = (width - min_dim) // 2
+                    top = (height - min_dim) // 2
+                    right = left + min_dim
+                    bottom = top + min_dim
+                    img = img.crop((left, top, right, bottom))
+
+                    # Resize to 256x256
+                    img = img.resize((256, 256), Image.Resampling.LANCZOS)
+
+                    img.save(image_path, format="JPEG")
+            except Exception as e:
+                logger.error(f"Failed to resize profile image: {str(e)}")
+                if self.profile_image:
+                    self.profile_image.delete(False)
+                return
 
     def delete(self, *args, **kwargs):
         try:

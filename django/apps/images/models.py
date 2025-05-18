@@ -307,8 +307,8 @@ class Slide(ModelPermissionMixin, models.Model):
     objects = SlideManager()
 
     class Meta:
-        verbose_name = _("slide")
-        verbose_name_plural = _("slides")
+        verbose_name = _lazy("slide")
+        verbose_name_plural = _lazy("slides")
         ordering = ("folder", "name")
 
     def __str__(self):

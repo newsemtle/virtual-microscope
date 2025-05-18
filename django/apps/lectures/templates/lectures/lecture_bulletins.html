@@ -8,12 +8,12 @@
     <link rel="stylesheet" href="{% static 'lectures/css/lecture_bulletins.css' %}">
 {% endblock %}
 
-<!-- 화면 상단 중앙에 Lectures인 거 표시하기(css에 slide-text 추가해 줘야함)-->
-{% block slide_name %}
-    {% trans "Lectures" %}
-{% endblock slide_name %}
 
-{% block content %}
+{% block navbar_title %}
+    {% trans "Lectures" %}
+{% endblock navbar_title %}
+
+{% block main_content %}
     <!-- Breadcrumb -->
     <nav class="breadcrumbs">
         <a href="{% url 'core:home' %}" class="breadcrumbs__item">{% trans "Home" %}</a>
@@ -93,7 +93,7 @@
                                     <a type="button" class="btn btn-outline-warning"
                                        href="{% url 'lectures:lecture-database' %}?folder={{ lecture.folder.id }}"
                                        target="_blank" rel="noopener noreferrer nofollow"
-                                       data-bs-tooltip="tooltip" title="{% trans "Open in DB" %}">
+                                       data-bs-tooltip="true" title="{% trans "Open in DB" %}">
                                         {% trans "Open in DB" %}
                                     </a>
                                 {% endif %}
@@ -104,8 +104,8 @@
                              style="width: 10%;">
                             <div class="btn-group-vertical btn-group-sm">
                                 {% if lecture.is_editable %}
-                                    <button class="btn btn-outline-danger" title="{% trans "Hide" %}"
-                                            data-bs-tooltip="tooltip" data-action="hide"
+                                    <button class="btn btn-outline-danger" title="{% trans "Close Lecture" %}"
+                                            data-bs-tooltip="true" data-action="hide"
                                             data-lecture-id="{{ lecture.id }}">
                                         <i class="bi bi-eye-slash"></i>
                                     </button>
@@ -117,7 +117,7 @@
             </div>
         {% endfor %}
     {% endif %}
-{% endblock content %}
+{% endblock main_content %}
 
 
 {% block extra_js %}

@@ -140,7 +140,7 @@ function activateTooltips(...elementList) {
     if (elementList.length > 0) {
         tooltipTriggerList = elementList;
     } else {
-        tooltipTriggerList = document.querySelectorAll("[data-bs-tooltip='tooltip']");
+        tooltipTriggerList = document.querySelectorAll("[data-bs-tooltip='true']");
     }
     [...tooltipTriggerList].forEach(tooltipTriggerEl => {
         // Create tooltip if not already present
@@ -156,7 +156,7 @@ function hideTooltips(...elementList) {
     if (elementList.length > 0) {
         tooltipHideList = elementList;
     } else {
-        tooltipHideList = document.querySelectorAll("[data-bs-tooltip='tooltip']");
+        tooltipHideList = document.querySelectorAll("[data-bs-tooltip='true']");
     }
     [...tooltipHideList].forEach(tooltipTriggerEl => {
         bootstrap.Tooltip.getInstance(tooltipTriggerEl)?.hide();
@@ -315,7 +315,7 @@ function showFeedback(message, type = "info") {
         if (feedbackContainer.children.length === 0) {
             feedbackContainer.remove();
         }
-    }, 5000);
+    }, 3000); // display for 3 seconds
 }
 
 /**
@@ -382,7 +382,7 @@ async function drfRequest({
                 try {
                     errorData = await response.json();
                 } catch {
-                    errorData = {detail: gettext("Invalid response")};
+                    errorData = {detail: "Invalid response"};
                 }
 
                 const classified = classifyError(errorData);
@@ -423,7 +423,7 @@ function submitForm({
         form.querySelectorAll(".invalid-feedback").forEach((feedback) => {
             feedback.textContent = gettext("This field is required.");
         });
-        onError({message: gettext("Validation error")});
+        onError({message: "Validation error"});
         return;
     }
     drfRequest({
@@ -606,9 +606,9 @@ async function fetchResults(url) {
                 const dbBtn = document.createElement("a");
                 dbBtn.className = "btn btn-outline-warning";
                 dbBtn.href = `/images/database/?folder=${image.folder}`;
-                dbBtn.textContent = gettext("DB");
+                dbBtn.textContent = "DB";
                 dbBtn.title = gettext("Open in DB");
-                dbBtn.dataset.bsTooltip = "tooltip";
+                dbBtn.dataset.bsTooltip = "true";
                 dbBtn.target = "_blank";
                 dbBtn.rel = "noopener noreferrer nofollow";
 
@@ -617,7 +617,7 @@ async function fetchResults(url) {
                 listItem.append(title, btnGroup);
                 imageList.appendChild(listItem);
 
-                activateTooltips(...listItem.querySelectorAll("[data-bs-tooltip='tooltip']"));
+                activateTooltips(...listItem.querySelectorAll("[data-bs-tooltip='true']"));
             });
 
             // Pagination buttons
@@ -668,14 +668,14 @@ function classifyError(errorData) {
     });
 
     return {
-        message: generalErrors.join("\n") || gettext("Validation error"),
+        message: generalErrors.join("\n") || "Validation error",
         generalErrors,
         fieldErrors,
     };
 }
 
-function formatDate(iso_string) {
-    const date = new Date(iso_string);
+function formatDate(date_string) {
+    const date = new Date(date_string);
     const year = date.getFullYear();
     const month = (date.getMonth() + 1).toString().padStart(2, "0");
     const day = date.getDate().toString().padStart(2, "0");

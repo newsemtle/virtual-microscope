@@ -73,7 +73,7 @@ function moveContent(listItem, direction) {
 
 function removeContent(listItem) {
     if (!listItem) return;
-    hideTooltips(...listItem.querySelectorAll("[data-bs-tooltip='tooltip']"));
+    hideTooltips(...listItem.querySelectorAll("[data-bs-tooltip='true']"));
     listItem.remove();
     updateSelectedImages();
 }
