@@ -19,22 +19,8 @@ document.addEventListener("DOMContentLoaded", function (event) {
         });
     }));
 
-    document.getElementById("folder-rename-modal").addEventListener("show.bs.modal", function (event) {
-        let button = event.relatedTarget;
-
-        drfRequest({
-            url: button.dataset.url,
-            onSuccess: (data) => {
-                document.getElementById("folder-rename-name").value = data.name;
-            },
-            onError: (error) => {
-                showFeedback(gettext("Failed to get slide information."), "danger");
-            },
-        });
-    });
-
     document.getElementById("folder-detail-modal").addEventListener("show.bs.modal", function (event) {
-        let button = event.relatedTarget;
+        const button = event.relatedTarget;
         const listElement = document.getElementById("folder-detail-list");
 
         drfRequest({
@@ -59,7 +45,7 @@ document.addEventListener("DOMContentLoaded", function (event) {
     });
 
     document.getElementById("lecture-detail-modal").addEventListener("show.bs.modal", function (event) {
-        let button = event.relatedTarget;
+        const button = event.relatedTarget;
         const listElement = document.getElementById("lecture-detail-list");
 
         drfRequest({
@@ -96,7 +82,7 @@ document.addEventListener("DOMContentLoaded", function (event) {
     });
 
     document.getElementById("lecture-copy-modal").addEventListener("show.bs.modal", function (event) {
-        let button = event.relatedTarget;
+        const button = event.relatedTarget;
         const duplicateForm = document.getElementById("lecture-duplicate-form");
         const sendForm = document.getElementById("lecture-send-form");
         duplicateForm.dataset.url = button.dataset.duplicateUrl;
@@ -182,15 +168,12 @@ document.addEventListener("DOMContentLoaded", function (event) {
         });
     });
 
-    handleModalShow("folder-rename-modal", "folder-rename-form");
-    handleModalShow("folder-delete-modal", "folder-delete-form");
     handleModalShow("lecture-delete-modal", "lecture-delete-form");
 
-    handleMoveModalShow("folder-move-modal", "folder-move-form", "folder");
     handleMoveModalShow("lecture-move-modal", "lecture-move-form", "file");
 
     document.getElementById("bulk-move-modal").addEventListener("show.bs.modal", function (event) {
-        let button = event.relatedTarget;
+        const button = event.relatedTarget;
 
         const message = this.querySelector("[data-type='message']");
         message.classList.add("d-none");
@@ -222,96 +205,6 @@ document.addEventListener("DOMContentLoaded", function (event) {
         });
     });
 
-    document.getElementById("bulk-move-modal").querySelector(".continue").addEventListener("click", function (event) {
-        const modal = this.closest(".modal");
-        const treeContainer = modal.querySelector(".tree-container");
-        const message = modal.querySelector("[data-type='message']");
-        let destination;
-        treeContainer.querySelectorAll("input[type='radio']").forEach(radio => {
-            if (radio.checked) {
-                destination = radio.value;
-            }
-        });
-        if (destination === undefined) {
-            message.textContent = gettext("Please select a destination folder.");
-            message.classList.remove("d-none");
-            return;
-        }
-
-        const confirmationModal = document.getElementById("confirmation-modal");
-        const confirmButton = confirmationModal.querySelector(".continue");
-        confirmButton.dataset.type = this.dataset.type;
-        confirmButton.dataset.destination = destination;
-
-        bootstrap.Modal.getOrCreateInstance(modal).hide();
-        bootstrap.Modal.getOrCreateInstance(confirmationModal).show();
-    });
-
-    document.getElementById("confirmation-modal").addEventListener("show.bs.modal", function (event) {
-        const continueButton = this.querySelector(".continue");
-        continueButton.classList.remove("btn-warning", "btn-danger");
-
-        const button = event.relatedTarget;
-        if (button) {
-            continueButton.dataset.type = button.dataset.type;
-        }
-
-        const title = this.querySelector(".modal-title");
-        const body = this.querySelector(".modal-body");
-        body.innerHTML = "";
-
-        const selectedItems = getSelectedItems();
-
-        if (selectedItems.length === 0) {
-            title.textContent = gettext("Selected Items");
-            continueButton.classList.add("btn-secondary");
-            continueButton.textContent = gettext("Next");
-            continueButton.disabled = true;
-            const info = document.createElement("div");
-            info.className = "alert alert-warning mt-3";
-            info.role = "alert";
-            info.textContent = gettext("No items selected.");
-            body.appendChild(info);
-            return;
-        }
-
-        if (continueButton.dataset.type === "move") {
-            title.textContent = gettext("Move Selected Items");
-            continueButton.classList.add("btn-warning");
-            continueButton.textContent = gettext("Move");
-
-            const info = document.createElement("p");
-            info.className = "text-warning";
-            info.textContent = interpolate(ngettext(
-                "Are you sure you want to move %(count)s item?",
-                "Are you sure you want to move %(count)s items?",
-                selectedItems.length,
-            ), {count: selectedItems.length}, true);
-            body.appendChild(info);
-
-        } else if (continueButton.dataset.type === "delete") {
-            title.textContent = gettext("Delete Selected Items");
-            continueButton.classList.add("btn-danger");
-            continueButton.textContent = gettext("Delete");
-
-            const info = document.createElement("p");
-            info.className = "text-danger";
-            info.textContent = interpolate(ngettext(
-                "Are you sure you want to delete %(count)s item?",
-                "Are you sure you want to delete %(count)s items?",
-                selectedItems.length,
-            ), {count: selectedItems.length}, true);
-            body.appendChild(info);
-
-        } else {
-            title.textContent = "Error";
-            continueButton.classList.add("btn-danger");
-            continueButton.textContent = "Error";
-            continueButton.disabled = true;
-            body.innerHTML = "Error";
-        }
-    });
-
     document.getElementById("action-progress-modal").addEventListener("show.bs.modal", async function (event) {
         const button = event.relatedTarget;
 
@@ -330,40 +223,40 @@ document.addEventListener("DOMContentLoaded", function (event) {
         selectedItems.forEach(item => {
             const listItem = document.createElement("li");
             listItem.className = "list-group-item d-flex align-items-center justify-content-between";
+            itemListElement.appendChild(listItem);
 
             const title = document.createElement("div");
             title.className = "d-flex align-items-center";
-
-            if (item.type === "folder") {
-                const icon = document.createElement("i");
-                icon.className = "bi bi-folder text-warning ps-1 me-2";
-                icon.style.width = "25px";
-                title.append(icon);
-            } else {
-                const icon = document.createElement("i");
-                icon.className = "bi bi-journal-text text-primary ps-1 me-2";
-                icon.style.width = "25px";
-                title.append(icon);
-            }
-
-            const listItemName = document.createElement("span");
-            listItemName.textContent = item.name;
-            title.append(listItemName);
 
             const status = document.createElement("i");
             status.className = "bi bi-circle text-muted";
             status.dataset.item = `${item.type}-${item.id}`;
 
             listItem.append(title, status);
-            itemListElement.appendChild(listItem);
+
+            let image;
+            if (item.type === "folder") {
+                image = document.createElement("i");
+                image.className = "bi bi-folder text-warning ps-1 me-2";
+                image.style.width = "25px";
+            } else {
+                image = document.createElement("i");
+                image.className = "bi bi-journal-text text-primary ps-1 me-2";
+                image.style.width = "25px";
+            }
+
+            const name = document.createElement("span");
+            name.textContent = item.name;
+
+            title.append(image, name);
         });
 
         if (button.dataset.type === "move") {
             title.textContent = gettext("Move Selected Items");
-            await processBulkAction(selectedItems, "move", button.dataset.destination);
+            await processBulkAction("lecture", selectedItems, "move", button.dataset.destination);
         } else if (button.dataset.type === "delete") {
             title.textContent = gettext("Delete Selected Items");
-            await processBulkAction(selectedItems, "delete");
+            await processBulkAction("lecture", selectedItems, "delete");
         }
         continueButton.classList.remove("btn-secondary");
         continueButton.classList.add("btn-success");
@@ -371,14 +264,6 @@ document.addEventListener("DOMContentLoaded", function (event) {
         unfreezeModal(this);
     });
 
-    document.getElementById("action-progress-modal").addEventListener("hidden.bs.modal", function (event) {
-        window.location.reload();
-    });
-
-    handleModalFormSubmit("folder-create-form");
-    handleModalFormSubmit("folder-rename-form");
-    handleModalFormSubmit("folder-move-form");
-    handleModalFormSubmit("folder-delete-form");
     handleModalFormSubmit("lecture-move-form");
     handleModalFormSubmit("lecture-duplicate-form");
     handleModalFormSubmit("lecture-send-form");
@@ -389,92 +274,9 @@ document.addEventListener("DOMContentLoaded", function (event) {
         submitForm({
             form: this,
             onSuccess: (data) => {
-                window.location.href = data.edit_url;
+                window.location.href = `/lectures/${data.id}/edit/`;
             },
         });
     });
 
 });
-
-function getSelectedItems() {
-    let selectedItems = [];
-    document.querySelectorAll("[name='item-checkbox']").forEach((item) => {
-        if (item.checked) {
-            selectedItems.push({
-                type: item.dataset.type,
-                id: item.value,
-                name: item.dataset.name,
-            });
-        }
-    });
-    return selectedItems;
-}
-
-function processBulkAction(items, actionType, destinationId = null) {
-    const maxThreads = 5;
-    let index = 0;
-    let completed = 0;
-
-    return new Promise((resolve) => {
-        function next() {
-            if (index >= items.length) return;
-
-            const currentItem = items[index++];
-            const itemStatus = document.querySelector(`[data-item="${currentItem.type}-${currentItem.id}"]`);
-
-            let url, method, data;
-            if (actionType === "move") {
-                if (currentItem.type === "folder") {
-                    url = API_ROUTES.lectureFolders.detail(currentItem.id).base;
-                    method = "PATCH";
-                    data = {parent: parseInt(destinationId)};
-                } else if (currentItem.type === "lecture") {
-                    url = API_ROUTES.lectures.detail(currentItem.id).base;
-                    method = "PATCH";
-                    data = {folder: parseInt(destinationId)};
-                }
-            } else if (actionType === "delete") {
-                if (currentItem.type === "folder") {
-                    url = API_ROUTES.lectureFolders.detail(currentItem.id).base;
-                    method = "DELETE";
-                } else if (currentItem.type === "lecture") {
-                    url = API_ROUTES.lectures.detail(currentItem.id).base;
-                    method = "DELETE";
-                }
-            }
-
-            drfRequest({
-                url: url,
-                method: method,
-                data: data,
-                onSuccess: () => {
-                    itemStatus.classList.remove("text-muted", "bi-circle");
-                    itemStatus.classList.add("text-success", "bi-check-circle");
-                    checkDone();
-                },
-                onError: (error) => {
-                    itemStatus.classList.remove("text-muted", "bi-circle");
-                    itemStatus.classList.add("text-danger", "bi-x-circle");
-                    itemStatus.title = error.message;
-                    itemStatus.dataset.bsTooltip = "tooltip";
-                    activateTooltips(itemStatus);
-                    checkDone();
-                },
-            });
-        }
-
-        function checkDone() {
-            completed++;
-            if (index < items.length) {
-                next();
-            }
-            if (completed === items.length) {
-                resolve();
-            }
-        }
-
-        for (let i = 0; i < maxThreads && i < items.length; i++) {
-            next();
-        }
-    });
-}

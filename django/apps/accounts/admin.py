@@ -60,6 +60,10 @@ class GroupAdmin(admin.ModelAdmin):
 class UserResource(resources.ModelResource):
     class Meta:
         model = User
+        exclude = ("password",)
+        import_id_fields = ("username",)
+        skip_unchanged = True
+        report_skipped = True
 
     def before_import(self, dataset, **kwargs):
         required_columns = ["username", "password", "first_name", "last_name"]

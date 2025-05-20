@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-05-18 18:22+0900\n"
+"POT-Creation-Date: 2025-05-20 09:32+0900\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -23,38 +23,38 @@ msgid "Profile"
 msgstr "프로필"
 
 #: apps/accounts/admin.py:31 apps/accounts/admin.py:57
-#: apps/accounts/admin.py:166
+#: apps/accounts/admin.py:170
 msgid "Type"
 msgstr "유형"
 
-#: apps/accounts/admin.py:73
+#: apps/accounts/admin.py:77
 #, python-brace-format
 msgid "Missing required columns: {columns}"
 msgstr "해당 열을 포함해야 합니다: {columns}"
 
-#: apps/accounts/admin.py:86
+#: apps/accounts/admin.py:90
 #, python-brace-format
 msgid "{column} is required"
 msgstr "{column}은 필수항목입니다."
 
-#: apps/accounts/admin.py:118 apps/viewer/templates/viewer/viewer.html:60
+#: apps/accounts/admin.py:122 apps/viewer/templates/viewer/viewer.html:60
 #: apps/viewer/templates/viewer/viewer.html:63
-#: apps/viewer/templates/viewer/viewer.html:454
+#: apps/viewer/templates/viewer/viewer.html:474
 msgid "Information"
 msgstr "정보"
 
-#: apps/accounts/admin.py:122 apps/accounts/admin.py:176
+#: apps/accounts/admin.py:126 apps/accounts/admin.py:180
 msgid "Permissions"
 msgstr "권한"
 
-#: apps/accounts/admin.py:126
+#: apps/accounts/admin.py:130
 msgid "Advanced Settings"
 msgstr "고급 설정"
 
-#: apps/accounts/admin.py:165 apps/accounts/templates/accounts/profile.html:34
+#: apps/accounts/admin.py:169 apps/accounts/templates/accounts/profile.html:34
 #: apps/lectures/templates/lectures/lecture_edit.html:29
-#: apps/viewer/templates/viewer/viewer.html:452
-#: apps/viewer/templates/viewer/viewer.html:466
+#: apps/viewer/templates/viewer/viewer.html:472
+#: apps/viewer/templates/viewer/viewer.html:486
 msgid "Name"
 msgstr "이름"
 
@@ -100,84 +100,90 @@ msgstr "새 비밀번호"
 msgid "New Password Confirmation"
 msgstr "새 비밀번호 확인"
 
-#: apps/accounts/models.py:30
+#: apps/accounts/forms.py:71
+#: apps/images/templates/images/image_database.html:634
+msgid "Delete Image"
+msgstr "이미지 삭제"
+
+#: apps/accounts/models.py:61
 msgid "Publisher"
 msgstr "게시자"
 
-#: apps/accounts/models.py:31 apps/viewer/apps.py:8
+#: apps/accounts/models.py:62 apps/viewer/apps.py:8
 msgid "Viewer"
 msgstr "뷰어"
 
-#: apps/accounts/models.py:35
+#: apps/accounts/models.py:66
 msgid "type"
 msgstr "유형"
 
-#: apps/accounts/models.py:39
+#: apps/accounts/models.py:71
 msgid "Type of the group."
 msgstr "그룹의 유형"
 
-#: apps/accounts/models.py:44 apps/core/templates/core/home.html:37
+#: apps/accounts/models.py:76 apps/core/templates/core/home.html:34
 msgid "group"
 msgstr "그룹"
 
-#: apps/accounts/models.py:50
+#: apps/accounts/models.py:84
 msgid "base image folder"
 msgstr "기본 이미지 폴더"
 
-#: apps/accounts/models.py:55
+#: apps/accounts/models.py:89
 msgid "Base image folder for the publisher group."
 msgstr "게시자 그룹의 기본 이미지 폴더"
 
-#: apps/accounts/models.py:59
+#: apps/accounts/models.py:93
 #, python-brace-format
 msgid "Profile for '{group_name}' group"
 msgstr "'{group_name}' 그룹의 프로필"
 
-#: apps/accounts/models.py:169 apps/core/templates/core/home.html:33
+#: apps/accounts/models.py:176 apps/core/templates/core/home.html:30
 msgid "username"
 msgstr "사용자 이름"
 
-#: apps/accounts/models.py:173
+#: apps/accounts/models.py:180
 msgid "Required. 150 characters or fewer. Letters, digits and @/./+/-/_ only."
 msgstr "150자 이하 문자, 숫자 그리고 @/./+/-/_만 가능합니다."
 
-#: apps/accounts/models.py:177
+#: apps/accounts/models.py:184
 msgid "A user with that username already exists."
 msgstr "해당 사용자 이름은 이미 존재합니다."
 
-#: apps/accounts/models.py:180
+#: apps/accounts/models.py:187
 msgid "first name"
 msgstr "이름"
 
-#: apps/accounts/models.py:181
+#: apps/accounts/models.py:188
 msgid "last name"
 msgstr "성"
 
-#: apps/accounts/models.py:183
+#: apps/accounts/models.py:190
 msgid "email address"
 msgstr "이메일 주소"
 
-#: apps/accounts/models.py:189
+#: apps/accounts/models.py:196
 msgid "profile image"
 msgstr "프로필 사진"
 
-#: apps/accounts/models.py:193
+#: apps/accounts/models.py:200
 msgid "Resized to 256x256 px. If blank, default image will be used."
-msgstr "256x256 px로 크기가 조정됩니다. 비어있을 경우 기본 이미지가 사용됩니다."
+msgstr ""
+"256x256 px로 크기가 조정됩니다. 비어있을 경우 기본 이미지가 사용됩니다."
 
-#: apps/accounts/models.py:196
+#: apps/accounts/models.py:203
 msgid "staff status"
 msgstr "스태프 권한"
 
-#: apps/accounts/models.py:198
+#: apps/accounts/models.py:205
 msgid "Designates whether the user can log into this admin site."
 msgstr "사용자가 관리사이트에 로그인이 가능한지를 나타냅니다."
 
-#: apps/accounts/models.py:201
+#: apps/accounts/models.py:208
 msgid "active"
 msgstr "활성"
 
-#: apps/accounts/models.py:204
+#: apps/accounts/models.py:211
 msgid ""
 "Designates whether this user should be treated as active. Unselect this "
 "instead of deleting accounts."
@@ -185,23 +191,23 @@ msgstr ""
 "이 사용자가 활성화되어 있는지를 나타냅니다. 계정을 삭제하는 대신 이것을 선택 "
 "해제하세요."
 
-#: apps/accounts/models.py:208
+#: apps/accounts/models.py:215
 msgid "date joined"
 msgstr "등록일"
 
-#: apps/accounts/models.py:212
+#: apps/accounts/models.py:219
 msgid "base lecture folder"
 msgstr "기본 강의 폴더"
 
-#: apps/accounts/models.py:217
+#: apps/accounts/models.py:224
 msgid "Base lecture folder for the publisher."
 msgstr "게시자의 기본 강의 폴더"
 
-#: apps/accounts/models.py:227
+#: apps/accounts/models.py:234
 msgid "user"
 msgstr "사용자"
 
-#: apps/accounts/models.py:228
+#: apps/accounts/models.py:235
 msgid "users"
 msgstr "사용자"
 
@@ -269,9 +275,9 @@ msgstr "현재 비밀번호"
 #: apps/lectures/templates/lectures/lecture_database.html:555
 #: apps/lectures/templates/lectures/lecture_database.html:596
 #: apps/lectures/templates/lectures/lecture_database.html:616
-#: apps/viewer/templates/viewer/viewer.html:384
-#: apps/viewer/templates/viewer/viewer.html:412
-#: apps/viewer/templates/viewer/viewer.html:433
+#: apps/viewer/templates/viewer/viewer.html:404
+#: apps/viewer/templates/viewer/viewer.html:432
+#: apps/viewer/templates/viewer/viewer.html:453
 msgid "Cancel"
 msgstr "취소"
 
@@ -302,138 +308,124 @@ msgstr "이전"
 msgid "Profile Image"
 msgstr "프로필 사진"
 
-#: apps/accounts/templates/accounts/profile_edit.html:41
-#: apps/images/templates/images/image_database.html:634
-msgid "Delete Image"
-msgstr "이미지 삭제"
-
 #: apps/accounts/templates/accounts/profile_edit.html:84
 #: apps/lectures/templates/lectures/lecture_edit.html:20
 msgid "Save Changes"
 msgstr "변경사항 저장"
 
-#: apps/core/models.py:43 apps/images/models.py:247 apps/images/models.py:626
+#: apps/core/models.py:44 apps/images/models.py:264 apps/images/models.py:652
 #: apps/images/templates/images/image_database.html:346
-#: apps/lectures/models.py:199
-#: apps/lectures/templates/lectures/lecture_edit.html:197
+#: apps/lectures/models.py:221
+#: apps/lectures/templates/lectures/lecture_edit.html:124
 #: apps/viewer/models.py:68
 msgid "name"
 msgstr "이름"
 
-#: apps/core/models.py:45 apps/images/models.py:274 apps/images/models.py:628
-#: apps/lectures/models.py:207 apps/lectures/models.py:309
-#: apps/viewer/models.py:82
+#: apps/core/models.py:46 apps/images/models.py:291 apps/images/models.py:654
+#: apps/lectures/models.py:229 apps/viewer/models.py:82
 msgctxt "date"
 msgid "created"
 msgstr "생성일"
 
-#: apps/core/models.py:49 apps/images/models.py:278 apps/images/models.py:632
-#: apps/lectures/models.py:211 apps/viewer/models.py:86
+#: apps/core/models.py:50 apps/images/models.py:295 apps/images/models.py:658
+#: apps/lectures/models.py:233 apps/viewer/models.py:86
 msgctxt "date"
 msgid "updated"
 msgstr "수정일"
 
-#: apps/core/models.py:55 apps/images/models.py:284 apps/images/models.py:644
-#: apps/images/templates/images/image_database.html:346
-#: apps/lectures/models.py:217
-#: apps/lectures/templates/lectures/lecture_edit.html:197
-#: apps/viewer/models.py:92
+#: apps/core/models.py:56 apps/images/models.py:301 apps/images/models.py:670
+#: apps/lectures/models.py:239 apps/viewer/models.py:92
 msgid "author"
 msgstr "작성자"
 
-#: apps/core/models.py:63
+#: apps/core/models.py:64
 msgctxt "folder"
 msgid "parent"
 msgstr "상위 폴더"
 
-#: apps/core/models.py:77 apps/images/models.py:292 apps/lectures/models.py:225
+#: apps/core/models.py:78 apps/images/models.py:309 apps/lectures/models.py:247
 msgid "folder"
 msgstr "폴더"
 
-#: apps/core/models.py:78
+#: apps/core/models.py:79
 msgid "folders"
 msgstr "폴더"
 
-#: apps/core/templates/core/base.html:57
+#: apps/core/templates/core/base.html:52
 msgid "Admin Site"
 msgstr "관리사이트"
 
-#: apps/core/templates/core/base.html:64
-#, python-format
-msgid "%(username)s's Profile"
-msgstr "%(username)s의 프로필"
-
-#: apps/core/templates/core/base.html:72
+#: apps/core/templates/core/base.html:68
 msgid "Logout"
 msgstr "로그아웃"
 
-#: apps/core/templates/core/base.html:79 apps/core/templates/core/home.html:105
+#: apps/core/templates/core/base.html:75 apps/core/templates/core/home.html:50
 msgid "Login"
 msgstr "로그인"
 
-#: apps/core/templates/core/base.html:131
+#: apps/core/templates/core/base.html:127
 msgid "SEMTLE, Inje University"
 msgstr "셈틀, 인제대학교"
 
-#: apps/core/templates/core/home.html:26
+#: apps/core/templates/core/home.html:23
 #, python-format
 msgid "Welcome, %(name)s"
 msgstr "%(name)s님, 환영합니다"
 
-#: apps/core/templates/core/home.html:43
+#: apps/core/templates/core/home.html:40
 msgid "last login"
 msgstr "마지막 로그인"
 
-#: apps/core/templates/core/home.html:60
+#: apps/core/templates/core/home.html:45
+msgid "Welcome to MediView"
+msgstr "Mediview에 오신 것을 환영합니다"
+
+#: apps/core/templates/core/home.html:47
+msgid "Please log in to access all features."
+msgstr "모든 기능을 이용하시려면 로그인 해주세요."
+
+#: apps/core/templates/core/home.html:66
 #: apps/images/templates/images/image_database.html:13
 #: apps/images/templates/images/image_database.html:66
-#: apps/lectures/templates/lectures/lecture_edit.html:136
+#: apps/lectures/templates/lectures/lecture_edit.html:94
 msgid "Image"
 msgstr "이미지"
 
-#: apps/core/templates/core/home.html:61
+#: apps/core/templates/core/home.html:67
 msgid "Navigate all uploaded images with a folder structure"
 msgstr "업로드된 모든 이미지를 폴더 구조로 탐색하기"
 
-#: apps/core/templates/core/home.html:63
+#: apps/core/templates/core/home.html:69
 msgid "View DB/Image"
 msgstr "DB/이미지 보기"
 
-#: apps/core/templates/core/home.html:71
+#: apps/core/templates/core/home.html:77
 #: apps/lectures/templates/lectures/lecture_database.html:12
 #: apps/lectures/templates/lectures/lecture_database.html:65
 msgid "Lecture"
 msgstr "강의"
 
-#: apps/core/templates/core/home.html:72
+#: apps/core/templates/core/home.html:78
 msgid "Navigate all your lectures with a folder structure."
 msgstr "생성된 강의를 폴더 구조로 탐색하기"
 
-#: apps/core/templates/core/home.html:75
+#: apps/core/templates/core/home.html:81
 msgid "View DB/Lecture"
 msgstr "DB/강의 보기"
 
-#: apps/core/templates/core/home.html:84
+#: apps/core/templates/core/home.html:90
 msgctxt "home"
 msgid "Lectures"
 msgstr "강의 목록"
 
-#: apps/core/templates/core/home.html:85
+#: apps/core/templates/core/home.html:91
 msgid "View all opened lectures."
 msgstr "열려있는 모든 강의 보기"
 
-#: apps/core/templates/core/home.html:88
+#: apps/core/templates/core/home.html:94
 msgctxt "home"
 msgid "View Lectures"
 msgstr "강의 목록 보기"
-
-#: apps/core/templates/core/home.html:101
-msgid "Welcome to MediView"
-msgstr "Mediview에 오신 것을 환영합니다"
-
-#: apps/core/templates/core/home.html:102
-msgid "Please log in to access all features."
-msgstr "모든 기능을 이용하시려면 로그인 해주세요."
 
 #: apps/images/admin.py:8 apps/images/admin.py:13
 msgid "Root Folder"
@@ -443,20 +435,20 @@ msgstr "루트 폴더"
 msgid "Non-Root Folder"
 msgstr "비 루트 폴더"
 
-#: apps/images/api/serializers.py:37 apps/lectures/api/serializers.py:33
+#: apps/images/api/serializers.py:34 apps/lectures/api/serializers.py:32
 msgid "The folder with the name already exists in this location."
 msgstr "동일한 이름의 폴더가 이미 현재 위치에 있습니다."
 
-#: apps/images/api/serializers.py:51 apps/lectures/api/serializers.py:47
+#: apps/images/api/serializers.py:48 apps/lectures/api/serializers.py:46
 msgid "You can't place folder at the root location."
 msgstr "루트에 폴더를 둘 수 없습니다."
 
-#: apps/images/api/serializers.py:53 apps/images/api/views.py:107
-#: apps/lectures/api/serializers.py:49 apps/lectures/api/views.py:83
+#: apps/images/api/serializers.py:50 apps/images/api/views.py:107
+#: apps/lectures/api/serializers.py:48 apps/lectures/api/views.py:83
 msgid "You don't have permission to edit this folder."
 msgstr "이 폴더에 대한 수정 권한이 없습니다."
 
-#: apps/images/api/serializers.py:126 apps/images/api/views.py:213
+#: apps/images/api/serializers.py:112 apps/images/api/views.py:213
 #: apps/images/api/views.py:318
 msgid "You don't have permission to edit this slide."
 msgstr "이 슬라이드에 대한 수정 권한이 없습니다."
@@ -468,7 +460,7 @@ msgstr "폴더에 파일이 있어 삭제할 수 없습니다."
 #: apps/images/api/views.py:62 apps/images/api/views.py:80
 #: apps/images/api/views.py:149 apps/images/views.py:62
 #: apps/lectures/api/views.py:56 apps/lectures/api/views.py:125
-#: apps/lectures/views.py:116
+#: apps/lectures/views.py:118
 msgid "Root"
 msgstr "루트"
 
@@ -501,7 +493,7 @@ msgid "You don't have permission to delete this slide."
 msgstr "이 슬라이드에 대한 삭제 권한이 없습니다."
 
 #: apps/images/api/views.py:217 apps/images/api/views.py:311
-#: apps/viewer/api/serializers.py:37
+#: apps/viewer/api/serializers.py:32
 msgid "You don't have permission to view this slide."
 msgstr "이 슬라이드에 대한 보기 권한이 없습니다."
 
@@ -535,102 +527,104 @@ msgstr "슬라이드를 복구하는데 실패했습니다."
 msgid "Images"
 msgstr "이미지"
 
-#: apps/images/models.py:96 apps/images/models.py:300
+#: apps/images/models.py:96 apps/images/models.py:317
+#: apps/images/templates/images/image_database.html:346
+#: apps/lectures/templates/lectures/lecture_edit.html:124
 msgid "manager group"
 msgstr "편집 권한 그룹"
 
-#: apps/images/models.py:238
+#: apps/images/models.py:255
 msgid "Pending"
 msgstr "대기중"
 
-#: apps/images/models.py:239
+#: apps/images/models.py:256
 msgid "Processing"
 msgstr "처리중"
 
-#: apps/images/models.py:240
+#: apps/images/models.py:257
 msgid "Done"
 msgstr "완료"
 
-#: apps/images/models.py:241
+#: apps/images/models.py:258
 #: apps/images/templates/images/image_database.html:220
 #: apps/images/templates/images/image_database.html:228
 msgid "Failed"
 msgstr "실패"
 
-#: apps/images/models.py:248
+#: apps/images/models.py:265
 msgid "information"
 msgstr "정보"
 
-#: apps/images/models.py:250
+#: apps/images/models.py:267
 msgid "file"
 msgstr "파일"
 
-#: apps/images/models.py:254
+#: apps/images/models.py:271
 msgid "metadata"
 msgstr "메타데이터"
 
-#: apps/images/models.py:256
+#: apps/images/models.py:273
 msgid "image root"
 msgstr "이미지 루트"
 
-#: apps/images/models.py:259
+#: apps/images/models.py:276
 msgid "Relative path to the image directory."
 msgstr "이미지 폴더의 상대 경로"
 
-#: apps/images/models.py:262
+#: apps/images/models.py:279
 msgid "public"
 msgstr "공개 여부"
 
-#: apps/images/models.py:264
+#: apps/images/models.py:281
 msgid "Whether the slide is public or private (manager group)."
 msgstr "슬라이드가 공개되어 있는지 편집 권한 그룹 내에만 공개되어 있는지."
 
-#: apps/images/models.py:267
+#: apps/images/models.py:284
 msgid "build status"
 msgstr "빌드 상태"
 
-#: apps/images/models.py:271
+#: apps/images/models.py:288
 msgid "Status of the slide processing."
 msgstr "슬라이드 처리 상태"
 
-#: apps/images/models.py:310 apps/lectures/models.py:321
+#: apps/images/models.py:327 apps/lectures/models.py:359
 #: apps/viewer/models.py:100
 msgid "slide"
 msgstr "슬라이드"
 
-#: apps/images/models.py:311 apps/images/models.py:638
+#: apps/images/models.py:328 apps/images/models.py:664
 msgid "slides"
 msgstr "슬라이드"
 
-#: apps/images/models.py:464
+#: apps/images/models.py:490
 msgid "Initializing slide"
 msgstr "슬라이드 초기화 중"
 
-#: apps/images/models.py:503
+#: apps/images/models.py:529
 msgid "Slide initialized"
 msgstr "슬라이드 초기화됨"
 
-#: apps/images/models.py:525
+#: apps/images/models.py:551
 msgid "Creating DZI file"
 msgstr "DZI 파일 생성중"
 
-#: apps/images/models.py:553
+#: apps/images/models.py:579
 msgid "Processing tiles"
 msgstr "타일 이미지 처리중"
 
-#: apps/images/models.py:570
+#: apps/images/models.py:596
 msgid "Tile generation complete"
 msgstr "타일 이미지 생성 완료"
 
-#: apps/images/models.py:580
+#: apps/images/models.py:606
 msgid "Failed to generate tiles"
 msgstr "타일 이미지 생성 실패"
 
-#: apps/images/models.py:652
+#: apps/images/models.py:678
 msgid "Tag"
 msgstr "태그"
 
-#: apps/images/models.py:653
+#: apps/images/models.py:679
 msgid "Tags"
 msgstr "태그"
 
@@ -678,8 +672,8 @@ msgstr "삭제"
 
 #: apps/images/templates/images/image_database.html:74
 #: apps/images/templates/images/image_database.html:338
-#: apps/lectures/templates/lectures/lecture_edit.html:142
-#: apps/lectures/templates/lectures/lecture_edit.html:189
+#: apps/lectures/templates/lectures/lecture_edit.html:100
+#: apps/lectures/templates/lectures/lecture_edit.html:116
 msgid "Search"
 msgstr "검색"
 
@@ -758,7 +752,7 @@ msgstr "폴더 이름"
 #: apps/images/templates/images/image_database.html:384
 #: apps/lectures/templates/lectures/lecture_database.html:321
 #: apps/lectures/templates/lectures/lecture_database.html:444
-#: apps/viewer/templates/viewer/viewer.html:348
+#: apps/viewer/templates/viewer/viewer.html:367
 msgid "Create"
 msgstr "생성"
 
@@ -792,7 +786,7 @@ msgstr "폴더 상세 정보"
 #: apps/images/templates/images/image_database.html:708
 #: apps/lectures/templates/lectures/lecture_database.html:414
 #: apps/lectures/templates/lectures/lecture_database.html:576
-#: apps/viewer/templates/viewer/viewer.html:501
+#: apps/viewer/templates/viewer/viewer.html:521
 msgid "Close"
 msgstr "닫기"
 
@@ -811,7 +805,7 @@ msgstr "비워둔 경우 파일 이름과 동일"
 
 #: apps/images/templates/images/image_database.html:511
 #: apps/images/templates/images/image_database.html:572
-#: apps/viewer/templates/viewer/viewer.html:447
+#: apps/viewer/templates/viewer/viewer.html:467
 msgid "Image Information"
 msgstr "이미지 정보"
 
@@ -865,7 +859,7 @@ msgid "Rename Annotation"
 msgstr "주석 이름 변경"
 
 #: apps/images/templates/images/image_database.html:726
-#: apps/viewer/templates/viewer/viewer.html:404
+#: apps/viewer/templates/viewer/viewer.html:424
 msgid "Annotation Name"
 msgstr "주석 이름"
 
@@ -887,21 +881,21 @@ msgstr "선택 항목 이동"
 msgid "Next"
 msgstr "다음"
 
-#: apps/lectures/api/serializers.py:106
+#: apps/lectures/api/serializers.py:103
 msgid "You can't place lecture at the root location."
 msgstr "루트에 강의를 둘 수 없습니다."
 
-#: apps/lectures/api/serializers.py:108 apps/lectures/api/views.py:141
+#: apps/lectures/api/serializers.py:105 apps/lectures/api/views.py:141
 #: apps/lectures/api/views.py:229
 msgid "You don't have permission to edit this lecture."
 msgstr "이 강의에 대한 수정 권한이 없습니다."
 
-#: apps/lectures/api/serializers.py:116
+#: apps/lectures/api/serializers.py:113
 #, python-brace-format
 msgid "You don't have permission to view slide '{name}'."
 msgstr "'{name}' 슬라이드에 대한 보기 권한이 없습니다."
 
-#: apps/lectures/api/serializers.py:120
+#: apps/lectures/api/serializers.py:119
 #, python-brace-format
 msgid "You don't have permission to view annotation '{name}'."
 msgstr "'{name}' 주석에 대한 보기 권한이 없습니다."
@@ -946,55 +940,55 @@ msgstr "이 강의에 대한 삭제 권한이 없습니다."
 msgid "Lectures"
 msgstr "강의"
 
-#: apps/lectures/models.py:82 apps/lectures/models.py:233
+#: apps/lectures/models.py:82 apps/lectures/models.py:255
 msgid "manager"
 msgstr "편집 권한자"
 
-#: apps/lectures/models.py:200 apps/viewer/models.py:70
+#: apps/lectures/models.py:222 apps/viewer/models.py:70
 msgid "description"
 msgstr "설명"
 
-#: apps/lectures/models.py:202
+#: apps/lectures/models.py:224
 msgid "open"
 msgstr "열림"
 
-#: apps/lectures/models.py:204
+#: apps/lectures/models.py:226
 msgid "Whether the lecture is open for viewer groups or not."
 msgstr "강의가 뷰어 그룹에게 열려있는지 아닌지."
 
-#: apps/lectures/models.py:241
+#: apps/lectures/models.py:263
 msgid "viewer groups"
 msgstr "뷰어 그룹"
 
-#: apps/lectures/models.py:244
+#: apps/lectures/models.py:266
 msgid "The groups that can view the lecture."
 msgstr "이 강의를 볼 수 있는 그룹."
 
-#: apps/lectures/models.py:250 apps/lectures/models.py:315
+#: apps/lectures/models.py:272 apps/lectures/models.py:353
 msgid "lecture"
 msgstr "강의"
 
-#: apps/lectures/models.py:251
+#: apps/lectures/models.py:273
 msgid "lectures"
 msgstr "강의"
 
-#: apps/lectures/models.py:305
+#: apps/lectures/models.py:347
 msgid "order"
 msgstr "순서"
 
-#: apps/lectures/models.py:306
+#: apps/lectures/models.py:348
 msgid "Order inside the lecture"
 msgstr "강의 내 배열 순서"
 
-#: apps/lectures/models.py:327 apps/viewer/models.py:108
+#: apps/lectures/models.py:365 apps/viewer/models.py:108
 msgid "annotation"
 msgstr "주석"
 
-#: apps/lectures/models.py:335
+#: apps/lectures/models.py:375
 msgid "lecture content"
 msgstr "강의 내용"
 
-#: apps/lectures/models.py:336
+#: apps/lectures/models.py:376
 msgid "lecture contents"
 msgstr "강의 내용"
 
@@ -1093,65 +1087,43 @@ msgid "Edit Lecture"
 msgstr "강의 수정"
 
 #: apps/lectures/templates/lectures/lecture_edit.html:34
-#: apps/viewer/templates/viewer/viewer.html:325
-#: apps/viewer/templates/viewer/viewer.html:425
+#: apps/viewer/templates/viewer/viewer.html:445
 msgid "Description"
 msgstr "설명"
 
-#: apps/lectures/templates/lectures/lecture_edit.html:41
+#: apps/lectures/templates/lectures/lecture_edit.html:40
 msgid "Viewer Groups"
 msgstr "뷰어 그룹"
 
-#: apps/lectures/templates/lectures/lecture_edit.html:42
+#: apps/lectures/templates/lectures/lecture_edit.html:41
 msgid "Select the groups that can view this lecture."
 msgstr "이 강의를 보여줄 그룹을 선택하세요."
 
-#: apps/lectures/templates/lectures/lecture_edit.html:45
+#: apps/lectures/templates/lectures/lecture_edit.html:44
 msgid "Publishers"
 msgstr "게시자"
 
-#: apps/lectures/templates/lectures/lecture_edit.html:60
+#: apps/lectures/templates/lectures/lecture_edit.html:59
 msgid "Viewers"
 msgstr "뷰어"
 
-#: apps/lectures/templates/lectures/lecture_edit.html:83
+#: apps/lectures/templates/lectures/lecture_edit.html:82
 msgid "Lecture Contents"
 msgstr "강의 내용"
 
-#: apps/lectures/templates/lectures/lecture_edit.html:84
+#: apps/lectures/templates/lectures/lecture_edit.html:83
 msgid "These images will be added to the lecture."
 msgstr "강의를 구성할 이미지 목록 입니다."
 
-#: apps/lectures/templates/lectures/lecture_edit.html:107
-msgid "Annotation"
-msgstr "주석"
-
-#: apps/lectures/templates/lectures/lecture_edit.html:112
-#: apps/lectures/templates/lectures/lecture_edit.html:117
-msgid "None"
-msgstr "없음"
-
-#: apps/lectures/templates/lectures/lecture_edit.html:121
-msgid "Remove"
-msgstr "제거"
-
-#: apps/lectures/templates/lectures/lecture_edit.html:137
+#: apps/lectures/templates/lectures/lecture_edit.html:95
 msgid "Select images to add."
 msgstr "추가할 이미지를 선택해주세요."
 
-#: apps/lectures/templates/lectures/lecture_edit.html:163
-msgid "Add"
-msgstr "추가"
-
-#: apps/lectures/templates/lectures/lecture_edit.html:179
-msgid "There's nothing in database."
-msgstr "데이터베이스에 아무 것도 없습니다."
-
-#: apps/lectures/templates/lectures/lecture_view.html:42
+#: apps/lectures/templates/lectures/lecture_view.html:112
 msgid "No items."
 msgstr "항목 없음."
 
-#: apps/lectures/views.py:69
+#: apps/lectures/views.py:71
 msgid "You don't have permission to access this page."
 msgstr "이 페이지에 대한 접근 권한이 없습니다."
 
@@ -1210,9 +1182,9 @@ msgid "Brightness"
 msgstr "밝기"
 
 #: apps/viewer/templates/viewer/viewer.html:112
-#: apps/viewer/templates/viewer/viewer.html:128
-#: apps/viewer/templates/viewer/viewer.html:144
-#: apps/viewer/templates/viewer/viewer.html:189
+#: apps/viewer/templates/viewer/viewer.html:129
+#: apps/viewer/templates/viewer/viewer.html:146
+#: apps/viewer/templates/viewer/viewer.html:191
 msgid "Reset"
 msgstr "초기화"
 
@@ -1220,141 +1192,166 @@ msgstr "초기화"
 msgid "Contrast"
 msgstr "대비"
 
-#: apps/viewer/templates/viewer/viewer.html:137
+#: apps/viewer/templates/viewer/viewer.html:138
 msgid "Saturation"
 msgstr "채도"
 
-#: apps/viewer/templates/viewer/viewer.html:152
+#: apps/viewer/templates/viewer/viewer.html:154
 msgid "Change Magnification"
 msgstr "배율 변경"
 
-#: apps/viewer/templates/viewer/viewer.html:198
+#: apps/viewer/templates/viewer/viewer.html:200
 msgid "Drawing"
 msgstr "그림"
 
-#: apps/viewer/templates/viewer/viewer.html:206
+#: apps/viewer/templates/viewer/viewer.html:210
 msgid "Circle"
 msgstr "원"
 
-#: apps/viewer/templates/viewer/viewer.html:212
+#: apps/viewer/templates/viewer/viewer.html:216
 msgid "Rectangle"
 msgstr "직사각형"
 
-#: apps/viewer/templates/viewer/viewer.html:218
+#: apps/viewer/templates/viewer/viewer.html:222
 msgid "Polygon"
 msgstr "다각형"
 
-#: apps/viewer/templates/viewer/viewer.html:228
+#: apps/viewer/templates/viewer/viewer.html:232
 msgid "Linear Measure"
 msgstr "길이 측정"
 
-#: apps/viewer/templates/viewer/viewer.html:237
+#: apps/viewer/templates/viewer/viewer.html:241
 msgid "Color"
 msgstr "색상"
 
-#: apps/viewer/templates/viewer/viewer.html:273
+#: apps/viewer/templates/viewer/viewer.html:277
 msgid "Hide Annotations"
 msgstr "주석 숨기기"
 
-#: apps/viewer/templates/viewer/viewer.html:279
+#: apps/viewer/templates/viewer/viewer.html:283
 msgid "Remove Selected Annotation"
 msgstr "선택한 주석 제거"
 
-#: apps/viewer/templates/viewer/viewer.html:285
+#: apps/viewer/templates/viewer/viewer.html:289
 msgid "Edit Selected Annotation"
 msgstr "선택한 주석 수정"
 
-#: apps/viewer/templates/viewer/viewer.html:294
+#: apps/viewer/templates/viewer/viewer.html:298
 msgid "Reset Magnification"
 msgstr "배율 초기화"
 
-#: apps/viewer/templates/viewer/viewer.html:299
+#: apps/viewer/templates/viewer/viewer.html:303
 msgid "Screenshot"
 msgstr "스크린샷"
 
-#: apps/viewer/templates/viewer/viewer.html:316
+#: apps/viewer/templates/viewer/viewer.html:321
 msgid "Edit Description"
 msgstr "설명 수정"
 
-#: apps/viewer/templates/viewer/viewer.html:329
-#: apps/viewer/templates/viewer/viewer.html:386
-#: apps/viewer/templates/viewer/viewer.html:414
+#: apps/viewer/templates/viewer/viewer.html:327
+#: apps/viewer/templates/viewer/viewer.html:337
+msgid "None"
+msgstr "없음"
+
+#: apps/viewer/templates/viewer/viewer.html:330
+msgid "Select Annotation"
+msgstr "주석 선택"
+
+#: apps/viewer/templates/viewer/viewer.html:345
+#: apps/viewer/templates/viewer/viewer.html:406
+#: apps/viewer/templates/viewer/viewer.html:434
 msgid "Save"
 msgstr "저장"
 
-#: apps/viewer/templates/viewer/viewer.html:336
+#: apps/viewer/templates/viewer/viewer.html:353
 msgid "Update Annotation"
 msgstr "주석 업데이트"
 
-#: apps/viewer/templates/viewer/viewer.html:339
+#: apps/viewer/templates/viewer/viewer.html:356
 msgid "Update"
 msgstr "업데이트"
 
-#: apps/viewer/templates/viewer/viewer.html:345
+#: apps/viewer/templates/viewer/viewer.html:363
 msgid "Create Annotation"
 msgstr "주석 생성"
 
-#: apps/viewer/templates/viewer/viewer.html:376
+#: apps/viewer/templates/viewer/viewer.html:396
 msgid "Annotation Details"
 msgstr "주석 상세 정보"
 
-#: apps/viewer/templates/viewer/viewer.html:377
+#: apps/viewer/templates/viewer/viewer.html:397
 msgid "Title"
 msgstr "제목"
 
-#: apps/viewer/templates/viewer/viewer.html:379
+#: apps/viewer/templates/viewer/viewer.html:399
 msgid "Comment"
 msgstr "설명"
 
-#: apps/viewer/templates/viewer/viewer.html:396
+#: apps/viewer/templates/viewer/viewer.html:416
 msgid "New Annotation"
 msgstr "새 주석"
 
-#: apps/viewer/templates/viewer/viewer.html:436
+#: apps/viewer/templates/viewer/viewer.html:456
 msgid "Apply"
 msgstr "적용"
 
-#: apps/viewer/templates/viewer/viewer.html:456
+#: apps/viewer/templates/viewer/viewer.html:476
 msgid "Author"
 msgstr "작성자"
 
-#: apps/viewer/templates/viewer/viewer.html:458
+#: apps/viewer/templates/viewer/viewer.html:478
 msgid "Manager Group"
 msgstr "편집 권한 그룹"
 
-#: apps/viewer/templates/viewer/viewer.html:460
+#: apps/viewer/templates/viewer/viewer.html:480
 msgid "Folder"
 msgstr "폴더"
 
-#: apps/viewer/templates/viewer/viewer.html:462
+#: apps/viewer/templates/viewer/viewer.html:482
 msgid "Original File"
 msgstr "원본 파일"
 
-#: apps/viewer/templates/viewer/viewer.html:468
+#: apps/viewer/templates/viewer/viewer.html:488
 msgid "File Size"
 msgstr "파일 용량"
 
-#: apps/viewer/templates/viewer/viewer.html:473
+#: apps/viewer/templates/viewer/viewer.html:493
 msgid "Associated Images"
 msgstr "연관 이미지"
 
-#: apps/viewer/templates/viewer/viewer.html:480
+#: apps/viewer/templates/viewer/viewer.html:500
 msgid "Metadata"
 msgstr "메타데이터"
 
-#: apps/viewer/templates/viewer/viewer.html:484
+#: apps/viewer/templates/viewer/viewer.html:504
 msgid "Vendor"
 msgstr "공급업체"
 
-#: apps/viewer/templates/viewer/viewer.html:486
-#: apps/viewer/templates/viewer/viewer.html:493
+#: apps/viewer/templates/viewer/viewer.html:506
+#: apps/viewer/templates/viewer/viewer.html:513
 msgid "Created"
 msgstr "생성일"
 
-#: apps/viewer/templates/viewer/viewer.html:488
+#: apps/viewer/templates/viewer/viewer.html:508
 msgid "Objective Power"
 msgstr "대물렌즈 배율"
 
-#: apps/viewer/templates/viewer/viewer.html:495
+#: apps/viewer/templates/viewer/viewer.html:515
 msgid "Updated"
 msgstr "수정일"
+
+#~ msgid "Annotation"
+#~ msgstr "주석"
+
+#~ msgid "Remove"
+#~ msgstr "제거"
+
+#~ msgid "Add"
+#~ msgstr "추가"
+
+#~ msgid "There's nothing in database."
+#~ msgstr "데이터베이스에 아무 것도 없습니다."
+
+#, python-format
+#~ msgid "%(username)s's Profile"
+#~ msgstr "%(username)s의 프로필"

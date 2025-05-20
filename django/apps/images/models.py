@@ -22,7 +22,7 @@ from apps.core.models import (
     ManagerPermissionMixin,
     ModelPermissionMixin,
 )
-from apps.lectures.models import Lecture
+from apps.lectures.models import Lecture, LectureContent
 
 logger = logging.getLogger("django")
 
@@ -103,21 +103,24 @@ class ImageFolder(ModelPermissionMixin, AbstractFolder):
     objects = ImageFolderManager()
 
     def save(self, *args, **kwargs):
+        handle_manager_group = False
+
         if self.pk:
-            old_instance = self.__class__.objects.get(pk=self.pk)
-            if old_instance.manager_group != self.manager_group:
-                for slide in self.get_images(cumulative=True):
-                    for content in slide.lecture_contents.all():
-                        content.handle_non_viewable()
+            old = self.__class__.objects.get(pk=self.pk)
+
+            # manager group
+            if (
+                not self.is_root_node()
+                and self.manager_group != self.parent.manager_group
+            ):
+                self.manager_group = self.parent.manager_group
+
+            handle_manager_group = self.manager_group != old.manager_group
 
         super().save(*args, **kwargs)
 
-        if not self.is_root_node():
-            if self.manager_group != self.parent.manager_group:
-                self.manager_group = self.parent.manager_group
-                self.__class__.objects.filter(pk=self.pk).update(
-                    manager_group=self.manager_group
-                )
+        if handle_manager_group:
+            self._update_descendants_and_images_manager()
 
     def file_count(self, cumulative=False):
         return self.get_images(cumulative=cumulative).count()
@@ -147,6 +150,20 @@ class ImageFolder(ModelPermissionMixin, AbstractFolder):
                 folder__in=self.get_descendants(include_self=True)
             )
         return self.slides.all()
+
+    def _update_descendants_and_images_manager(self):
+        descendants = self.get_descendants(include_self=True)
+        descendants.update(manager=self.manager_group)
+
+        slides = (
+            Slide.objects.filter(folder__in=descendants)
+            .select_related("manager_group")
+            .only("id", "manager_group_id")
+        )
+        slides.update(manager=self.manager_group)
+        # reduce the memory load by using iterator to disable caching
+        for slide in slides.iterator():
+            LectureContent.objects.handle_unavailable_by_slide(slide)
 
 
 class SlideManager(ManagerPermissionMixin, models.Manager):
@@ -315,43 +332,40 @@ class Slide(ModelPermissionMixin, models.Model):
         return self.name
 
     def save(self, *args, **kwargs):
-        try:
-            if self.pk:
-                old_instance = self.__class__.objects.get(pk=self.pk)
-                if old_instance.file != self.file:
-                    self.build_status = self.BuildStatus.PENDING
-                    old_instance.file.delete()
-                    self._delete_directory(old_instance.image_directory_path)
-                if (
-                    old_instance.manager_group != self.manager_group
-                    or old_instance.is_public != self.is_public
-                ):
-                    for content in self.lecture_contents.all():
-                        content.handle_non_viewable()
+        handle_manager_group = False
 
-            super().save(*args, **kwargs)
+        # image root
+        if not self.image_root:
+            self.image_root = os.path.join("protected/processed_images", str(self.id))
 
-            if not self.image_root:
-                image_root = os.path.join("protected/processed_images", str(self.id))
-                self.__class__.objects.filter(pk=self.pk).update(image_root=image_root)
-                self.image_root = image_root
+        if self.pk:
+            old = self.__class__.objects.get(pk=self.pk)
 
-            if self.build_status == self.BuildStatus.PENDING:
-                build_slide_task.delay(self.pk)
+            # file
+            if self.file != old.file:
+                old.file.delete()
+                self._delete_directory(old.image_directory_path)
+                self.build_status = self.BuildStatus.PENDING
 
-            if self.folder:
-                if self.manager_group != self.folder.manager_group:
-                    self.manager_group = self.folder.manager_group
-                    self.__class__.objects.filter(pk=self.pk).update(
-                        manager_group=self.manager_group
-                    )
-            else:
-                if self.manager_group:
-                    self.manager_group = None
-                    self.__class__.objects.filter(pk=self.pk).update(manager_group=None)
+            # manager group
+            if self.folder and self.manager_group != self.folder.manager_group:
+                self.manager_group = self.folder.manager_group
+            elif not self.folder and self.manager_group:
+                self.manager_group = None
 
-        except Exception as e:
-            raise Exception(f"Failed to save slide: {str(e)}")
+            handle_manager_group = (
+                self.manager_group != old.manager_group
+                or self.is_public != old.is_public
+            )
+
+        super().save(*args, **kwargs)
+
+        # build
+        if self.build_status == self.BuildStatus.PENDING:
+            build_slide_task.delay(self.pk)
+
+        if handle_manager_group:
+            LectureContent.objects.handle_unavailable_by_slide(self)
 
     def delete(self, *args, **kwargs):
         try:
@@ -396,21 +410,33 @@ class Slide(ModelPermissionMixin, models.Model):
             return True
         return self.manager_group in user.groups.all()
 
-    def build_slide(self):
-        try:
-            self._delete_directory(self.image_directory_path)
-            with OpenSlide(self.file.path) as slide:
-                self._initialize_slide(slide)
-                self._generate_tiles(slide)
-        except Exception as e:
-            raise Exception(f"Failed to process slide: {str(e)}")
-
     def building(self):
         if self.build_status == self.BuildStatus.PENDING:
             return True
         if self.build_status == self.BuildStatus.PROCESSING:
             return True
         return False
+
+    def run_build_process(self):
+        try:
+            self.__class__.objects.filter(pk=self.pk).update(
+                build_status=self.BuildStatus.PROCESSING
+            )
+
+            # process
+            self._delete_directory(self.image_directory_path)
+            with OpenSlide(self.file.path) as slide:
+                self._initialize_slide(slide)
+                self._generate_tiles(slide)
+
+            self.__class__.objects.filter(pk=self.pk).update(
+                build_status=self.BuildStatus.DONE
+            )
+        except Exception as e:
+            self.__class__.objects.filter(pk=self.pk).update(
+                build_status=self.BuildStatus.FAILED
+            )
+            logger.error(f"Failed to build slide {self.pk}: {e}")
 
     @property
     def file_name(self):
@@ -662,15 +688,6 @@ class Tag(models.Model):
 def build_slide_task(slide_id):
     try:
         slide = Slide.objects.get(pk=slide_id)
-        slide.build_status = slide.BuildStatus.PROCESSING
-        slide.save(update_fields=["build_status"])
-        slide.build_slide()
-        slide.build_status = Slide.BuildStatus.DONE
-        slide.save(update_fields=["build_status"])
-    except Exception as e:
-        try:
-            slide = Slide.objects.get(pk=slide_id)
-            slide.build_status = Slide.BuildStatus.FAILED
-            slide.save(update_fields=["build_status"])
-        finally:
-            logger.error(f"Failed to process slide {slide_id}: {str(e)}")
+        slide.run_build_process()
+    except Slide.DoesNotExist:
+        logger.error(f"Slide {slide_id} does not exist.")

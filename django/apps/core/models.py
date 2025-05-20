@@ -1,4 +1,5 @@
 from django.conf import settings
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import AutoField
 from django.utils.translation import gettext_lazy as _lazy, pgettext_lazy
@@ -61,7 +62,7 @@ class AbstractFolder(MPTTModel):
     parent = TreeForeignKey(
         "self",
         verbose_name=pgettext_lazy("folder", "parent"),
-        on_delete=models.CASCADE,
+        on_delete=models.CASCADE,  # CASCADE doesn't trigger delete()
         related_name="children",
         blank=True,
         null=True,
@@ -83,8 +84,8 @@ class AbstractFolder(MPTTModel):
         return self.get_full_path()
 
     def delete(self, *args, **kwargs):
-        if self.file_count():
-            raise ValueError("Cannot delete a folder that contains files.")
+        if self.file_count(cumulative=True) > 0:
+            raise ValidationError("Cannot delete a folder that contains files.")
         super().delete(*args, **kwargs)
 
     def get_full_path(self):

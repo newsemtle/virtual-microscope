@@ -12,17 +12,48 @@ from django.contrib.auth.models import (
 )
 from django.contrib.auth.validators import UnicodeUsernameValidator
 from django.core.cache import cache
+from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.db import models
 from django.db.models import Q
-from django.db.models.signals import m2m_changed, post_save
+from django.db.models.signals import m2m_changed, post_save, pre_delete
 from django.dispatch import receiver
 from django.utils import timezone
 from django.utils.translation import gettext as _, gettext_lazy as _lazy
 
 from apps.images.models import ImageFolder
-from apps.lectures.models import LectureFolder
+from apps.lectures.models import LectureFolder, LectureContent
 
 logger = logging.getLogger("django")
+
+
+@receiver(post_save, sender=Group)
+def update_group_profile(sender, instance, created, **kwargs):
+    try:
+        profile = instance.profile
+        if not profile.base_image_folder and profile.is_publisher_type():
+            profile.create_base_image_folder()
+        elif (
+            profile.base_image_folder
+            and profile.base_image_folder.name != instance.name.title()
+        ):
+            profile.base_image_folder.name = instance.name.title()
+            profile.base_image_folder.save(update_fields=["name"])
+
+    except ObjectDoesNotExist:
+        GroupProfile.objects.create(group=instance)
+
+
+@receiver(pre_delete, sender=Group)
+def on_delete_group_profile(sender, instance, **kwargs):
+    profile = instance.profile
+
+    try:
+        if profile.base_image_folder:
+            profile.base_image_folder.delete()
+    except ValidationError as e:
+        logger.error(f"Failed to delete base image folder: {str(e)}")
+
+    profile.delete()
 
 
 class GroupProfile(models.Model):
@@ -35,6 +66,7 @@ class GroupProfile(models.Model):
         _lazy("type"),
         max_length=10,
         choices=Type.choices,
+        default=Type.VIEWER,
         blank=False,
         help_text=_lazy("Type of the group."),
     )
@@ -42,13 +74,15 @@ class GroupProfile(models.Model):
     group = models.OneToOneField(
         "auth.Group",
         verbose_name=_lazy("group"),
-        on_delete=models.CASCADE,
+        on_delete=models.SET_NULL,
         related_name="profile",
+        blank=True,
+        null=True,
     )
     base_image_folder = models.OneToOneField(
         "images.ImageFolder",
         verbose_name=_lazy("base image folder"),
-        on_delete=models.CASCADE,
+        on_delete=models.SET_NULL,
         related_name="groupprofile",
         blank=True,
         null=True,
@@ -59,67 +93,37 @@ class GroupProfile(models.Model):
         return _("Profile for '{group_name}' group").format(group_name=self.group.name)
 
     def save(self, *args, **kwargs):
-        created = False if self.pk else True
-
         super().save(*args, **kwargs)
-
-        if created:
-            self.set_default_permission()
-
-    def delete(self, *args, **kwargs):
-        try:
-            if self.group:
-                self.group.delete()
-        except Exception as e:
-            logger.error(f"Failed to delete group: {str(e)}")
-
-        try:
-            if self.base_image_folder:
-                self.base_image_folder.delete()
-        except Exception as e:
-            logger.error(f"Failed to delete base folder: {str(e)}")
-
-        super().delete(*args, **kwargs)
+        self.set_default_permission()
 
     def set_default_permission(self):
-        if self.is_publisher_group():
+        if self.is_publisher_type():
             q = Q(content_type__app_label="images")
             q |= Q(content_type__app_label="lectures")
             q |= Q(content_type__model="annotation")
             self.group.permissions.set(Permission.objects.filter(q))
-        elif self.is_viewer_group():
+        elif self.is_viewer_type():
             q = Q(content_type__model="slide", codename__contains="view")
             q |= Q(content_type__model="lecture", codename__contains="view")
             q |= Q(content_type__model="lecturecontent", codename__contains="view")
             q |= Q(content_type__model="annotation", codename__contains="view")
             self.group.permissions.set(Permission.objects.filter(q))
 
-    def is_publisher_group(self):
+    def is_publisher_type(self):
         return self.type == self.Type.PUBLISHER
 
-    def is_viewer_group(self):
+    def is_viewer_type(self):
         return self.type == self.Type.VIEWER
 
-
-@receiver(post_save, sender=Group)
-def update_group_profile(sender, instance, created, **kwargs):
-    profile = instance.profile
-    if profile and profile.is_publisher_group():
-        if profile.base_image_folder:
-            base_image_folder = profile.base_image_folder
-            if base_image_folder.name != instance.name.title():
-                base_image_folder.name = instance.name.title()
-                base_image_folder.save(update_fields=["name"])
-        else:
-            profile.base_image_folder = ImageFolder.objects.create(
-                name=instance.name.title(),
-                author=User.objects.filter(is_superuser=True).first(),
-                manager_group=instance,
-            )
-            if profile.pk:
-                profile.save(update_fields=["base_image_folder"])
-            else:
-                profile.save()
+    def create_base_image_folder(self):
+        self.base_image_folder = ImageFolder.objects.create(
+            name=self.group.name.title(),
+            author=User.objects.filter(is_superuser=True).first(),
+            manager_group=self.group,
+        )
+        self.__class__.objects.filter(pk=self.pk).update(
+            base_image_folder=self.base_image_folder
+        )
 
 
 class UserManager(BaseUserManager):
@@ -232,51 +236,32 @@ class User(AbstractBaseUser, PermissionsMixin):
         ordering = ["username"]
 
     def save(self, *args, **kwargs):
+        handle_profile_image = False
+
         if self.pk:
-            old_instance = self.__class__.objects.get(pk=self.pk)
-            if old_instance.username != self.username and self.base_lecture_folder:
-                self.base_lecture_folder.name = self.username.title()
-                self.base_lecture_folder.save(update_fields=["name"])
-            if old_instance.profile_image != self.profile_image:
-                if old_instance.profile_image:
-                    old_instance.profile_image.delete(False)
+            old = self.__class__.objects.get(pk=self.pk)
+
+            # profile_image
+            if old.profile_image != self.profile_image:
+                handle_profile_image = self.profile_image is not None
+                if old.profile_image:
+                    old.profile_image.delete(False)
 
         super().save(*args, **kwargs)
 
-        if self.is_publisher() and not self.base_lecture_folder:
-            self.base_lecture_folder = LectureFolder.objects.create(
-                name=self.username.title(),
-                author=self.__class__.objects.filter(is_superuser=True).first(),
-                manager=self,
-            )
-            self.__class__.objects.filter(pk=self.pk).update(
-                base_lecture_folder=self.base_lecture_folder
-            )
+        # base lecture folder
+        # this should be placed after save() because of `is_publisher()`
+        if not self.base_lecture_folder and self.is_publisher():
+            self.create_base_lecture_folder()
+        elif (
+            self.base_lecture_folder
+            and self.base_lecture_folder.name != self.username.title()
+        ):
+            self.base_lecture_folder.name = self.username.title()
+            self.base_lecture_folder.save(update_fields=["name"])
 
-        if self.profile_image:
-            image_path = self.profile_image.path
-            try:
-                with Image.open(image_path) as img:
-                    img = img.convert("RGB")
-
-                    # Crop to center square
-                    width, height = img.size
-                    min_dim = min(width, height)
-                    left = (width - min_dim) // 2
-                    top = (height - min_dim) // 2
-                    right = left + min_dim
-                    bottom = top + min_dim
-                    img = img.crop((left, top, right, bottom))
-
-                    # Resize to 256x256
-                    img = img.resize((256, 256), Image.Resampling.LANCZOS)
-
-                    img.save(image_path, format="JPEG")
-            except Exception as e:
-                logger.error(f"Failed to resize profile image: {str(e)}")
-                if self.profile_image:
-                    self.profile_image.delete(False)
-                return
+        if handle_profile_image:
+            self.process_profile_image()
 
     def delete(self, *args, **kwargs):
         try:
@@ -320,17 +305,50 @@ class User(AbstractBaseUser, PermissionsMixin):
             return False
         return self.groups.filter(profile__type=GroupProfile.Type.VIEWER).exists()
 
+    def create_base_lecture_folder(self):
+        self.base_lecture_folder = LectureFolder.objects.create(
+            name=self.username.title(),
+            author=self.__class__.objects.filter(is_superuser=True).first(),
+            manager=self,
+        )
+        self.__class__.objects.filter(pk=self.pk).update(
+            base_lecture_folder=self.base_lecture_folder
+        )
+
+    def process_profile_image(self):
+        try:
+            image_path = self.profile_image.path
+            with Image.open(image_path) as img:
+                img = img.convert("RGB")
+
+                # Crop to center square
+                width, height = img.size
+                min_dim = min(width, height)
+                left = (width - min_dim) // 2
+                top = (height - min_dim) // 2
+                right = left + min_dim
+                bottom = top + min_dim
+                img = img.crop((left, top, right, bottom))
+
+                # Resize to 256x256
+                img = img.resize((256, 256), Image.Resampling.LANCZOS)
+
+                img.save(image_path, format="JPEG")
+        except Exception as e:
+            logger.error(f"Failed to resize profile image: {str(e)}")
+            self.profile_image.delete(False)
+
 
 @receiver(m2m_changed, sender=User.groups.through)
-def create_lecture_folder_on_publisher_add(sender, instance, action, **kwargs):
+def handle_user_group_change(sender, instance, action, **kwargs):
     if action in ["post_add"]:
-        if instance.is_publisher() and not instance.base_lecture_folder:
-            instance.base_lecture_folder = LectureFolder.objects.create(
-                name=instance.username.title(),
-                author=User.objects.filter(is_superuser=True).first(),
-                manager=instance,
-            )
-            instance.save(update_fields=["base_lecture_folder"])
+        # base lecture folder
+        if not instance.base_lecture_folder and instance.is_publisher():
+            instance.create_base_lecture_folder()
+
+    if action in ["post_add", "post_remove"]:
+        # lecture content
+        LectureContent.objects.handle_unavailable_by_user(instance)
 
 
 @receiver(user_logged_out)

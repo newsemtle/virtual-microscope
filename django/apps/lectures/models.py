@@ -89,12 +89,21 @@ class LectureFolder(ModelPermissionMixin, AbstractFolder):
     objects = LectureFolderManager()
 
     def save(self, *args, **kwargs):
+        handle_manager = False
+
+        if self.pk:
+            old = self.__class__.objects.get(pk=self.pk)
+
+            # manager
+            if not self.is_root_node() and self.manager != self.parent.manager:
+                self.manager = self.parent.manager
+
+            handle_manager = self.manager != old.manager
+
         super().save(*args, **kwargs)
 
-        if not self.is_root_node():
-            if self.manager != self.parent.manager:
-                self.manager = self.parent.manager
-                self.__class__.objects.filter(pk=self.pk).update(manager=self.manager)
+        if handle_manager:
+            self._update_descendants_and_lectures_manager()
 
     def file_count(self, cumulative=False):
         if cumulative:
@@ -118,6 +127,19 @@ class LectureFolder(ModelPermissionMixin, AbstractFolder):
         if user.is_admin():
             return True
         return self.manager == user
+
+    def _update_descendants_and_lectures_manager(self):
+        descendants = self.get_descendants(include_self=True)
+        descendants.update(manager=self.manager)
+
+        lectures = (
+            Lecture.objects.filter(folder__in=descendants)
+            .select_related("manager")
+            .only("id", "manager_id")
+        )
+        lectures.update(manager=self.manager)
+        for lecture in lectures:
+            LectureContent.objects.handle_unavailable_by_lecture(lecture)
 
 
 class LectureManager(ManagerPermissionMixin, models.Manager):
@@ -255,18 +277,21 @@ class Lecture(ModelPermissionMixin, models.Model):
         return self.name
 
     def save(self, *args, **kwargs):
+        handle_manager = False
+
         if self.pk:
-            old_instance = self.__class__.objects.get(pk=self.pk)
-            if old_instance.manager != self.manager:
-                for content in self.contents.all():
-                    content.handle_non_viewable()
+            old = self.__class__.objects.get(pk=self.pk)
+
+            # manager
+            if self.folder and self.manager != self.folder.manager:
+                self.manager = self.folder.manager
+
+            handle_manager = self.manager != old.manager
 
         super().save(*args, **kwargs)
 
-        if self.folder:
-            if self.manager != self.folder.manager:
-                self.manager = self.folder.manager
-                self.__class__.objects.filter(pk=self.pk).update(manager=self.manager)
+        if handle_manager:
+            LectureContent.objects.handle_unavailable_by_lecture(self)
 
     def is_deletable_by(self, user):
         if user.is_admin():
@@ -299,15 +324,28 @@ class Lecture(ModelPermissionMixin, models.Model):
         return self.contents.count()
 
 
+class LectureContentManager(models.Manager):
+    def handle_unavailable_by_lecture(self, lecture):
+        manager = lecture.manager
+        for content in self.filter(lecture=lecture).select_related("slide"):
+            if not content.slide.is_viewable_by(manager, include_lecture=False):
+                content.delete()
+
+    def handle_unavailable_by_slide(self, slide):
+        for content in self.filter(slide=slide).select_related("lecture__manager"):
+            if not slide.is_viewable_by(content.lecture.manager, include_lecture=False):
+                content.delete()
+
+    def handle_unavailable_by_user(self, user):
+        for lecture in user.managing_lectures.all():
+            self.handle_unavailable_by_lecture(lecture)
+
+
 class LectureContent(ModelPermissionMixin, models.Model):
     id = models.AutoField(primary_key=True)
     order = models.PositiveSmallIntegerField(
         _lazy("order"),
         help_text=_lazy("Order inside the lecture"),
-    )
-    created_at = models.DateTimeField(
-        pgettext_lazy("date", "created"),
-        auto_now_add=True,
     )
 
     lecture = models.ForeignKey(
@@ -331,22 +369,23 @@ class LectureContent(ModelPermissionMixin, models.Model):
         null=True,
     )
 
+    objects = LectureContentManager()
+
     class Meta:
         verbose_name = _lazy("lecture content")
         verbose_name_plural = _lazy("lecture contents")
-        unique_together = ("lecture", "order")
-        ordering = ("created_at",)
 
     def __str__(self):
         return f"Item {self.order} of '{self.lecture}'"
 
     def save(self, *args, **kwargs):
-        if not self.slide.is_viewable_by(self.lecture.manager):
-            logger.warning(
-                f"Lecture Manager '{self.lecture.manager}' cannot view slide '{self.slide}'"
-            )
+        # slide
+        if not self.slide.is_viewable_by(self.lecture.manager, include_lecture=False):
+            if self.pk:
+                self.delete()
             return
 
+        # annotation
         if self.annotation:
             if (
                 self.annotation.slide != self.slide
@@ -358,7 +397,3 @@ class LectureContent(ModelPermissionMixin, models.Model):
 
     def is_viewable_by(self, user):
         return self.lecture.is_viewable_by(user)
-
-    def handle_non_viewable(self):
-        if not self.slide.is_viewable_by(self.lecture.manager):
-            self.delete()

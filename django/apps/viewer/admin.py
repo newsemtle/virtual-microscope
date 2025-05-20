@@ -9,3 +9,4 @@ class AnnotationAdmin(admin.ModelAdmin):
     list_filter = ("slide",)
     search_fields = ("name", "description")
     ordering = ("-created_at",)
+    readonly_fields = ("slide", "data")

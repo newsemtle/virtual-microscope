@@ -8,6 +8,7 @@ class LectureFolderAdmin(admin.ModelAdmin):
     list_display = ("name", "parent", "created_at", "updated_at", "author")
     search_fields = ("name",)
     ordering = ("-created_at",)
+    readonly_fields = ("parent",)
 
 
 class LectureContentInline(admin.StackedInline):
@@ -29,5 +30,6 @@ class LectureAdmin(admin.ModelAdmin):
     search_fields = ("name", "author__username")
     ordering = ("-updated_at",)
     filter_horizontal = ("viewer_groups",)
+    readonly_fields = ("folder",)
 
     inlines = [LectureContentInline]

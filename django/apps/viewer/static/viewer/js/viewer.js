@@ -1,6 +1,6 @@
 const slideMetadata = {
     mppX: parseFloat(rawSlideMetadata["mpp-x"]).toFixed(3), // toFixed(3)를 사용하여 소수점 3자리 문자열로 만들 수도 있음
-    objectivePower: parseInt(rawSlideMetadata.objective_power),
+    objectivePower: parseInt(rawSlideMetadata.objective_power, 10),
 };
 
 let currentMagnification;
@@ -78,6 +78,16 @@ viewer.addHandler("open", function () {
         fontSize: contentFactor / 50,
         selectedColor: getAnnoColor(),
     });
+});
+
+// deselect measurement on click outside
+viewer.addHandler("canvas-click", function (event) {
+    const clickedElement = event.originalEvent.target;
+
+    // Check if the clicked element is not part of a measurement
+    if (!clickedElement.closest(".osd-measure-element")) {
+        plugin.deselectMeasurement();
+    }
 });
 
 // viewer.addHandler('update-viewport', function () {
@@ -174,18 +184,9 @@ window.addEventListener("measurement-deselected", () => {
 
 document.addEventListener("DOMContentLoaded", function () {
 
-    // const annotation = JSON.parse(document.getElementById("annotation-data").innerHTML);
-
     //저장된 주석 이미지 및 설명(슬라이드 자체 설명 & 주석 설명) 띄우기 (fetch 사용 제거)
     if (annotation && annotation.data) {
-        annotation.data.forEach(annot => {
-            anno.addAnnotation(annot);
-            updateAnnotationDisplay(annot);
-        });
-
-        //슬라이드 자체 설명
-        const descriptionElement = document.getElementById("slide-description");
-        descriptionElement.innerHTML = annotation.description;
+        initializeAnnotation(annotation);
     }
 
     // 이미지 필터 초기화
@@ -332,6 +333,56 @@ document.addEventListener("DOMContentLoaded", function () {
         touchStartY = e.changedTouches[0].screenY;
     });
 
+    // change annotation
+    const annotationDropdown = document.getElementById("annotation-change-dropdown");
+    const dropdownToggle = annotationDropdown?.querySelector(".dropdown-toggle");
+    const dropdownMenu = annotationDropdown?.querySelector(".dropdown-menu");
+    dropdownToggle?.addEventListener("show.bs.dropdown", async function (event) {
+        await drfRequest({
+            url: API_ROUTES.slides.detail(slideId).annotations,
+            onSuccess: (data) => {
+                dropdownMenu.innerHTML = "";
+
+                const listItem = document.createElement("li");
+                dropdownMenu.appendChild(listItem);
+
+                const button = document.createElement("button");
+                button.classList.add("dropdown-item");
+                button.innerHTML = `<i class="bi bi-image-fill"></i> (${gettext("None")})`;
+                listItem.appendChild(button);
+
+                data.forEach(annotation => {
+                    const listItem = document.createElement("li");
+                    dropdownMenu.appendChild(listItem);
+
+                    const button = document.createElement("button");
+                    button.classList.add("dropdown-item");
+                    button.dataset.annotationId = annotation.id;
+                    button.innerHTML = `<i class="bi bi-file-earmark-arrow-down"></i> ${annotation.name}`;
+                    listItem.appendChild(button);
+                });
+            },
+        });
+        bootstrap.Dropdown.getOrCreateInstance(dropdownToggle)._popper?.update();
+    });
+    dropdownMenu?.addEventListener("click", function (event) {
+        const button = event.target.closest("button");
+        const annotationId = button.dataset.annotationId;
+        if (annotationId === undefined) {
+            // window.history.pushState({}, "", window.location.pathname);
+            clearAnnotations();
+            return;
+        }
+        drfRequest({
+            url: API_ROUTES.annotations.detail(annotationId).base,
+            onSuccess: (data) => {
+                // window.history.pushState({}, "", window.location.pathname + `?annotation=${data.id}`);
+                clearAnnotations();
+                initializeAnnotation(data);
+            },
+        });
+    });
+
     // save: update annotation
     document.getElementById("annotation-update-btn")?.addEventListener("click", function (event) {
         const button = event.target;
@@ -393,6 +444,28 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 
 });
+
+function initializeAnnotation(annotation) {
+    document.getElementById("annotation-name").textContent = truncateString(annotation.name, 15);
+
+    annotation.data.forEach(annot => {
+        anno.addAnnotation(annot);
+        updateAnnotationDisplay(annot);
+    });
+
+    //슬라이드 자체 설명
+    const descriptionElement = document.getElementById("slide-description");
+    descriptionElement.innerHTML = annotation.description;
+}
+
+function clearAnnotations() {
+    document.getElementById("annotation-name").textContent = `(${gettext("None")})`;
+    anno.clearAnnotations();
+    plugin.deselectMeasurement();
+    plugin.clear();
+    document.getElementById("slide-description").innerHTML = "";
+    document.getElementById("article-body").innerHTML = "";
+}
 
 function toggleNav() {
     if (navShown) {
@@ -525,8 +598,7 @@ function updateAnnotationDisplay(annotation) {
     const descriptionSpan = document.createElement("span");
     descriptionSpan.classList.add("annotation-description");
     descriptionSpan.style.color = "black";
-    const formattedDescription = annotation.description.replace(/\n/g, "<br>");
-    descriptionSpan.innerHTML = formattedDescription;
+    descriptionSpan.innerHTML = annotation.description.replace(/\n/g, "<br>");
 
     // 구분자
     const separator = document.createTextNode(": ");
@@ -675,7 +747,7 @@ function captureOpenSeadragonView(saveToFile = true) {
         const filename = getScreenshotFilename();
         const timestamp = formatDate(Date.now());
 
-        // 💡 여백 추가할 캔버스 만들기
+        // 여백 추가할 캔버스 만들기
         const marginHeight = 50; // 아래 여백 크기 (px)
         const finalCanvas = document.createElement("canvas");
         finalCanvas.width = originalCanvas.width;
@@ -683,12 +755,12 @@ function captureOpenSeadragonView(saveToFile = true) {
 
         const finalCtx = finalCanvas.getContext("2d");
 
-        // 기존 이미지 그리기
-        finalCtx.drawImage(originalCanvas, 0, 0);
-
-        // 아래 여백 흰색 배경
+        // 전체 캔버스를 흰색으로 초기화
         finalCtx.fillStyle = "white";
-        finalCtx.fillRect(0, originalCanvas.height, finalCanvas.width, marginHeight);
+        finalCtx.fillRect(0, 0, finalCanvas.width, finalCanvas.height);
+
+        // 원본 이미지 그리기
+        finalCtx.drawImage(originalCanvas, 0, 0);
 
         // 텍스트 작성
         finalCtx.fillStyle = "black";

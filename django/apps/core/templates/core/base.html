@@ -23,10 +23,9 @@
     <nav class="navbar navbar-expand-xl">
         <div class="container-fluid position-relative">
             <!-- 왼쪽: 로고/이름 -->
-            <a class="navbar-brand" href="{% url 'core:home' %}">
-                <img src="{% static 'core/img/logo.svg' %}" height="30" class="d-inline-block align-top"
-                     alt="인제대학교 의과대학">
-                <span class="">MediView</span>
+            <a class="navbar-brand d-flex gap-2 align-items-center" href="{% url 'core:home' %}">
+                <img src="{% static 'core/img/logo.svg' %}" height="35" alt="인제대학교 의과대학">
+                <span class="fw-semibold fs-4">MediView</span>
             </a>
 
             <!-- 중앙: 항상 보이는 slide_name 영역 -->
@@ -46,10 +45,6 @@
                 </ul>
                 <ul class="navbar-nav">
                     {% if user.is_authenticated %}
-                        <li class="nav-item">
-                            <div class="nav-link text-decoration-underline" id="session-time"
-                                 type="button" data-url="{% url 'api:session-extend' %}"></div>
-                        </li>
                         {% if user.is_admin %}
                             <li class="nav-item">
                                 <a class="nav-link" href="{% url 'admin:index' %}">
@@ -59,15 +54,16 @@
                             </li>
                         {% endif %}
                         <li class="nav-item">
+                            <div class="nav-link text-decoration-underline" id="session-time" type="button"></div>
+                        </li>
+                        <li class="nav-item">
                             <a class="nav-link" href="{% url 'accounts:profile' %}?next={{ request.get_full_path }}">
                                 <i class="bi bi-person"></i>
-                                <span>{% blocktrans trimmed with username=user.username %}
-                                    {{ username }}'s Profile
-                                {% endblocktrans %}</span>
+                                <span>{{ user.username }}</span>
                             </a>
                         </li>
                         <li class="nav-item">
-                            <button class="nav-link" id="logout" data-url="{% url 'api:logout' %}">
+                            <button class="nav-link" id="logout">
                                 <i class="bi bi-box-arrow-right"></i>
                                 <span>{% trans "Logout" %}</span>
                             </button>
@@ -140,8 +136,8 @@
         showFeedback("{{ message.message|escapejs }}", "{{ message.level_tag }}");
     {% endfor %}
 </script>
-<script src="{% static 'core/js/base.js' %}" type="text/javascript"></script>
-<script src="{% static 'core/js/apiRoutes.js' %}" type="text/javascript"></script>
+<script src="{% static 'core/js/base.js' %}"></script>
+<script src="{% static 'core/js/api_routes.js' %}"></script>
 {% block extra_js %}{% endblock %}
 </body>
 

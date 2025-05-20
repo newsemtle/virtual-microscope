@@ -1,3 +1,5 @@
+import json
+
 from django.contrib.auth.mixins import (
     LoginRequiredMixin,
     UserPassesTestMixin,
@@ -161,8 +163,33 @@ class LectureEditView(
         return lecture.is_editable_by(self.request.user)
 
     def get_queryset(self):
-        contents = self.get_lecture().contents.all().order_by("order")
-        return contents
+        contents_qs = (
+            self.get_lecture()
+            .contents.select_related("slide", "annotation")
+            .all()
+            .order_by("order")
+        )
+
+        contents = [
+            {
+                "slide": {
+                    "id": content.slide.id,
+                    "name": content.slide.name,
+                },
+                "annotation": (
+                    {
+                        "id": content.annotation.id,
+                        "name": content.annotation.name,
+                        "author": content.annotation.author,
+                    }
+                    if content.annotation
+                    else None
+                ),
+            }
+            for content in contents_qs
+        ]
+
+        return json.dumps(contents)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -184,6 +211,22 @@ class LectureEditView(
             .annotate(type=Value("image/slide", CharField()))
             .order_by("name")
         )
-        context["items"] = list(base_image_folders) + list(root_slides)
+        items = {
+            "children": [
+                {
+                    "id": folder.id,
+                    "name": folder.name,
+                }
+                for folder in base_image_folders
+            ],
+            "slides": [
+                {
+                    "id": slide.id,
+                    "name": slide.name,
+                }
+                for slide in root_slides
+            ],
+        }
+        context["items"] = json.dumps(items)
 
         return context

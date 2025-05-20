@@ -27,10 +27,6 @@ body {
         /* 가로 폭이 1200px 이하로는 줄지 않음 */
         min-height: 100vh;
     }
-
-    .nav-small-query {
-        display: none !important;
-    }
 }
 
 
@@ -62,14 +58,6 @@ body {
     article {
         max-height: 200px;
         overflow-y: auto;
-    }
-
-    .nav-large-query {
-        display: none !important;
-    }
-
-    .slide-text {
-        display: none !important;
     }
 }
 
@@ -106,18 +94,6 @@ body {
     .nav-large-query {
         display: none !important;
     }
-
-    .slide-text {
-        display: none !important;
-    }
-}
-
-/* slide name style */
-.slide-text {
-    font-size: 1.5rem;
-    color: black;
-    font-weight: bold;
-    padding: 0;
 }
 
 .nav-slide-text {
@@ -154,12 +130,6 @@ nav {
 .custom-nav {
     padding: 0 !important;
     background: #8fa1b9;
-}
-
-/* nav button style */
-.custom-button {
-    border-radius: 0;
-    color: #FFFFFF;
 }
 
 main {
@@ -222,18 +192,16 @@ footer {
 .color-palette {
     display: grid;
     grid-template-columns: repeat(4, 1fr); /* 4개의 열로 구성 */
-    padding-right: 9px;
-    padding-left: 9px;
-    padding-top: 0px;
-    padding-bottom: 0px;
+    padding: 0 9px;
 }
 
 /* 색상 옵션(버튼) */
 .color-option {
     cursor: pointer;
     list-style: none;
-    padding: 5px;
+    margin: 5px;
     text-align: center;
+    justify-self: center;
 }
 
 /* 색상 원 : 동그란 모양, 기본 스타일 */
@@ -294,21 +262,14 @@ footer {
     transform: translate(-50%, -50%);
     background: white;
     border: 1px solid #ccc;
-    padding: 20px;
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
     z-index: 1000;
     width: 500px;
-    height: 400px;
+    height: fit-content;
     overflow: auto;
 }
 
-#annotation-form input[type="text"] {
-    width: 100%;
-    box-sizing: border-box; /* 패딩과 테두리를 포함하여 크기 계산 */
-}
-
 #annotation-form textarea {
-    width: 100%;
     height: 150px;
     resize: none; /* 사용자가 크기 조절하지 못하도록 설정 */
     overflow: auto;
@@ -331,43 +292,6 @@ footer {
     z-index: 999;
 }
 
-#information-popup {
-    display: none;
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background: white;
-    border: 1px solid #ccc;
-    padding: 20px;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
-    z-index: 1000;
-    width: 500px;
-    height: 400px;
-    overflow: auto;
-}
-
-#information-box {
-    border: 1px solid #ccc;
-    padding: 10px;
-    width: 100%;
-    height: 200px;
-    background-color: #f9f9f9;
-    overflow: auto;
-    white-space: pre-wrap;
-    font-family: Arial, sans-serif;
-    resize: none; /* 사용자가 크기 조절하지 못하도록 설정 */
-    overflow: auto;
-}
-
-
-#information-popup button {
-    position: absolute; /* 절대 위치 지정 */
-    bottom: 20px; /* 아래로 20px */
-    left: 20px; /* 오른쪽으로 20px */
-}
-
-
 #article-header {
     height: 65%; /* 상단 65% */
     background-color: lightgray;
@@ -387,7 +311,6 @@ footer {
     overflow-x: hidden; /* 가로 스크롤 비활성화 */
 }
 
-
 /* 마우스 오버 시 스타일 */
 .annotation-name:hover {
     cursor: pointer; /* 손 모양 커서 */
@@ -403,10 +326,4 @@ footer {
     background: rgba(255, 255, 255, 0.8);
     padding: 10px;
     border-radius: 5px;
-}
-
-.filter-value {
-    display: inline-block;
-    width: 3ch;
-    text-align: center;
 }

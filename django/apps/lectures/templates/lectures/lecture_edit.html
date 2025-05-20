@@ -4,7 +4,7 @@
 
 {% block main_content %}
     <!-- Breadcrumb -->
-    <nav>
+    <nav class="navbar">
         <button class="btn btn-sm btn-outline-secondary" onclick="redirectToNextOrDefault(`/lectures/database/`);">
             <i class="bi bi-arrow-left"></i>
             {% trans "Back" %}
@@ -32,9 +32,8 @@
                         </div>
                         <div>
                             <label for="lecture-description" class="form-label">{% trans "Description" %}</label>
-                            <textarea class="form-control" id="lecture-description" name="description" rows="2">
-                                {{ lecture.description|default:"" }}
-                            </textarea>
+                            <textarea class="form-control" id="lecture-description" name="description"
+                                      rows="2">{{ lecture.description|default:"" }}</textarea>
                         </div>
                     </div>
                     <div class="col-md">
@@ -77,59 +76,18 @@
             </div>
         </div>
         <div class="row g-3">
-            <div class="col-md-6">
+            <div class="col-xl-6">
                 <div class="card">
                     <div class="card-header d-flex align-items-baseline">
                         <h5 class="card-title">{% trans "Lecture Contents" %}</h5>
                         <span class="text-muted ms-2">({% trans "These images will be added to the lecture." %})</span>
                     </div>
                     <div class="card-body">
-                        <ul class="list-group" id="content-list">
-                            {% for content in contents %}
-                                {% with slide=content.slide annotation=content.annotation %}
-                                    <li class="list-group-item d-flex align-items-center"
-                                        data-slide-id="{{ slide.id }}">
-                                        <input type="hidden" name="contents[][order]" value="{{ forloop.counter }}">
-                                        <input type="hidden" name="contents[][slide]" value="{{ slide.id }}">
-                                        <span class="bg-secondary-subtle rounded me-2 content-list-order">{{ forloop.counter }}</span>
-                                        <div class="d-flex flex-column me-2">
-                                            <i class="bi bi-caret-up" role="button" data-action="up"></i>
-                                            <i class="bi bi-caret-down" role="button" data-action="down"></i>
-                                        </div>
-                                        <img src="{% url 'api:slide-thumbnail' pk=slide.id %}" height="50" class="me-2"
-                                             alt="">
-                                        <a href="{% url 'viewer:image-viewer' slide_id=slide.id %}"
-                                           class="text-decoration-none text-body" target="_blank"
-                                           rel="noopener noreferrer nofollow">
-                                            {{ slide.name }}
-                                        </a>
-                                        <div class="ms-auto col-3">
-                                            <label for="annotation-for-{{ slide.id }}">{% trans "Annotation" %}</label>
-                                            <select class="form-select" id="annotation-for-{{ slide.id }}"
-                                                    name="contents[][annotation]" data-action="loadAnnotation"
-                                                    data-url="{% url 'api:slide-annotations' pk=slide.id %}">
-                                                {% if annotation %}
-                                                    <option value="">{% trans "None" %}</option>
-                                                    <option value="{{ annotation.id }}" selected>
-                                                        {{ annotation.name }} ({{ annotation.author.username }})
-                                                    </option>
-                                                {% else %}
-                                                    <option value="" selected>{% trans "None" %}</option>
-                                                {% endif %}
-                                            </select>
-                                        </div>
-                                        <button class="btn btn-sm" title="{% trans "Remove" %}"
-                                                data-bs-tooltip="true" data-action="remove">
-                                            <i class="bi bi-trash3"></i>
-                                        </button>
-                                    </li>
-                                {% endwith %}
-                            {% endfor %}
-                        </ul>
+                        <ul class="list-group" id="content-list"></ul>
                     </div>
                 </div>
             </div>
-            <div class="col-md-6">
+            <div class="col-xl-6">
                 <div class="card">
                     <div class="card-header d-flex align-items-center justify-content-between">
                         <div class="d-flex align-items-baseline">
@@ -143,58 +101,27 @@
                         </button>
                     </div>
                     <div class="card-body">
-                        {% if items %}
-                            <ul class="list-group" id="database-list">
-                                {% for item in items %}
-                                    {% if item.type == "folder" %}
-                                        <li class="list-group-item"
-                                            data-url="{% url 'api:image-folder-items' pk=item.id %}"
-                                            data-folder-id="{{ item.id }}">
-                                            <i class="bi bi-chevron-right me-2" data-bs-toggle="collapse"
-                                               href="#collapse-{{ item.id }}" role="button"
-                                               data-action="collapse"></i>
-                                            <i class="bi bi-folder text-warning me-2"></i>
-                                            <span>{{ item.name }}</span>
-                                        </li>
-                                    {% else %}
-                                        <li class="list-group-item"
-                                            data-annotations-url="{% url 'api:slide-annotations' pk=item.id %}"
-                                            data-slide-id="{{ item.id }}" data-slide-name="{{ item.name }}">
-                                            <i class="bi bi-plus-circle me-2" role="button" title="{% trans "Add" %}"
-                                               data-bs-tooltip="true" data-action="add"></i>
-                                            <img src="{% url 'api:slide-thumbnail' pk=item.id %}"
-                                                 height="40" class="me-2" alt="">
-                                            <a href="{% url 'viewer:image-viewer' slide_id=item.id %}"
-                                               class="text-decoration-none text-body" target="_blank"
-                                               rel="noopener noreferrer nofollow">
-                                                {{ item.name }}
-                                            </a>
-                                        </li>
-                                    {% endif %}
-                                {% endfor %}
-                            </ul>
-                        {% else %}
-                            <div class="alert alert-info" role="alert">
-                                <i class="bi bi-info-circle me-2"></i>
-                                {% trans "There's nothing in database." %}
-                            </div>
-                        {% endif %}
+                        <ul class="list-group" id="database-list"></ul>
                     </div>
                 </div>
             </div>
         </div>
     </form>
+{% endblock main_content %}
+
+
+{% block extra_overlay %}
     <div class="offcanvas offcanvas-end" data-bs-scroll="true" tabindex="-1" id="slide-search-sidebar">
         <div class="offcanvas-header">
             <h5 class="offcanvas-title">{% trans "Search" %}</h5>
             <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
         </div>
         <div class="offcanvas-body">
-            <form id="image-search-form" data-url="{% url 'api:slide-dbsearch' %}">
+            <form id="image-search-form">
                 <div class="mb-2">
                     <div class="input-group">
                         <input type="text" class="form-control" id="image-search-input" name="search"
-                               placeholder="{% trans "name" %}, {% trans "author" %}" required>
+                               placeholder="{% trans "name" %}, {% trans "manager group" %}" required>
                         <button type="submit" class="btn btn-outline-secondary">
                             <i class="bi bi-search"></i>
                         </button>
@@ -209,9 +136,13 @@
             </form>
         </div>
     </div>
-{% endblock main_content %}
+{% endblock extra_overlay %}
 
 
 {% block extra_js %}
-    <script src="{% static 'lectures/js/lecture_edit.js' %}" type="text/javascript"></script>
+    <script>
+        const contents = {{ contents|safe }};
+        const items = {{ items|safe }};
+    </script>
+    <script src="{% static 'lectures/js/lecture_edit.js' %}"></script>
 {% endblock extra_js %}

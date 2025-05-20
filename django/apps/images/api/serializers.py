@@ -1,6 +1,5 @@
 import os
 
-from django.urls import reverse
 from django.utils.translation import gettext as _, gettext_lazy as _lazy
 from rest_framework import serializers
 
@@ -14,7 +13,6 @@ class ImageFolderSerializer(serializers.ModelSerializer):
     manager_group = serializers.CharField(
         source="manager_group.name", default=None, read_only=True
     )
-    url = serializers.SerializerMethodField()
 
     class Meta:
         model = ImageFolder
@@ -26,7 +24,6 @@ class ImageFolderSerializer(serializers.ModelSerializer):
             "parent",
             "created_at",
             "updated_at",
-            "url",
         ]
         read_only_fields = []
         validators = [
@@ -60,9 +57,6 @@ class ImageFolderSerializer(serializers.ModelSerializer):
         validated_data["author"] = self.context["request"].user
         return super().create(validated_data)
 
-    def get_url(self, obj):
-        return reverse("api:image-folder-items", kwargs={"pk": obj.pk})
-
 
 class TagSerializer(serializers.ModelSerializer):
     class Meta:
@@ -87,11 +81,7 @@ class SlideSerializer(serializers.ModelSerializer):
     manager_group = serializers.CharField(
         source="manager_group.name", default=None, read_only=True
     )
-    thumbnail = serializers.SerializerMethodField()
     tags = TagSerializer(many=True, read_only=True)
-    url = serializers.SerializerMethodField()
-    view_url = serializers.SerializerMethodField()
-    annotations_url = serializers.SerializerMethodField()
 
     class Meta:
         model = Slide
@@ -104,16 +94,12 @@ class SlideSerializer(serializers.ModelSerializer):
             "folder",
             "file",
             "image_root",
-            "thumbnail",
             "metadata",
             "is_public",
             "tags",
             "build_status",
             "created_at",
             "updated_at",
-            "url",
-            "view_url",
-            "annotations_url",
         ]
         read_only_fields = ["image_root", "metadata"]
 
@@ -138,15 +124,3 @@ class SlideSerializer(serializers.ModelSerializer):
 
         validated_data["author"] = self.context["request"].user
         return super().create(validated_data)
-
-    def get_thumbnail(self, obj):
-        return reverse("api:slide-thumbnail", kwargs={"pk": obj.pk})
-
-    def get_url(self, obj):
-        return reverse("api:slide-detail", kwargs={"pk": obj.pk})
-
-    def get_view_url(self, obj):
-        return reverse("viewer:image-viewer", kwargs={"slide_id": obj.pk})
-
-    def get_annotations_url(self, obj):
-        return reverse("api:slide-annotations", kwargs={"pk": obj.pk})

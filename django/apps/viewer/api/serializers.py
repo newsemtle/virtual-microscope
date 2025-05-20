@@ -1,4 +1,3 @@
-from django.urls import reverse
 from django.utils.translation import gettext as _
 from rest_framework import serializers
 
@@ -7,8 +6,6 @@ from apps.viewer.models import Annotation
 
 class AnnotationSerializer(serializers.ModelSerializer):
     author = serializers.CharField(source="author.username", default=None)
-    url = serializers.SerializerMethodField()
-    viewer_url = serializers.SerializerMethodField()
     editable = serializers.SerializerMethodField()
 
     class Meta:
@@ -22,8 +19,6 @@ class AnnotationSerializer(serializers.ModelSerializer):
             "author",
             "created_at",
             "updated_at",
-            "url",
-            "viewer_url",
             "editable",
         ]
         read_only_fields = ["author"]
@@ -44,12 +39,6 @@ class AnnotationSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         validated_data["author"] = self.context["request"].user
         return super().create(validated_data)
-
-    def get_url(self, obj):
-        return reverse("api:annotation-detail", kwargs={"pk": obj.pk})
-
-    def get_viewer_url(self, obj):
-        return reverse("viewer:image-viewer", kwargs={"slide_id": obj.slide.pk}) + f"?annotation={obj.pk}"
 
     def get_editable(self, obj):
         return obj.is_editable_by(self.context["request"].user)

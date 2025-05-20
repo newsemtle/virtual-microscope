@@ -124,7 +124,8 @@
                                     <input class="form-range" id="contrast" style="width: 200px" type="range" min="0"
                                            max="2" step="0.01" value="1" oninput="updateFilters()">
                                     <span class="text-center" id="contrast-value" style="width: 40px"></span>
-                                    <button type="button" class="btn btn-sm btn-secondary" onclick="resetContrast()">
+                                    <button type="button" class="btn btn-sm btn-secondary text-nowrap"
+                                            onclick="resetContrast()">
                                         {% trans "Reset" %}
                                     </button>
                                 </div>
@@ -140,7 +141,8 @@
                                     <input class="form-range" id="saturate" style="width: 200px" type="range" min="0"
                                            max="2" step="0.01" value="1" oninput="updateFilters()">
                                     <span class="text-center" id="saturate-value" style="width: 40px"></span>
-                                    <button type="button" class="btn btn-sm btn-secondary" onclick="resetSaturate()">
+                                    <button type="button" class="btn btn-sm btn-secondary text-nowrap"
+                                            onclick="resetSaturate()">
                                         {% trans "Reset" %}
                                     </button>
                                 </div>
@@ -193,10 +195,12 @@
                 </div>
                 <!-- 그리기 드롭다운 버튼-->
                 <div class="btn-group" role="group">
-                    <button id="btnGroupDrop_annotation" class="btn btn btn-outline-light rounded-0 dropdown-toggle"
+                    <button id="btnGroupDrop_annotation" class="btn btn-outline-light rounded-0 dropdown-toggle"
                             type="button" data-bs-toggle="dropdown" style="background-color: rgb(243, 88, 83);">
                         <span>{% trans "Drawing" %}</span>
-                        <span id="ink" style="color: #ff0000">●</span>
+                        <span id="ink" style="color: #ff0000">
+                            <i class="bi bi-circle-fill"></i>
+                        </span>
                     </button>
                     <ul class="dropdown-menu" style="min-width: 0;">
                         <!-- Annotation 버튼-->
@@ -312,46 +316,62 @@
 
 
 {% block aside_content %}
-    {% if can_create_annotation %}
-        <button class="btn btn-outline-light rounded-0 me-auto" title="{% trans "Edit Description" %}"
-                data-bs-tooltip="true" data-bs-toggle="modal" data-bs-target="#description-modal">
-            <i class="bi bi-pencil"></i>
-        </button>
-    {% endif %}
-    <div class="text-center flex-grow-1">
-        {% if annotation %}
-            {{ annotation.name|slice:':20' }}
-        {% else %}
-            {% trans "Description" %}
+    <div class="d-flex justify-content-between align-items-center w-100">
+        {% if can_create_annotation %}
+            <button class="btn btn-outline-light rounded-0" title="{% trans "Edit Description" %}"
+                    data-bs-tooltip="true" data-bs-toggle="modal" data-bs-target="#description-modal">
+                <i class="bi bi-pencil"></i>
+            </button>
+        {% endif %}
+        <div class="d-flex gap-2 justify-content-center">
+            <span id="annotation-name">({% trans "None" %})</span>
+            {% if slide.annotations and can_create_annotation %}
+                <div class="dropdown-center" id="annotation-change-dropdown"
+                     title="{% trans "Select Annotation" %}" data-bs-tooltip="true">
+                    <i class="dropdown-toggle" type="button" data-bs-toggle="dropdown"></i>
+                    <ul class="dropdown-menu" style="min-width: 0;">
+                        <li>
+                            <a class="dropdown-item" type="button"
+                               href="{% url 'viewer:image-viewer' slide.id %}">
+                                <i class="bi bi-image-fill"></i>
+                                ({% trans "None" %})
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            {% endif %}
+        </div>
+        {% if can_create_annotation or can_edit_annotation %}
+            <div class="dropdown" title="{% trans "Save" %}" data-bs-tooltip="true">
+                <button class="btn btn-outline-light rounded-0 dropdown-toggle" data-bs-toggle="dropdown">
+                    <i class="bi bi-floppy"></i>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end" style="min-width: 0;">
+                    <li>
+                        {% if can_edit_annotation %}
+                            <button class="dropdown-item" id="annotation-update-btn"
+                                    title="{% trans "Update Annotation" %}"
+                                    data-bs-tooltip="true" data-annotation-id="{{ annotation.id }}">
+                                <i class="bi bi-file-earmark-arrow-up"></i>
+                                {% trans "Update" %}
+                            </button>
+                        {% endif %}
+                    </li>
+                    <li>
+                        {% if can_create_annotation %}
+                            <button class="dropdown-item" id="annotation-create-btn"
+                                    title="{% trans "Create Annotation" %}"
+                                    data-bs-tooltip="true" data-bs-toggle="modal"
+                                    data-bs-target="#annotation-create-modal">
+                                <i class="bi bi-file-earmark-plus"></i>
+                                {% trans "Create" %}
+                            </button>
+                        {% endif %}
+                    </li>
+                </ul>
+            </div>
         {% endif %}
     </div>
-    {% if can_create_annotation or can_edit_annotation %}
-        <div class="dropdown" title="{% trans "Save" %}" data-bs-tooltip="true">
-            <button class="btn btn-outline-light rounded-0 dropdown-toggle ms-auto" data-bs-toggle="dropdown">
-                <i class="bi bi-floppy"></i>
-            </button>
-            <ul class="dropdown-menu dropdown-menu-end" style="min-width: 0;">
-                <li>
-                    {% if can_edit_annotation %}
-                        <button class="dropdown-item" id="annotation-update-btn" title="{% trans "Update Annotation" %}"
-                                data-bs-tooltip="true" data-annotation-id="{{ annotation.id }}">
-                            <i class="bi bi-file-earmark-arrow-up"></i>
-                            {% trans "Update" %}
-                        </button>
-                    {% endif %}
-                </li>
-                <li>
-                    {% if can_create_annotation %}
-                        <button class="dropdown-item" id="annotation-create-btn" title="{% trans "Create Annotation" %}"
-                                data-bs-tooltip="true" data-bs-toggle="modal" data-bs-target="#annotation-create-modal">
-                            <i class="bi bi-file-earmark-plus"></i>
-                            {% trans "Create" %}
-                        </button>
-                    {% endif %}
-                </li>
-            </ul>
-        </div>
-    {% endif %}
 {% endblock aside_content %}
 
 
@@ -369,7 +389,7 @@
     <!-- Overlay -->
     <div id="overlay"></div>
 
-    <!-- Annotation Popup: non-bootstrap -->
+    <!-- Annotation Popup -->
     <div class="card" id="annotation-popup">
         <form id="annotation-form">
             <div class="card-body">
@@ -519,6 +539,7 @@
         let annotation;
         {% if annotation %}
             annotation = {
+                name: '{{ annotation.name }}',
                 description: '{{ annotation.description|linebreaksbr }}',
                 data: {{ annotation.data|safe }},
             };
@@ -526,5 +547,5 @@
 
         const CAN_CREATE_ANNOTATION = {{ can_create_annotation|yesno:"true,false" }};
     </script>
-    <script src="{% static 'viewer/js/viewer.js' %}" type="text/javascript"></script>
+    <script src="{% static 'viewer/js/viewer.js' %}"></script>
 {% endblock extra_js %}

@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-05-18 18:21+0900\n"
+"POT-Creation-Date: 2025-05-20 09:32+0900\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -26,258 +26,269 @@ msgstr "로그아웃하지 못했습니다."
 msgid "Failed to get session time."
 msgstr "로그인 시간을 연장하지 못했습니다."
 
-#: apps/core/static/core/js/base.js:264
-msgid "Failed to get folder tree."
-msgstr "폴더 목록을 가져오지 못했습니다."
-
-#: apps/core/static/core/js/base.js:276
-msgid "No folders available."
-msgstr "폴더 없음."
-
-#: apps/core/static/core/js/base.js:424
+#: apps/core/static/core/js/base.js:413
 msgid "This field is required."
 msgstr "이 항목은 필수입니다."
 
-#: apps/core/static/core/js/base.js:556
+#: apps/core/static/core/js/base.js:473
 msgid "No results found."
 msgstr "결과 없음."
 
-#: apps/core/static/core/js/base.js:573
+#: apps/core/static/core/js/base.js:490
 msgid ""
 "Total: %(count)s | Showing %(start)s-%(end)s | Page %(currentPage)s of "
 "%(totalPages)s"
 msgstr ""
-"전쳬: %(count)s | 현재 %(start)s-%(end)s | 페이지 %(totalPages)s 중 "
+"전체: %(count)s | 현재 %(start)s-%(end)s | %(totalPages)s 페이지 중 "
 "%(currentPage)s"
 
-#: apps/core/static/core/js/base.js:610
+#: apps/core/static/core/js/base.js:527
 msgid "Open in DB"
 msgstr "DB에서 열기"
 
-#: apps/core/static/core/js/base.js:647
+#: apps/core/static/core/js/base.js:564
 msgid "Failed to get results."
 msgstr "결과를 가져오지 못했습니다."
 
-#: apps/images/static/images/js/image_database.js:66
+#: apps/core/static/core/js/database.js:11
 msgid "Failed to get current folder information."
 msgstr "현재 폴더 정보를 가져오지 못했습니다."
 
-#: apps/images/static/images/js/image_database.js:82
-msgid "Failed to get current image information."
-msgstr "현재 이미지 정보를 가져오지 못했습니다."
-
-#: apps/images/static/images/js/image_database.js:96
-#: apps/images/static/images/js/image_database.js:141
-#: apps/images/static/images/js/image_database.js:164
-#: apps/lectures/static/lectures/js/lecture_database.js:45
-#: apps/lectures/static/lectures/js/lecture_database.js:79
-msgid "Name"
-msgstr "이름"
-
-#: apps/images/static/images/js/image_database.js:97
-#: apps/lectures/static/lectures/js/lecture_database.js:46
-#: apps/lectures/static/lectures/js/lecture_database.js:81
-msgid "Content"
-msgstr "내용"
-
-#: apps/images/static/images/js/image_database.js:97
-#: apps/lectures/static/lectures/js/lecture_database.js:46
-msgid "Folders"
-msgstr "폴더"
-
-#: apps/images/static/images/js/image_database.js:97
-#: apps/lectures/static/lectures/js/lecture_database.js:81
-msgid "Images"
-msgstr "이미지"
-
-#: apps/images/static/images/js/image_database.js:98
-#: apps/images/static/images/js/image_database.js:166
-#: apps/lectures/static/lectures/js/lecture_database.js:47
-#: apps/lectures/static/lectures/js/lecture_database.js:82
-msgid "Author"
-msgstr "작성자"
-
-#: apps/images/static/images/js/image_database.js:99
-#: apps/images/static/images/js/image_database.js:167
-msgid "Manager Group"
-msgstr "편집 권한 그룹"
-
-#: apps/images/static/images/js/image_database.js:100
-#: apps/lectures/static/lectures/js/lecture_database.js:49
-msgctxt "folder"
-msgid "Parent"
-msgstr "상위 폴더"
-
-#: apps/images/static/images/js/image_database.js:101
-#: apps/images/static/images/js/image_database.js:149
-#: apps/images/static/images/js/image_database.js:173
-#: apps/lectures/static/lectures/js/lecture_database.js:50
-#: apps/lectures/static/lectures/js/lecture_database.js:87
-msgctxt "date"
-msgid "Created"
-msgstr "생성일"
-
-#: apps/images/static/images/js/image_database.js:102
-#: apps/images/static/images/js/image_database.js:174
-#: apps/lectures/static/lectures/js/lecture_database.js:51
-#: apps/lectures/static/lectures/js/lecture_database.js:88
-msgctxt "date"
-msgid "Updated"
-msgstr "수정일"
-
-#: apps/images/static/images/js/image_database.js:107
-#: apps/lectures/static/lectures/js/lecture_database.js:56
-msgid "Failed to get folder details."
-msgstr "폴더 상세 정보를 가져오지 못했습니다."
-
-#: apps/images/static/images/js/image_database.js:142
-msgid "File Size"
-msgstr "파일 용량"
-
-#: apps/images/static/images/js/image_database.js:143
-msgid "Download"
-msgstr "다운로드"
-
-#: apps/images/static/images/js/image_database.js:144
-msgid "Repair"
-msgstr "복구"
-
-#: apps/images/static/images/js/image_database.js:148
-msgid "Vendor"
-msgstr "공급업체"
-
-#: apps/images/static/images/js/image_database.js:150
-msgid "Objective Power"
-msgstr "대물렌즈 배율"
-
-#: apps/images/static/images/js/image_database.js:165
-msgid "Information"
-msgstr "정보"
-
-#: apps/images/static/images/js/image_database.js:168
-#: apps/lectures/static/lectures/js/lecture_database.js:84
-msgid "Folder"
-msgstr "폴더"
-
-#: apps/images/static/images/js/image_database.js:169
-msgid "Original File"
-msgstr "원본 파일"
-
-#: apps/images/static/images/js/image_database.js:170
-msgid "Associated Images"
-msgstr "연관 이미지"
-
-#: apps/images/static/images/js/image_database.js:171
-msgid "Metadata"
-msgstr "메타데이터"
-
-#: apps/images/static/images/js/image_database.js:172
-msgid "Access Level"
-msgstr "공개 수준"
-
-#: apps/images/static/images/js/image_database.js:172
-msgid "Public"
-msgstr "공개"
-
-#: apps/images/static/images/js/image_database.js:172
-msgid "Private"
-msgstr "그룹 내 공개"
-
-#: apps/images/static/images/js/image_database.js:179
-msgid "Failed to get image details."
-msgstr "이미지 상세 정보를 가져오지 못했습니다."
-
-#: apps/images/static/images/js/image_database.js:202
-msgid "Failed to get annotation information."
-msgstr "주석 정보를 가져오지 못했습니다."
-
-#: apps/images/static/images/js/image_database.js:219
-msgid "No annotations available."
-msgstr "주석 없음."
-
-#: apps/images/static/images/js/image_database.js:279
-msgid "Failed to get annotations."
-msgstr "주석을 가져오지 못했습니다."
-
-#: apps/images/static/images/js/image_database.js:328
-#: apps/lectures/static/lectures/js/lecture_database.js:236
+#: apps/core/static/core/js/database.js:52
 msgid "Please select a destination folder."
 msgstr "대상 폴더를 선택해주세요."
 
-#: apps/images/static/images/js/image_database.js:359
-#: apps/lectures/static/lectures/js/lecture_database.js:261
+#: apps/core/static/core/js/database.js:82
 msgid "Selected Items"
 msgstr "선택 항목"
 
-#: apps/images/static/images/js/image_database.js:361
-#: apps/lectures/static/lectures/js/lecture_database.js:263
+#: apps/core/static/core/js/database.js:84
 msgid "Next"
 msgstr "다음"
 
-#: apps/images/static/images/js/image_database.js:366
-#: apps/lectures/static/lectures/js/lecture_database.js:268
+#: apps/core/static/core/js/database.js:89
 msgid "No items selected."
 msgstr "선택된 항목 없음."
 
-#: apps/images/static/images/js/image_database.js:372
-#: apps/images/static/images/js/image_database.js:457
-#: apps/lectures/static/lectures/js/lecture_database.js:274
-#: apps/lectures/static/lectures/js/lecture_database.js:357
+#: apps/core/static/core/js/database.js:95
+#: apps/images/static/images/js/image_database.js:343
+#: apps/lectures/static/lectures/js/lecture_database.js:255
 msgid "Move Selected Items"
 msgstr "선택 항목 이동"
 
-#: apps/images/static/images/js/image_database.js:374
-#: apps/lectures/static/lectures/js/lecture_database.js:276
+#: apps/core/static/core/js/database.js:97
 msgid "Move"
 msgstr "이동"
 
-#: apps/images/static/images/js/image_database.js:379
-#: apps/lectures/static/lectures/js/lecture_database.js:281
+#: apps/core/static/core/js/database.js:102
 msgid "Are you sure you want to move %(count)s item?"
 msgid_plural "Are you sure you want to move %(count)s items?"
 msgstr[0] "정말로 %(count)s 개의 항목을 이동하시겠습니까?"
 msgstr[1] "정말로 %(count)s 개의 항목을 이동하시겠습니까?"
 
-#: apps/images/static/images/js/image_database.js:386
-#: apps/images/static/images/js/image_database.js:460
-#: apps/lectures/static/lectures/js/lecture_database.js:288
-#: apps/lectures/static/lectures/js/lecture_database.js:360
+#: apps/core/static/core/js/database.js:109
+#: apps/images/static/images/js/image_database.js:346
+#: apps/lectures/static/lectures/js/lecture_database.js:258
 msgid "Delete Selected Items"
 msgstr "선택 항목 삭제"
 
-#: apps/images/static/images/js/image_database.js:388
-#: apps/lectures/static/lectures/js/lecture_database.js:290
+#: apps/core/static/core/js/database.js:111
+#: apps/images/static/images/js/image_database.js:230
 msgid "Delete"
 msgstr "삭제"
 
-#: apps/images/static/images/js/image_database.js:393
-#: apps/lectures/static/lectures/js/lecture_database.js:295
+#: apps/core/static/core/js/database.js:116
 msgid "Are you sure you want to delete %(count)s item?"
 msgid_plural "Are you sure you want to delete %(count)s items?"
 msgstr[0] "정말로 %(count)s 개의 항목을 삭제하시겠습니까?"
 msgstr[1] "정말로 %(count)s 개의 항목을 삭제하시겠습니까?"
 
-#: apps/images/static/images/js/image_database.js:415
-#: apps/lectures/static/lectures/js/lecture_database.js:317
+#: apps/core/static/core/js/database.js:168
+msgid "Failed to get folder tree."
+msgstr "폴더 목록을 가져오지 못했습니다."
+
+#: apps/core/static/core/js/database.js:180
+msgid "No folders available."
+msgstr "폴더 없음."
+
+#: apps/images/static/images/js/image_database.js:67
+msgid "Failed to get current image information."
+msgstr "현재 이미지 정보를 가져오지 못했습니다."
+
+#: apps/images/static/images/js/image_database.js:80
+#: apps/images/static/images/js/image_database.js:124
+#: apps/images/static/images/js/image_database.js:147
+#: apps/lectures/static/lectures/js/lecture_database.js:31
+#: apps/lectures/static/lectures/js/lecture_database.js:65
+msgid "Name"
+msgstr "이름"
+
+#: apps/images/static/images/js/image_database.js:81
+#: apps/lectures/static/lectures/js/lecture_database.js:32
+#: apps/lectures/static/lectures/js/lecture_database.js:67
+msgid "Content"
+msgstr "내용"
+
+#: apps/images/static/images/js/image_database.js:81
+#: apps/lectures/static/lectures/js/lecture_database.js:32
+msgid "Folders"
+msgstr "폴더"
+
+#: apps/images/static/images/js/image_database.js:81
+#: apps/lectures/static/lectures/js/lecture_database.js:67
+msgid "Images"
+msgstr "이미지"
+
+#: apps/images/static/images/js/image_database.js:82
+#: apps/images/static/images/js/image_database.js:149
+#: apps/lectures/static/lectures/js/lecture_database.js:33
+#: apps/lectures/static/lectures/js/lecture_database.js:68
+msgid "Author"
+msgstr "작성자"
+
+#: apps/images/static/images/js/image_database.js:83
+#: apps/images/static/images/js/image_database.js:150
+msgid "Manager Group"
+msgstr "편집 권한 그룹"
+
+#: apps/images/static/images/js/image_database.js:84
+#: apps/lectures/static/lectures/js/lecture_database.js:35
+msgctxt "folder"
+msgid "Parent"
+msgstr "상위 폴더"
+
+#: apps/images/static/images/js/image_database.js:85
+#: apps/images/static/images/js/image_database.js:132
+#: apps/images/static/images/js/image_database.js:156
+#: apps/lectures/static/lectures/js/lecture_database.js:36
+#: apps/lectures/static/lectures/js/lecture_database.js:73
+msgctxt "date"
+msgid "Created"
+msgstr "생성일"
+
+#: apps/images/static/images/js/image_database.js:86
+#: apps/images/static/images/js/image_database.js:157
+#: apps/lectures/static/lectures/js/lecture_database.js:37
+#: apps/lectures/static/lectures/js/lecture_database.js:74
+msgctxt "date"
+msgid "Updated"
+msgstr "수정일"
+
+#: apps/images/static/images/js/image_database.js:91
+#: apps/lectures/static/lectures/js/lecture_database.js:42
+msgid "Failed to get folder details."
+msgstr "폴더 상세 정보를 가져오지 못했습니다."
+
+#: apps/images/static/images/js/image_database.js:125
+msgid "File Size"
+msgstr "파일 용량"
+
+#: apps/images/static/images/js/image_database.js:126
+msgid "Download"
+msgstr "다운로드"
+
+#: apps/images/static/images/js/image_database.js:127
+msgid "Repair"
+msgstr "복구"
+
+#: apps/images/static/images/js/image_database.js:131
+msgid "Vendor"
+msgstr "공급업체"
+
+#: apps/images/static/images/js/image_database.js:133
+msgid "Objective Power"
+msgstr "대물렌즈 배율"
+
+#: apps/images/static/images/js/image_database.js:148
+msgid "Information"
+msgstr "정보"
+
+#: apps/images/static/images/js/image_database.js:151
+#: apps/lectures/static/lectures/js/lecture_database.js:70
+msgid "Folder"
+msgstr "폴더"
+
+#: apps/images/static/images/js/image_database.js:152
+msgid "Original File"
+msgstr "원본 파일"
+
+#: apps/images/static/images/js/image_database.js:153
+msgid "Associated Images"
+msgstr "연관 이미지"
+
+#: apps/images/static/images/js/image_database.js:154
+msgid "Metadata"
+msgstr "메타데이터"
+
+#: apps/images/static/images/js/image_database.js:155
+msgid "Access Level"
+msgstr "공개 수준"
+
+#: apps/images/static/images/js/image_database.js:155
+msgid "Public"
+msgstr "공개"
+
+#: apps/images/static/images/js/image_database.js:155
+msgid "Private"
+msgstr "그룹 내 공개"
+
+#: apps/images/static/images/js/image_database.js:162
+msgid "Failed to get image details."
+msgstr "이미지 상세 정보를 가져오지 못했습니다."
+
+#: apps/images/static/images/js/image_database.js:175
+msgid "Failed to get annotation information."
+msgstr "주석 정보를 가져오지 못했습니다."
+
+#: apps/images/static/images/js/image_database.js:191
+msgid "No annotations available."
+msgstr "주석 없음."
+
+#: apps/images/static/images/js/image_database.js:221
+msgid "Rename"
+msgstr "이름 변경"
+
+#: apps/images/static/images/js/image_database.js:246
+msgid "Failed to get annotations."
+msgstr "주석을 가져오지 못했습니다."
+
+#: apps/images/static/images/js/image_database.js:301
+#: apps/lectures/static/lectures/js/lecture_database.js:215
 msgid "Working"
 msgstr "작업중"
 
-#: apps/images/static/images/js/image_database.js:465
-#: apps/lectures/static/lectures/js/lecture_database.js:365
+#: apps/images/static/images/js/image_database.js:351
+#: apps/lectures/static/lectures/js/lecture_database.js:263
 msgid "Close"
 msgstr "닫기"
+
+#: apps/images/static/images/js/image_database.js:366
+msgid "Renamed annotation successfully!"
+msgstr "주석 이름이 성공적으로 변경 되었습니다!"
+
+#: apps/images/static/images/js/image_database.js:369
+msgid "Failed to rename the annotation."
+msgstr "주석 이름을 변경하지 못했습니다."
+
+#: apps/images/static/images/js/image_database.js:380
+msgid "Deleted annotation successfully!"
+msgstr "주석이 성공적으로 삭제 되었습니다!"
+
+#: apps/images/static/images/js/image_database.js:383
+msgid "Failed to delete the annotation."
+msgstr "주석을 삭제하지 못했습니다."
 
 #: apps/lectures/static/lectures/js/lecture_bulletins.js:22
 msgid "Failed to close the lecture."
 msgstr "강의를 닫지 못했습니다."
 
 #: apps/lectures/static/lectures/js/lecture_database.js:14
-#: apps/lectures/static/lectures/js/lecture_database.js:85
+#: apps/lectures/static/lectures/js/lecture_database.js:71
 msgid "Open"
 msgstr "열림"
 
 #: apps/lectures/static/lectures/js/lecture_database.js:14
-#: apps/lectures/static/lectures/js/lecture_database.js:85
+#: apps/lectures/static/lectures/js/lecture_database.js:71
 msgid "Closed"
 msgstr "닫힘"
 
@@ -285,111 +296,112 @@ msgstr "닫힘"
 msgid "Failed to toggle lecture status."
 msgstr "강의 상태를 변경하지 못했습니다."
 
-#: apps/lectures/static/lectures/js/lecture_database.js:31
-msgid "Failed to get slide information."
-msgstr "슬라이드 정보를 가져오지 못했습니다."
-
-#: apps/lectures/static/lectures/js/lecture_database.js:46
+#: apps/lectures/static/lectures/js/lecture_database.js:32
 msgid "Lectures"
 msgstr "강의"
 
-#: apps/lectures/static/lectures/js/lecture_database.js:48
-#: apps/lectures/static/lectures/js/lecture_database.js:83
+#: apps/lectures/static/lectures/js/lecture_database.js:34
+#: apps/lectures/static/lectures/js/lecture_database.js:69
 msgid "Manager"
 msgstr "편집 권한자"
 
-#: apps/lectures/static/lectures/js/lecture_database.js:80
+#: apps/lectures/static/lectures/js/lecture_database.js:66
 msgid "Description"
 msgstr "설명"
 
-#: apps/lectures/static/lectures/js/lecture_database.js:85
+#: apps/lectures/static/lectures/js/lecture_database.js:71
 msgid "Status"
 msgstr "상태"
 
-#: apps/lectures/static/lectures/js/lecture_database.js:86
+#: apps/lectures/static/lectures/js/lecture_database.js:72
 msgid "Viewer Groups"
 msgstr "뷰어 그룹"
 
-#: apps/lectures/static/lectures/js/lecture_database.js:93
+#: apps/lectures/static/lectures/js/lecture_database.js:79
 msgid "Failed to get lecture details."
 msgstr "강의 상세 정보를 가져오지 못했습니다."
 
-#: apps/lectures/static/lectures/js/lecture_database.js:114
+#: apps/lectures/static/lectures/js/lecture_database.js:100
 msgid "No users available."
 msgstr "사용자 없음."
 
-#: apps/lectures/static/lectures/js/lecture_database.js:180
+#: apps/lectures/static/lectures/js/lecture_database.js:166
 msgid "Failed to get users."
 msgstr "사용자를 가져오지 못했습니다."
 
-#: apps/lectures/static/lectures/js/lecture_edit.js:105
-msgid "Failed to get slide annotations."
-msgstr "슬라이드 주석을 가져오지 못했습니다."
-
-#: apps/lectures/static/lectures/js/lecture_edit.js:140
-msgid "No items"
-msgstr "항목 없음."
-
-#: apps/lectures/static/lectures/js/lecture_edit.js:207
-msgid "Failed to get folder content."
-msgstr "폴더 내용을 가져오지 못했습니다."
-
-#: apps/lectures/static/lectures/js/lecture_edit.js:219
-msgid "Slide '%(name)s' is already added!"
-msgstr "'%(name)s' 슬라이드는 이미 추가되었습니다!"
-
-#: apps/lectures/static/lectures/js/lecture_edit.js:271
-msgid "Annotation"
-msgstr "주석"
-
-#: apps/lectures/static/lectures/js/lecture_edit.js:283
-msgid "None"
-msgstr "없음"
-
-#: apps/lectures/static/lectures/js/lecture_edit.js:291
-msgid "Remove"
-msgstr "제거"
-
-#: apps/lectures/static/lectures/js/lecture_edit.js:325
-msgid "Error occurred."
-msgstr "오류가 발생했습니다."
-
-#: apps/lectures/static/lectures/js/lecture_edit.js:342
-msgid "Lecture '%(name)s' updated successfully!"
-msgstr "'%(name)s' 강의가 성공적으로 업데이트 되었습니다!"
-
-#: apps/lectures/static/lectures/js/lecture_edit.js:346
-msgid "Failed to update lecture."
-msgstr "강의를 업데이트하지 못했습니다."
-
-#: apps/lectures/static/lectures/js/lecture_edit.js:408
+#: apps/lectures/static/lectures/js/lecture_edit.js:73
 msgid "Add"
 msgstr "추가"
 
+#: apps/lectures/static/lectures/js/lecture_edit.js:158
+msgid "Failed to get slide annotations."
+msgstr "슬라이드 주석을 가져오지 못했습니다."
+
+#: apps/lectures/static/lectures/js/lecture_edit.js:197
+msgid "Failed to get folder content."
+msgstr "폴더 내용을 가져오지 못했습니다."
+
+#: apps/lectures/static/lectures/js/lecture_edit.js:207
+msgid "No items"
+msgstr "항목 없음"
+
+#: apps/lectures/static/lectures/js/lecture_edit.js:273
+msgid "Slide '%(name)s' is already added!"
+msgstr "'%(name)s' 슬라이드는 이미 추가되었습니다!"
+
+#: apps/lectures/static/lectures/js/lecture_edit.js:345
+msgid "Annotation"
+msgstr "주석"
+
+#: apps/lectures/static/lectures/js/lecture_edit.js:356
 #: apps/viewer/static/viewer/js/viewer.js:351
+#: apps/viewer/static/viewer/js/viewer.js:462
+msgid "None"
+msgstr "없음"
+
+#: apps/lectures/static/lectures/js/lecture_edit.js:371
+msgid "Remove"
+msgstr "제거"
+
+#: apps/lectures/static/lectures/js/lecture_edit.js:400
+msgid "Error occurred."
+msgstr "오류가 발생했습니다."
+
+#: apps/lectures/static/lectures/js/lecture_edit.js:418
+msgid "Lecture '%(name)s' updated successfully!"
+msgstr "'%(name)s' 강의가 성공적으로 업데이트 되었습니다!"
+
+#: apps/lectures/static/lectures/js/lecture_edit.js:422
+msgid "Failed to update lecture."
+msgstr "강의를 업데이트하지 못했습니다."
+
+#: apps/viewer/static/viewer/js/viewer.js:402
 msgid "Annotation '%(name)s' updated successfully!"
 msgstr "'%(name)s' 주석이 성공적으로 업데이트 되었습니다!"
 
-#: apps/viewer/static/viewer/js/viewer.js:354
+#: apps/viewer/static/viewer/js/viewer.js:405
 msgid "Failed to update annotation."
 msgstr "주석을 업데이트하지 못했습니다."
 
-#: apps/viewer/static/viewer/js/viewer.js:380
+#: apps/viewer/static/viewer/js/viewer.js:431
 msgid "Failed to create annotation."
 msgstr "주석을 생성하지 못했습니다."
 
-#: apps/viewer/static/viewer/js/viewer.js:702
+#: apps/viewer/static/viewer/js/viewer.js:774
 msgid "Magnification"
 msgstr "배율"
 
-#: apps/viewer/static/viewer/js/viewer.js:713
+#: apps/viewer/static/viewer/js/viewer.js:785
 msgid "Screenshot was copied to clipboard."
 msgstr "스크린샷이 클립보드에 저장되었습니다."
 
-#: apps/viewer/static/viewer/js/viewer.js:716
+#: apps/viewer/static/viewer/js/viewer.js:788
 msgid "Failed to copy screenshot to clipboard."
 msgstr "스크린샷을 클립보드에 저장하지 못했습니다."
 
-#: apps/viewer/static/viewer/js/viewer.js:725
+#: apps/viewer/static/viewer/js/viewer.js:797
 msgid "Failed to capture screenshot."
 msgstr "스크린샷을 저장하지 못했습니다."
+
+#~ msgid "Failed to get slide information."
+#~ msgstr "슬라이드 정보를 가져오지 못했습니다."

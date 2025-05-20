@@ -6,6 +6,10 @@ const API_ROUTES = {
         return {
             list: {
                 base: `${base}/`,
+                login: `${base}/login/`,
+                logout: `${base}/logout/`,
+                session_extend: `${base}/session_extend/`,
+                session_time: `${base}/session_time/`,
             },
             detail: (id) => {
                 const detailBase = `${base}/${id}`;

@@ -339,11 +339,11 @@
             <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
         </div>
         <div class="offcanvas-body">
-            <form id="image-search-form" data-url="{% url 'api:slide-dbsearch' %}">
+            <form id="image-search-form">
                 <div class="mb-2">
                     <div class="input-group">
                         <input type="text" class="form-control" id="image-search-input" name="search"
-                               placeholder="{% trans "name" %}, {% trans "author" %}" required>
+                               placeholder="{% trans "name" %}, {% trans "manager group" %}" required>
                         <button type="submit" class="btn btn-outline-secondary">
                             <i class="bi bi-search"></i>
                         </button>
@@ -826,5 +826,6 @@
 
 
 {% block extra_js %}
-    <script src="{% static 'images/js/image_database.js' %}" type="text/javascript"></script>
+    <script src="{% static 'core/js/database.js' %}"></script>
+    <script src="{% static 'images/js/image_database.js' %}"></script>
 {% endblock extra_js %}

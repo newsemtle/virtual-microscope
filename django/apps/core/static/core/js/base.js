@@ -6,7 +6,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const logoutElement = document.getElementById("logout");
     logoutElement?.addEventListener("click", function (event) {
         drfRequest({
-            url: this.dataset.url,
+            url: API_ROUTES.accounts.list.logout,
             method: "POST",
             onSuccess: (data) => {
                 window.location.href = "/";
@@ -29,7 +29,7 @@ document.addEventListener("DOMContentLoaded", () => {
             }
             lastFetchTime = now;
             drfRequest({
-                url: this.dataset.url,
+                url: API_ROUTES.accounts.list.session_extend,
                 method: "POST",
                 onSuccess: (data) => {
                     timer.start(new Date(data.expire) - Date.now());
@@ -50,20 +50,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 form.reset();
                 clearFormErrors(form);
             });
-        });
-    });
-
-    document.getElementById("item-checkbox-all")?.addEventListener("click", function (event) {
-        const checkboxes = document.querySelectorAll("[name='item-checkbox']");
-        checkboxes.forEach(checkbox => {
-            checkbox.checked = this.checked;
-        });
-    });
-
-    document.querySelectorAll("[name='item-checkbox']")?.forEach((checkbox) => {
-        checkbox.addEventListener("click", function (event) {
-            const checkboxes = document.querySelectorAll("[name='item-checkbox']");
-            document.getElementById("item-checkbox-all").checked = [...checkboxes].every(checkbox => checkbox.checked);
         });
     });
 
@@ -130,9 +116,35 @@ function getCookie(name) {
     return cookieValue;
 }
 
+function redirectToNextOrDefault(defaultUrl) {
+    const next = getQueryParam("next");
+    if (next && next.startsWith("/")) {
+        window.location.href = next;
+    } else if (defaultUrl.startsWith("/")) {
+        window.location.href = defaultUrl;
+    } else {
+        window.location.href = "/";
+    }
+}
+
 function getQueryParam(key, url = window.location.href) {
     const searchParams = new URL(url).searchParams;
     return searchParams.get(key);
+}
+
+function formatDate(date_string) {
+    const date = new Date(date_string);
+    const year = date.getFullYear();
+    const month = (date.getMonth() + 1).toString().padStart(2, "0");
+    const day = date.getDate().toString().padStart(2, "0");
+    const hours = date.getHours().toString().padStart(2, "0");
+    const minutes = date.getMinutes().toString().padStart(2, "0");
+    const seconds = date.getSeconds().toString().padStart(2, "0");
+    return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+}
+
+function truncateString(str, maxLength) {
+    return str.length > maxLength ? str.slice(0, maxLength) + "..." : str;
 }
 
 function activateTooltips(...elementList) {
@@ -163,16 +175,6 @@ function hideTooltips(...elementList) {
     });
 }
 
-function loadFeedback() {
-    let feedbackData = JSON.parse(localStorage.getItem("feedbackData"));
-    if (feedbackData && feedbackData.length > 0) {
-        feedbackData.forEach(feedback => {
-            showFeedback(feedback.text, feedback.type);
-        });
-        localStorage.removeItem("feedbackData");
-    }
-}
-
 function freezeModal(modalElement) {
     const modal = bootstrap.Modal.getOrCreateInstance(modalElement);
     modal._config.keyboard = false;
@@ -191,6 +193,31 @@ function unfreezeModal(modalElement) {
     modalElement.querySelectorAll("button").forEach(button => {
         button.disabled = false;
     });
+}
+
+function classifyError(errorData) {
+    const generalErrors = [];
+    const fieldErrors = {};
+
+    if (errorData?.detail) {
+        generalErrors.push(errorData.detail);
+    }
+
+    if (errorData?.non_field_errors) {
+        generalErrors.push(...errorData.non_field_errors);
+    }
+
+    Object.entries(errorData || {}).forEach(([key, value]) => {
+        if (key !== "non_field_errors" && key !== "detail") {
+            fieldErrors[key] = Array.isArray(value) ? value.join("\n") : value;
+        }
+    });
+
+    return {
+        message: generalErrors.join("\n") || "Validation error",
+        generalErrors,
+        fieldErrors,
+    };
 }
 
 function handleFormErrors(form, error) {
@@ -228,60 +255,6 @@ function clearFormErrors(formElement) {
         message.classList.add("d-none");
         message.innerHTML = "";
     });
-}
-
-function handleModalFormSubmit(formId) {
-    document.getElementById(formId).addEventListener("submit", function (event) {
-        event.preventDefault();
-        submitForm({
-            form: this,
-            onSuccess: (data) => {
-                location.reload();
-            },
-        });
-    });
-}
-
-function handleModalShow(modalId, formId) {
-    document.getElementById(modalId).addEventListener("show.bs.modal", function (event) {
-        let button = event.relatedTarget;
-        document.getElementById(formId).dataset.url = button.dataset.url;
-    });
-}
-
-function handleMoveModalShow(modalId, formId, itemType) {
-    document.getElementById(modalId).addEventListener("show.bs.modal", function (event) {
-        let button = event.relatedTarget;
-        document.getElementById(formId).dataset.url = button.dataset.url;
-
-        drfRequest({
-            url: button.dataset.urlTree,
-            onSuccess: (data) => {
-                const treeContainer = this.querySelector(".folder-tree-container");
-                populateMoveTree(treeContainer, data, itemType, [button.dataset.itemId]);
-            },
-            onError: (error) => {
-                showFeedback(gettext("Failed to get folder tree."), "danger");
-            },
-        });
-    });
-}
-
-function populateMoveTree(container, data, itemType, movingFolderIds) {
-    container.innerHTML = "";
-    if (data.length === 0) {
-        const alert = document.createElement("div");
-        alert.classList.add("alert", "alert-warning", "mt-3");
-        alert.role = "alert";
-        alert.textContent = gettext("No folders available.");
-        container.appendChild(alert);
-        return;
-    }
-    if (itemType === "folder") {
-        container.appendChild(createMoveTree(data, itemType, movingFolderIds));
-    } else {
-        container.appendChild(createMoveTree(data, itemType));
-    }
 }
 
 /**
@@ -330,6 +303,22 @@ function sendFeedback(message, type = "info") {
     let feedbackData = JSON.parse(localStorage.getItem("feedbackData")) || [];
     feedbackData.push({text: message, type: type});
     localStorage.setItem("feedbackData", JSON.stringify(feedbackData));
+}
+
+/**
+ * Loads feedback data from local storage, displays it using the `showFeedback` method,
+ * and then removes the feedback data from local storage.
+ *
+ * @return {void} This method does not return a value.
+ */
+function loadFeedback() {
+    let feedbackData = JSON.parse(localStorage.getItem("feedbackData"));
+    if (feedbackData && feedbackData.length > 0) {
+        feedbackData.forEach(feedback => {
+            showFeedback(feedback.text, feedback.type);
+        });
+        localStorage.removeItem("feedbackData");
+    }
 }
 
 /**
@@ -469,79 +458,7 @@ function populateDetailList(dl, details) {
     }
 }
 
-/**
- * Creates a nested move tree structure in the form of an unordered list (ul) element.
- * This structure is used to display and manage tree-like data with selectable items for moving folders or files.
- *
- * @param {Array} data - An array of objects representing the items (folders or files) to populate the tree structure. Each object should contain `id`, `name`, and an optional `children` array.
- * @param {string} itemType - Specifies the type of tree to create, either "folder" or "file". Determines the input name and behavior for the generated elements.
- * @param {Array} movingFolderIds - An array of folder IDs (as strings) that should be disabled in the tree because they are in the process of being moved.
- * @return {HTMLElement} An unordered list (ul) HTML element representing the move tree, with nested items and collapsible folders as applicable.
- */
-function createMoveTree(data, itemType, movingFolderIds = []) {
-    const ul = document.createElement("ul");
-    ul.className = "list-unstyled mb-0";
-
-    if (!["folder", "file"].includes(itemType)) return ul;
-
-    data.forEach(item => {
-        const movingFolder = itemType === "folder" && movingFolderIds.includes(item.id?.toString());
-        const showChildren = item.children?.length > 0 && !movingFolder;
-
-        const li = document.createElement("li");
-
-        const input = document.createElement("input");
-        input.className = "form-check-input me-2";
-        input.type = "radio";
-        input.id = `folder-${item.id}`;
-        input.name = itemType === "folder" ? "parent" : "folder";
-        input.value = item.id;
-        input.required = true;
-        input.disabled = movingFolder || (itemType === "folder" && !item.id);
-
-        const icon = document.createElement("i");
-        icon.className = "bi bi-chevron-right me-2 text-muted";
-        icon.type = "button";
-
-        const label = document.createElement("label");
-        label.className = "form-check-label";
-        label.htmlFor = input.id;
-        label.innerHTML = `<i class="bi bi-folder text-warning me-2"></i> ${item.name}`;
-
-        const ulChildContainer = document.createElement("div");
-        if (showChildren) {
-            icon.classList.remove("text-muted");
-            icon.dataset.bsToggle = "collapse";
-            icon.setAttribute("href", "#collapse-" + item.id);
-            icon.role = "button";
-
-            ulChildContainer.className = "collapse";
-            ulChildContainer.id = "collapse-" + item.id;
-
-            ulChildContainer.addEventListener("show.bs.collapse", function (event) {
-                event.stopPropagation();
-                icon.classList.remove("bi-chevron-right");
-                icon.classList.add("bi-chevron-down");
-            });
-            ulChildContainer.addEventListener("hide.bs.collapse", function (event) {
-                event.stopPropagation();
-                icon.classList.remove("bi-chevron-down");
-                icon.classList.add("bi-chevron-right");
-            });
-
-            const ulChild = createMoveTree(item.children, itemType, movingFolderIds);
-            ulChild.classList.add("ms-4");
-            ulChildContainer.appendChild(ulChild);
-        }
-
-        li.append(input, icon, label, ulChildContainer);
-        ul.appendChild(li);
-    });
-
-    return ul;
-}
-
-async function fetchResults(url) {
+async function fetchImageSearchResults(url) {
     await drfRequest({
         url: url,
         onSuccess: (data) => {
@@ -557,7 +474,7 @@ async function fetchResults(url) {
                 return;
             }
 
-            let currentPage = parseInt(getQueryParam("page", window.location.origin + url));
+            let currentPage = parseInt(getQueryParam("page", window.location.origin + url), 10);
             if (!currentPage) {
                 currentPage = 1;
             }
@@ -595,7 +512,7 @@ async function fetchResults(url) {
 
                 const titleText = document.createElement("a");
                 titleText.className = "d-inline-block text-truncate text-decoration-none text-body";
-                titleText.href = image.view_url;
+                titleText.href = `/viewer/${image.id}/`;
                 titleText.textContent = image.name;
                 titleText.target = "_blank";
                 titleText.rel = "noopener noreferrer nofollow";
@@ -627,7 +544,7 @@ async function fetchResults(url) {
                 prevBtn.innerHTML = `<a class="page-link" href="#">Previous</a>`;
                 prevBtn.addEventListener("click", function (e) {
                     e.preventDefault();
-                    fetchResults(data.previous);
+                    fetchImageSearchResults(data.previous);
                 });
                 pagination.appendChild(prevBtn);
             }
@@ -638,7 +555,7 @@ async function fetchResults(url) {
                 nextBtn.innerHTML = `<a class="page-link" href="#">Next</a>`;
                 nextBtn.addEventListener("click", function (e) {
                     e.preventDefault();
-                    fetchResults(data.next);
+                    fetchImageSearchResults(data.next);
                 });
                 pagination.appendChild(nextBtn);
             }
@@ -647,51 +564,4 @@ async function fetchResults(url) {
             showFeedback(gettext("Failed to get results."), "danger");
         },
     });
-}
-
-function classifyError(errorData) {
-    const generalErrors = [];
-    const fieldErrors = {};
-
-    if (errorData?.detail) {
-        generalErrors.push(errorData.detail);
-    }
-
-    if (errorData?.non_field_errors) {
-        generalErrors.push(...errorData.non_field_errors);
-    }
-
-    Object.entries(errorData || {}).forEach(([key, value]) => {
-        if (key !== "non_field_errors" && key !== "detail") {
-            fieldErrors[key] = Array.isArray(value) ? value.join("\n") : value;
-        }
-    });
-
-    return {
-        message: generalErrors.join("\n") || "Validation error",
-        generalErrors,
-        fieldErrors,
-    };
-}
-
-function formatDate(date_string) {
-    const date = new Date(date_string);
-    const year = date.getFullYear();
-    const month = (date.getMonth() + 1).toString().padStart(2, "0");
-    const day = date.getDate().toString().padStart(2, "0");
-    const hours = date.getHours().toString().padStart(2, "0");
-    const minutes = date.getMinutes().toString().padStart(2, "0");
-    const seconds = date.getSeconds().toString().padStart(2, "0");
-    return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
-}
-
-function redirectToNextOrDefault(defaultUrl) {
-    const next = getQueryParam("next");
-    if (next && next.startsWith("/")) {
-        window.location.href = next;
-    } else if (defaultUrl.startsWith("/")) {
-        window.location.href = defaultUrl;
-    } else {
-        window.location.href = "/";
-    }
 }

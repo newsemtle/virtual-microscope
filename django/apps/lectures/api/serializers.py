@@ -1,6 +1,5 @@
 from django.utils.translation import gettext as _, gettext_lazy as _lazy
 from rest_framework import serializers
-from rest_framework.reverse import reverse
 
 from apps.lectures.models import Lecture, LectureContent, LectureFolder
 
@@ -59,6 +58,8 @@ class LectureFolderSerializer(serializers.ModelSerializer):
 
 
 class LectureContentSerializer(serializers.ModelSerializer):
+    id = serializers.IntegerField(required=False)  # to enable getting id from request
+
     class Meta:
         model = LectureContent
         fields = ["id", "slide", "annotation", "order"]
@@ -72,8 +73,6 @@ class LectureSerializer(serializers.ModelSerializer):
         source="manager.username", default=None, read_only=True
     )
     contents = LectureContentSerializer(many=True, required=False)
-    edit_url = serializers.SerializerMethodField()
-    folder_url = serializers.SerializerMethodField()
 
     class Meta:
         model = Lecture
@@ -89,8 +88,6 @@ class LectureSerializer(serializers.ModelSerializer):
             "is_open",
             "created_at",
             "updated_at",
-            "edit_url",
-            "folder_url",
         ]
         read_only_fields = []
 
@@ -111,11 +108,13 @@ class LectureSerializer(serializers.ModelSerializer):
         for index, content in enumerate(contents):
             slide = content.get("slide")
             annotation = content.get("annotation")
-            if slide and not slide.is_viewable_by(user):
+            if slide and not slide.is_viewable_by(user, include_lecture=False):
                 errors[f"detail"] = _(
                     "You don't have permission to view slide '{name}'."
                 ).format(name=slide.name)
-            if annotation and not annotation.is_viewable_by(user):
+            if annotation and not annotation.is_viewable_by(
+                user, include_lecture=False
+            ):
                 errors[f"detail"] = _(
                     "You don't have permission to view annotation '{name}'."
                 ).format(name=annotation.name)
@@ -140,15 +139,28 @@ class LectureSerializer(serializers.ModelSerializer):
         contents_data = validated_data.pop("contents", [])
         lecture = super().update(instance, validated_data)
 
-        lecture.contents.all().delete()
-        for content in contents_data:
-            lecture.contents.create(**content)
+        existing_contents = {content.id: content for content in lecture.contents.all()}
+        incoming_ids = set()
+
+        for content_data in contents_data:
+            content_id = content_data.get("id")
+            if content_id and content_id in existing_contents:
+                # Update existing
+                content = existing_contents[content_id]
+                for attr, value in content_data.items():
+                    setattr(content, attr, value)
+                content.save()
+                incoming_ids.add(content_id)
+            else:
+                # Create new
+                lecture.contents.create(**content_data)
+
+        # Delete contents not in incoming data
+        to_delete = [
+            c for cid, c in existing_contents.items() if cid not in incoming_ids
+        ]
+        for content in to_delete:
+            content.delete()
 
         lecture.save()
         return lecture
-
-    def get_edit_url(self, obj):
-        return reverse("lectures:lecture-edit", kwargs={"lecture_id": obj.pk})
-
-    def get_folder_url(self, obj):
-        return reverse("lectures:lecture-database") + f"?folder={obj.folder.id}"

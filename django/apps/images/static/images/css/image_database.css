@@ -1,14 +1,9 @@
 .card-hover {
     transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
 }
-  .card-hover:hover {
+
+.card-hover:hover {
     box-shadow: 0 5px 15px #8fa1b9;
-}
-.slide-text {
-    font-size: 25px;
-    color: black;
-    font-weight: bold;
-    padding: 0;
 }
 
 @media (min-width: 1025px) {
@@ -19,6 +14,7 @@
         overflow: hidden;
         text-overflow: ellipsis;
     }
+
     .information-truncate {
         width: 100%;
         word-break: break-word;
@@ -38,12 +34,13 @@
     .flex-item-right,
     .flex-item-edit,
     .flex-item-visibility,
-    .slide-text {
-        display: none !important;
-      }
-    
-    .flex-item-icon { flex: 1; }
-    .flex-item-name { flex: 9; }
+    .flex-item-icon {
+        flex: 1;
+    }
+
+    .flex-item-name {
+        flex: 9;
+    }
 
     .name-truncate {
         width: 100%;
@@ -52,6 +49,7 @@
         overflow: hidden;
         text-overflow: ellipsis;
     }
+
     .information-truncate {
         width: 100%;
         word-break: break-word;
