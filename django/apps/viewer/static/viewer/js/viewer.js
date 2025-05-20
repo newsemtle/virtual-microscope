@@ -35,7 +35,7 @@ const viewer = OpenSeadragon({
     nextButton: "next",
     previousButton: "previous",
     maxZoomLevel: 52, //최대 줌 레벨 설정. 100X까지 되도록 설정함.
-    showRotationControl: true,
+    // showRotationControl: true,
     gestureSettingsMouse: {
         clickToZoom: false, //사용시 약간 불편해서 꺼둠 (250210)
         dblClickToZoom: true,
@@ -88,6 +88,11 @@ viewer.addHandler("canvas-click", function (event) {
     if (!clickedElement.closest(".osd-measure-element")) {
         plugin.deselectMeasurement();
     }
+});
+
+// disable default keyboard shortcut
+viewer.addHandler("canvas-key", function (event) {
+    event.cancelEvent();
 });
 
 // viewer.addHandler('update-viewport', function () {
@@ -259,12 +264,9 @@ document.addEventListener("DOMContentLoaded", function () {
         // Combination keys
         if (event.ctrlKey && key === "S") {
             event.preventDefault();
-            event.stopPropagation();
             captureOpenSeadragonView();
             return;
         } else if (event.ctrlKey && key === "C") {
-            event.preventDefault();
-            event.stopPropagation();
             captureOpenSeadragonView(false);
             return;
         }
@@ -281,11 +283,8 @@ document.addEventListener("DOMContentLoaded", function () {
             case "0":
                 viewer.viewport.goHome(true); //reset view
                 break;
-            case "P":
-                captureOpenSeadragonView();
-                break;
             // case "R":
-            //     viewer.viewport.setRotation(90); // 90도 회전 : 제대로 안됨. 보류
+            //     viewer.viewport.rotateBy(90); // 90도 회전 : 제대로 안됨. 보류
             //     break;
 
             //숫자키 입력시 배율 조정
@@ -419,6 +418,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 clearAnnotations();
                 initializeAnnotation(data);
                 annotation = data;
+                document.getElementById("annotation-update-btn").disabled = !data.editable;
             },
             onError: (error) => {
                 handleFormErrors(form, error);
@@ -465,6 +465,7 @@ function loadAnnotation(annotationId = null) {
         window.history.replaceState(null, "", window.location.pathname);
         annotation = undefined;
         clearAnnotations();
+        document.getElementById("annotation-update-btn").disabled = true;
         return;
     }
     drfRequest({
@@ -474,6 +475,7 @@ function loadAnnotation(annotationId = null) {
             annotation = data;
             clearAnnotations();
             initializeAnnotation(data);
+            document.getElementById("annotation-update-btn").disabled = !data.editable;
         },
     });
 }

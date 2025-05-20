@@ -348,25 +348,20 @@
                 </button>
                 <ul class="dropdown-menu dropdown-menu-end" style="min-width: 0;">
                     <li>
-                        {% if can_edit_annotation %}
-                            <button class="dropdown-item" id="annotation-update-btn"
-                                    title="{% trans "Update Annotation" %}"
-                                    data-bs-tooltip="true">
-                                <i class="bi bi-file-earmark-arrow-up"></i>
-                                {% trans "Update" %}
-                            </button>
-                        {% endif %}
+                        <button class="dropdown-item" id="annotation-update-btn"
+                                title="{% trans "Update Annotation" %}" data-bs-tooltip="true"
+                                {% if not can_edit_annotation %}disabled{% endif %}>
+                            <i class="bi bi-file-earmark-arrow-up"></i>
+                            {% trans "Update" %}
+                        </button>
                     </li>
                     <li>
-                        {% if can_create_annotation %}
-                            <button class="dropdown-item" id="annotation-create-btn"
-                                    title="{% trans "Create Annotation" %}"
-                                    data-bs-tooltip="true" data-bs-toggle="modal"
-                                    data-bs-target="#annotation-create-modal">
-                                <i class="bi bi-file-earmark-plus"></i>
-                                {% trans "Create" %}
-                            </button>
-                        {% endif %}
+                        <button class="dropdown-item" id="annotation-create-btn" title="{% trans "Create Annotation" %}"
+                                data-bs-tooltip="true" data-bs-toggle="modal" data-bs-target="#annotation-create-modal"
+                                {% if not can_create_annotation %}disabled{% endif %}>
+                            <i class="bi bi-file-earmark-plus"></i>
+                            {% trans "Create" %}
+                        </button>
                     </li>
                 </ul>
             </div>
