@@ -33,12 +33,12 @@
                 {% endif %}
             </div>
             <!-- 카드 본문 -->
-            <div class="card-body">
-                <!-- Description -->
-                {% if lecture.description %}
+            <!-- Description -->
+            {% if lecture.description %}
+                <div class="card-body">
                     <p class="card-text">{{ lecture.description }}</p>
-                {% endif %}
-            </div>
+                </div>
+            {% endif %}
         </div>
     </div>
     <!-- Contents -->

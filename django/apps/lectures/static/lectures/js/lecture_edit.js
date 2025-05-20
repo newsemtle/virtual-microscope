@@ -4,7 +4,7 @@ document.addEventListener("DOMContentLoaded", function () {
         const slideId = content.slide.id;
         const slideName = content.slide.name;
         const annotation = content.annotation || {};
-        renderContent(slideId, slideName, annotation);
+        renderContent(slideId, slideName, annotation, content.id);
     }
 
     const databaseList = document.getElementById("database-list");
@@ -244,7 +244,7 @@ function renderItems(listElement, data) {
             addIcon.dataset.action = "add";
 
             const img = document.createElement("img");
-            img.src = item.thumbnail;
+            img.src = API_ROUTES.slides.detail(item.id).thumbnail;
             img.height = 40;
             img.className = "me-2";
             img.alt = "";
@@ -280,11 +280,12 @@ function addContent(listItem) {
     updateContentsOrder();
 }
 
-function renderContent(slideId, slideName, annotation = {}) {
+function renderContent(slideId, slideName, annotation = {}, contentId = null) {
     const contentList = document.getElementById("content-list");
 
     const content = document.createElement("li");
     content.className = "list-group-item";
+    content.dataset.contentId = slideId;
     contentList.appendChild(content);
 
     const row = document.createElement("div");

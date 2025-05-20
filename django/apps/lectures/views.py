@@ -172,6 +172,7 @@ class LectureEditView(
 
         contents = [
             {
+                "id": content.id,
                 "slide": {
                     "id": content.slide.id,
                     "name": content.slide.name,

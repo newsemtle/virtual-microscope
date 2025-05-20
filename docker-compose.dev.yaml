@@ -28,7 +28,7 @@ services:
       - .env
 
   postgresql:
-    image: postgres:13
+    image: postgres:16
     restart: always
     ports:
       - ${POSTGRES_PORT}:${POSTGRES_PORT}
