@@ -368,34 +368,18 @@ document.addEventListener("DOMContentLoaded", function () {
     dropdownMenu?.addEventListener("click", function (event) {
         const button = event.target.closest("button");
         const annotationId = button.dataset.annotationId;
-        if (annotationId === undefined) {
-            // window.history.pushState({}, "", window.location.pathname);
-            // annotation = undefined;
-            clearAnnotations();
-            return;
-        }
-        drfRequest({
-            url: API_ROUTES.annotations.detail(annotationId).base,
-            onSuccess: (data) => {
-                // window.history.pushState({}, "", window.location.pathname + `?annotation=${data.id}`);
-                // annotation = data;
-                clearAnnotations();
-                initializeAnnotation(data);
-            },
-        });
+        loadAnnotation(annotationId);
     });
 
     // save: update annotation
     document.getElementById("annotation-update-btn")?.addEventListener("click", function (event) {
-        const button = event.target;
-
         const data = {
             description: decodeHTML(document.getElementById("slide-description").innerHTML),
             data: anno.getAnnotations(),
         };
 
         drfRequest({
-            url: API_ROUTES.annotations.detail(button.dataset.annotationId).base,
+            url: API_ROUTES.annotations.detail(annotation.id).base,
             method: "PATCH",
             data: data,
             onSuccess: (data) => {
@@ -413,6 +397,7 @@ document.addEventListener("DOMContentLoaded", function () {
     document.getElementById("annotation-create-form")?.addEventListener("submit", function (event) {
         event.preventDefault();
 
+        const form = this;
         const formData = new FormData(this);
 
         const data = {
@@ -423,14 +408,20 @@ document.addEventListener("DOMContentLoaded", function () {
         };
 
         drfRequest({
-            url: this.dataset.url,
+            url: API_ROUTES.annotations.list.base,
             method: "POST",
             data: data,
             onSuccess: (data) => {
-                window.location.replace(window.location.origin + window.location.pathname + `?annotation=${data.id}`);
+                bootstrap.Modal.getInstance(document.getElementById("annotation-create-modal")).hide();
+
+                window.history.replaceState(null, "", window.location.pathname + `?annotation=${data.id}`);
+                showFeedback(interpolate(gettext("Annotation '%(name)s' created successfully!"), {name: data.name}, true), "success");
+                clearAnnotations();
+                initializeAnnotation(data);
+                annotation = data;
             },
             onError: (error) => {
-                showFeedback(gettext("Failed to create annotation."), "danger");
+                handleFormErrors(form, error);
             },
         });
     });
@@ -467,6 +458,24 @@ function clearAnnotations() {
     plugin.clear();
     document.getElementById("slide-description").innerHTML = "";
     document.getElementById("article-body").innerHTML = "";
+}
+
+function loadAnnotation(annotationId = null) {
+    if (annotationId === null) {
+        window.history.replaceState(null, "", window.location.pathname);
+        annotation = undefined;
+        clearAnnotations();
+        return;
+    }
+    drfRequest({
+        url: API_ROUTES.annotations.detail(annotationId).base,
+        onSuccess: (data) => {
+            window.history.replaceState(null, "", window.location.pathname + `?annotation=${data.id}`);
+            annotation = data;
+            clearAnnotations();
+            initializeAnnotation(data);
+        },
+    });
 }
 
 function toggleNav() {

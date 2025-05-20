@@ -5,7 +5,9 @@ from apps.viewer.models import Annotation
 
 
 class AnnotationSerializer(serializers.ModelSerializer):
-    author = serializers.CharField(source="author.username", default=None)
+    author = serializers.CharField(
+        source="author.username", default=None, read_only=True
+    )
     editable = serializers.SerializerMethodField()
 
     class Meta:
@@ -21,7 +23,7 @@ class AnnotationSerializer(serializers.ModelSerializer):
             "updated_at",
             "editable",
         ]
-        read_only_fields = ["author"]
+        read_only_fields = []
 
     def validate(self, attrs):
         user = self.context["request"].user
@@ -38,6 +40,15 @@ class AnnotationSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         validated_data["author"] = self.context["request"].user
+
+        author = validated_data["author"]
+        slide = validated_data["slide"]
+        name = validated_data["name"]
+        if Annotation.objects.filter(author=author, slide=slide, name=name).exists():
+            raise serializers.ValidationError(
+                {"detail": _("Annotation with this name already exists.")}
+            )
+
         return super().create(validated_data)
 
     def get_editable(self, obj):
