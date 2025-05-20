@@ -231,7 +231,7 @@ function handleFormErrors(form, error) {
 
     if (error.fieldErrors) {
         for (const [field, message] of Object.entries(error.fieldErrors)) {
-            const input = form.querySelector(`#${field}`);
+            const input = form.querySelector(`[name='${field}']`);
             if (input) {
                 input.classList.add("is-invalid");
             }
