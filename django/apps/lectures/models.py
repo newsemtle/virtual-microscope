@@ -91,12 +91,12 @@ class LectureFolder(ModelPermissionMixin, AbstractFolder):
     def save(self, *args, **kwargs):
         handle_manager = False
 
+        # manager
+        if not self.is_root_node() and self.manager != self.parent.manager:
+            self.manager = self.parent.manager
+
         if self.pk:
             old = self.__class__.objects.get(pk=self.pk)
-
-            # manager
-            if not self.is_root_node() and self.manager != self.parent.manager:
-                self.manager = self.parent.manager
 
             handle_manager = self.manager != old.manager
 
@@ -279,12 +279,12 @@ class Lecture(ModelPermissionMixin, models.Model):
     def save(self, *args, **kwargs):
         handle_manager = False
 
+        # manager
+        if self.folder and self.manager != self.folder.manager:
+            self.manager = self.folder.manager
+
         if self.pk:
             old = self.__class__.objects.get(pk=self.pk)
-
-            # manager
-            if self.folder and self.manager != self.folder.manager:
-                self.manager = self.folder.manager
 
             handle_manager = self.manager != old.manager
 

@@ -11,6 +11,7 @@ document.addEventListener("DOMContentLoaded", function () {
     renderItems(databaseList, items);
 
     updateSelectedImages();
+    updateContentsOrder();
 
     const lectureForm = document.getElementById("lecture-form");
     lectureForm.addEventListener("submit", function (event) {
@@ -285,7 +286,7 @@ function renderContent(slideId, slideName, annotation = {}, contentId = null) {
 
     const content = document.createElement("li");
     content.className = "list-group-item";
-    content.dataset.contentId = slideId;
+    content.dataset.contentId = contentId;
     contentList.appendChild(content);
 
     const row = document.createElement("div");
@@ -403,12 +404,18 @@ function submitChanges(formItem) {
         }
         const annotationValue = annotationInput?.value;
 
-        data.contents.push({
-            id: item.dataset.contentId || null,
+        const contentId = parseInt(item.dataset.contentId, 10);
+        const content = {
             order: parseInt(orderValue, 10),
             slide: parseInt(slideValue, 10),
             annotation: annotationValue ? parseInt(annotationValue, 10) : null,
-        });
+        };
+
+        if (!isNaN(contentId)) {
+            content.id = contentId;
+        }
+
+        data.contents.push(content);
     });
 
     drfRequest({

@@ -105,22 +105,19 @@ class ImageFolder(ModelPermissionMixin, AbstractFolder):
     def save(self, *args, **kwargs):
         handle_manager_group = False
 
+        # manager group
+        if not self.is_root_node() and self.manager_group != self.parent.manager_group:
+            self.manager_group = self.parent.manager_group
+
         if self.pk:
             old = self.__class__.objects.get(pk=self.pk)
-
-            # manager group
-            if (
-                not self.is_root_node()
-                and self.manager_group != self.parent.manager_group
-            ):
-                self.manager_group = self.parent.manager_group
 
             handle_manager_group = self.manager_group != old.manager_group
 
         super().save(*args, **kwargs)
 
         if handle_manager_group:
-            self._update_descendants_and_images_manager()
+            self._update_descendants_and_images_manager_group()
 
     def file_count(self, cumulative=False):
         return self.get_images(cumulative=cumulative).count()
@@ -151,16 +148,16 @@ class ImageFolder(ModelPermissionMixin, AbstractFolder):
             )
         return self.slides.all()
 
-    def _update_descendants_and_images_manager(self):
+    def _update_descendants_and_images_manager_group(self):
         descendants = self.get_descendants(include_self=True)
-        descendants.update(manager=self.manager_group)
+        descendants.update(manager_group=self.manager_group)
 
         slides = (
             Slide.objects.filter(folder__in=descendants)
             .select_related("manager_group")
             .only("id", "manager_group_id")
         )
-        slides.update(manager=self.manager_group)
+        slides.update(manager_group=self.manager_group)
         # reduce the memory load by using iterator to disable caching
         for slide in slides.iterator():
             LectureContent.objects.handle_unavailable_by_slide(slide)
@@ -338,6 +335,12 @@ class Slide(ModelPermissionMixin, models.Model):
         if not self.image_root:
             self.image_root = os.path.join("protected/processed_images", str(self.id))
 
+        # manager group
+        if self.folder and self.manager_group != self.folder.manager_group:
+            self.manager_group = self.folder.manager_group
+        elif not self.folder and self.manager_group:
+            self.manager_group = None
+
         if self.pk:
             old = self.__class__.objects.get(pk=self.pk)
 
@@ -346,12 +349,6 @@ class Slide(ModelPermissionMixin, models.Model):
                 old.file.delete()
                 self._delete_directory(old.image_directory_path)
                 self.build_status = self.BuildStatus.PENDING
-
-            # manager group
-            if self.folder and self.manager_group != self.folder.manager_group:
-                self.manager_group = self.folder.manager_group
-            elif not self.folder and self.manager_group:
-                self.manager_group = None
 
             handle_manager_group = (
                 self.manager_group != old.manager_group
