@@ -97,6 +97,7 @@ class GroupProfile(models.Model):
         self.set_default_permission()
 
     def set_default_permission(self):
+        self.group.permissions.clear()
         if self.is_publisher_type():
             q = Q(content_type__app_label="images")
             q |= Q(content_type__app_label="lectures")
@@ -246,6 +247,8 @@ class User(AbstractBaseUser, PermissionsMixin):
                 handle_profile_image = self.profile_image is not None
                 if old.profile_image:
                     old.profile_image.delete(False)
+        else:
+            handle_profile_image = self.profile_image is not None
 
         super().save(*args, **kwargs)
 

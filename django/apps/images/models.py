@@ -331,10 +331,6 @@ class Slide(ModelPermissionMixin, models.Model):
     def save(self, *args, **kwargs):
         handle_manager_group = False
 
-        # image root
-        if not self.image_root:
-            self.image_root = os.path.join("protected/processed_images", str(self.id))
-
         # manager group
         if self.folder and self.manager_group != self.folder.manager_group:
             self.manager_group = self.folder.manager_group
@@ -356,6 +352,11 @@ class Slide(ModelPermissionMixin, models.Model):
             )
 
         super().save(*args, **kwargs)
+
+        # image root
+        if not self.image_root:
+            self.image_root = os.path.join("protected/processed_images", str(self.pk))
+            self.__class__.objects.filter(pk=self.pk).update(image_root=self.image_root)
 
         # build
         if self.build_status == self.BuildStatus.PENDING:

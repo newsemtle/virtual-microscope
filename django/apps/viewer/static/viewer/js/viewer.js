@@ -370,6 +370,7 @@ document.addEventListener("DOMContentLoaded", function () {
         const annotationId = button.dataset.annotationId;
         if (annotationId === undefined) {
             // window.history.pushState({}, "", window.location.pathname);
+            // annotation = undefined;
             clearAnnotations();
             return;
         }
@@ -377,6 +378,7 @@ document.addEventListener("DOMContentLoaded", function () {
             url: API_ROUTES.annotations.detail(annotationId).base,
             onSuccess: (data) => {
                 // window.history.pushState({}, "", window.location.pathname + `?annotation=${data.id}`);
+                // annotation = data;
                 clearAnnotations();
                 initializeAnnotation(data);
             },
