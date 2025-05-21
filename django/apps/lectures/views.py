@@ -11,7 +11,7 @@ from django.db.models import CharField, Value
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse_lazy
 from django.utils.translation import gettext as _
-from django.views.generic import ListView
+from django.views.generic import ListView, TemplateView
 
 from apps.accounts.models import GroupProfile
 from apps.images.models import Slide, ImageFolder
@@ -148,10 +148,9 @@ class LectureView(
 
 
 class LectureEditView(
-    LoginRequiredMixin, PermissionRequiredMixin, UserPassesTestMixin, ListView
+    LoginRequiredMixin, PermissionRequiredMixin, UserPassesTestMixin, TemplateView
 ):
     template_name = "lectures/lecture_edit.html"
-    context_object_name = "contents"
     permission_required = ["lectures.change_lecture", "images.view_slide"]
 
     def get_lecture(self):
@@ -162,14 +161,22 @@ class LectureEditView(
         lecture = self.get_lecture()
         return lecture.is_editable_by(self.request.user)
 
-    def get_queryset(self):
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["lecture"] = self.get_lecture()
+
+        context["publishers"] = Group.objects.filter(
+            profile__type=GroupProfile.Type.PUBLISHER
+        )
+        context["viewers"] = Group.objects.filter(
+            profile__type=GroupProfile.Type.VIEWER
+        )
+
         contents_qs = (
             self.get_lecture()
             .contents.select_related("slide", "annotation")
-            .all()
             .order_by("order")
         )
-
         contents = [
             {
                 "id": content.id,
@@ -181,7 +188,7 @@ class LectureEditView(
                     {
                         "id": content.annotation.id,
                         "name": content.annotation.name,
-                        "author": content.annotation.author,
+                        "author": content.annotation.author.username,
                     }
                     if content.annotation
                     else None
@@ -189,18 +196,7 @@ class LectureEditView(
             }
             for content in contents_qs
         ]
-
-        return json.dumps(contents)
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context["lecture"] = self.get_lecture()
-        context["publishers"] = Group.objects.filter(
-            profile__type=GroupProfile.Type.PUBLISHER
-        )
-        context["viewers"] = Group.objects.filter(
-            profile__type=GroupProfile.Type.VIEWER
-        )
+        context["contents"] = json.dumps(contents)
 
         base_image_folders = (
             ImageFolder.objects.viewable(self.request.user, parent="root")

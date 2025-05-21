@@ -1,9 +1,9 @@
 document.addEventListener("DOMContentLoaded", function () {
 
-    for (content of contents) {
+    for (const content of contents) {
         const slideId = content.slide.id;
         const slideName = content.slide.name;
-        const annotation = content.annotation || {};
+        const annotation = content.annotation;
         renderContent(slideId, slideName, annotation, content.id);
     }
 
@@ -285,36 +285,29 @@ function renderContent(slideId, slideName, annotation = {}, contentId = null) {
     const contentList = document.getElementById("content-list");
 
     const content = document.createElement("li");
-    content.className = "list-group-item";
+    content.className = "list-group-item d-flex gap-2 align-items-center";
     content.dataset.contentId = contentId;
     contentList.appendChild(content);
 
-    const row = document.createElement("div");
-    row.className = "row g-2";
-    content.appendChild(row);
+    const orderContainer = document.createElement("div");
+    orderContainer.className = "d-flex gap-2 align-items-center justify-content-center";
 
-    const col1 = document.createElement("div");
-    col1.className = "col-md-8 d-flex gap-2 align-items-center";
+    const mainContainer = document.createElement("div");
+    mainContainer.className = "row d-flex flex-grow-1 g-2";
 
-    const col2 = document.createElement("div");
-    col2.className = "col-md-4 d-flex gap-2 align-items-center justify-content-end ps-md-0 ps-5";
-
-    row.append(col1, col2);
+    content.append(orderContainer, mainContainer);
 
     const orderInput = document.createElement("input");
     orderInput.type = "hidden";
     orderInput.name = "contents[][order]";
-
-    const slideInput = document.createElement("input");
-    slideInput.type = "hidden";
-    slideInput.name = "contents[][slide]";
-    slideInput.value = slideId;
 
     const order = document.createElement("span");
     order.className = "bg-secondary-subtle rounded content-list-order";
 
     const moveContainer = document.createElement("div");
     moveContainer.className = "d-flex flex-column";
+
+    orderContainer.append(orderInput, order, moveContainer);
 
     const upBtn = document.createElement("i");
     upBtn.className = "bi bi-caret-up";
@@ -328,10 +321,23 @@ function renderContent(slideId, slideName, annotation = {}, contentId = null) {
 
     moveContainer.append(upBtn, downBtn);
 
-    const img = document.createElement("img");
-    img.src = API_ROUTES.slides.detail(slideId).thumbnail;
-    img.height = 50;
-    img.alt = "";
+    const col1 = document.createElement("div");
+    col1.className = "col-md-8 d-flex gap-2 align-items-center";
+
+    const col2 = document.createElement("div");
+    col2.className = "col-md-4 d-flex gap-2 align-items-center justify-content-end";
+
+    mainContainer.append(col1, col2);
+
+    const slideInput = document.createElement("input");
+    slideInput.type = "hidden";
+    slideInput.name = "contents[][slide]";
+    slideInput.value = slideId;
+
+    const slideImage = document.createElement("img");
+    slideImage.src = API_ROUTES.slides.detail(slideId).thumbnail;
+    slideImage.height = 50;
+    slideImage.alt = "";
 
     const slideText = document.createElement("a");
     slideText.href = `/viewer/${slideId}/`;
@@ -340,11 +346,16 @@ function renderContent(slideId, slideName, annotation = {}, contentId = null) {
     slideText.target = "_blank";
     slideText.rel = "noopener noreferrer nofollow";
 
-    col1.append(orderInput, slideInput, order, moveContainer, img, slideText);
+    col1.append(slideInput, slideImage, slideText);
+
+    const annotationContainer = document.createElement("div");
+    annotationContainer.className = "input-group";
 
     const annotationLabel = document.createElement("label");
-    annotationLabel.className = "text-nowrap";
-    annotationLabel.textContent = gettext("Annotation");
+    annotationLabel.className = "input-group-text";
+    annotationLabel.innerHTML = `<i class="bi bi-pen-fill text-danger"></i>`;
+    annotationLabel.title = gettext("Annotation");
+    annotationLabel.dataset.bsTooltip = "true";
     annotationLabel.htmlFor = `annotation-for-${slideId}`;
 
     const annotationSelect = document.createElement("select");
@@ -353,13 +364,15 @@ function renderContent(slideId, slideName, annotation = {}, contentId = null) {
     annotationSelect.name = "contents[][annotation]";
     annotationSelect.dataset.action = "loadAnnotation";
 
+    annotationContainer.append(annotationLabel, annotationSelect);
+
     const defaultOption = document.createElement("option");
     defaultOption.value = "";
     defaultOption.textContent = `(${gettext("None")})`;
     defaultOption.selected = true;
     annotationSelect.appendChild(defaultOption);
 
-    if (annotation.length > 0) {
+    if (annotation !== null) {
         defaultOption.selected = false;
         const annotationOption = document.createElement("option");
         annotationOption.value = annotation.id;
@@ -368,14 +381,13 @@ function renderContent(slideId, slideName, annotation = {}, contentId = null) {
         annotationSelect.appendChild(annotationOption);
     }
 
-    const removeBtn = document.createElement("button");
-    removeBtn.className = "btn btn-sm";
+    const removeBtn = document.createElement("i");
+    removeBtn.className = "bi bi-trash3";
     removeBtn.title = gettext("Remove");
     removeBtn.dataset.bsTooltip = "tooltip";
     removeBtn.dataset.action = "remove";
-    removeBtn.innerHTML = "<i class='bi bi-trash3'></i>";
 
-    col2.append(annotationLabel, annotationSelect, removeBtn);
+    col2.append(annotationContainer, removeBtn);
 
     initializeAnnotationSelect(annotationSelect);
     activateTooltips(removeBtn);
