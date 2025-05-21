@@ -60,7 +60,6 @@ class GroupAdmin(admin.ModelAdmin):
 class UserResource(resources.ModelResource):
     class Meta:
         model = User
-        exclude = ("password",)
         import_id_fields = ("username",)
         skip_unchanged = True
         report_skipped = True
@@ -94,14 +93,20 @@ class UserResource(resources.ModelResource):
     def save_instance(self, instance, is_create, row, **kwargs):
         raw_password = instance.password
 
-        # Check if the password is already hashed
         try:
             identify_hasher(raw_password)
         except ValueError:
-            # It's not hashed, hash it now
+            # hash password
             instance.set_password(raw_password)
 
         return super().save_instance(instance, is_create, row, **kwargs)
+
+    def get_export_fields(self, selected_fields=None):
+        return [
+            field
+            for field in super().get_export_fields(selected_fields)
+            if field.column_name != "password"
+        ]
 
 
 @admin.register(User)
