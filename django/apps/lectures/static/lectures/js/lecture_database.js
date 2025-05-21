@@ -29,7 +29,7 @@ document.addEventListener("DOMContentLoaded", function (event) {
                 listElement.innerHTML = "";
                 const details = new Map([
                     [gettext("Name"), data.name || "-"],
-                    [gettext("Content"), `${data.children_count || 0} ${gettext("Folders")}, ${data.total_file_count || 0} ${gettext("Lectures")}`],
+                    [gettext("Content"), `${data.child_count || 0} ${gettext("Folders")}, ${data.total_file_count || 0} ${gettext("Lectures")}`],
                     [gettext("Author"), data.author || "-"],
                     [gettext("Manager"), data.manager || "-"],
                     [pgettext("folder", "Parent"), data.parent_path || "-"],
