@@ -147,6 +147,18 @@ function truncateString(str, maxLength) {
     return str.length > maxLength ? str.slice(0, maxLength) + "..." : str;
 }
 
+function decodeHTML(html) {
+    const txt = document.createElement("textarea");
+    txt.innerHTML = html.replace(/<br>/g, "\n");
+    return txt.value;
+}
+
+function encodeHTML(text) {
+    const txt = document.createElement("textarea");
+    txt.textContent = text;
+    return txt.innerHTML.replace(/\n/g, "<br>");
+}
+
 function activateTooltips(...elementList) {
     let tooltipTriggerList;
     if (elementList.length > 0) {

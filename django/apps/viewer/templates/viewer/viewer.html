@@ -535,7 +535,7 @@
             annotation = {
                 id: {{ annotation.id }},
                 name: '{{ annotation.name }}',
-                description: '{{ annotation.description|linebreaksbr }}',
+                description: '{{ annotation.description|escapejs }}',
                 data: {{ annotation.data|safe }},
             };
         {% endif %}

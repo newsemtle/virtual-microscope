@@ -448,7 +448,7 @@ function initializeAnnotation(annotation) {
 
     //슬라이드 자체 설명
     const descriptionElement = document.getElementById("slide-description");
-    descriptionElement.innerHTML = annotation.description;
+    descriptionElement.innerHTML = encodeHTML(annotation.description);
 }
 
 function clearAnnotations() {
@@ -701,18 +701,6 @@ function resetSaturate() {
     const saturateSlider = document.getElementById("saturate");
     saturateSlider.value = 1;
     updateFilters();
-}
-
-function decodeHTML(html) {
-    const txt = document.createElement("textarea");
-    txt.innerHTML = html.replace(/<br>/g, "\n");
-    return txt.value;
-}
-
-function encodeHTML(text) {
-    const txt = document.createElement("textarea");
-    txt.textContent = text;
-    return txt.innerHTML.replace(/\n/g, "<br>");
 }
 
 function getScreenshotFilename() {

@@ -3,7 +3,7 @@ document.addEventListener("DOMContentLoaded", function () {
     for (const content of contents) {
         const slideId = content.slide.id;
         const slideName = content.slide.name;
-        const annotation = content.annotation || null;
+        const annotation = content.annotation;
         renderContent(slideId, slideName, annotation, content.id);
     }
 
@@ -281,7 +281,7 @@ function addContent(listItem) {
     updateContentsOrder();
 }
 
-function renderContent(slideId, slideName, annotation = {}, contentId = null) {
+function renderContent(slideId, slideName, annotation = null, contentId = null) {
     const contentList = document.getElementById("content-list");
 
     const content = document.createElement("li");
@@ -341,6 +341,9 @@ function renderContent(slideId, slideName, annotation = {}, contentId = null) {
 
     const slideText = document.createElement("a");
     slideText.href = `/viewer/${slideId}/`;
+    if (annotation != null) {
+        slideText.href += `?annotation=${annotation.id}`;
+    }
     slideText.className = "text-decoration-none text-body image-link";
     slideText.textContent = slideName;
     slideText.target = "_blank";
@@ -487,5 +490,5 @@ function updateSelectedImages() {
 
 function getContentSlideId(listItem) {
     const slideInput = listItem.querySelector("[name='contents[][slide]']");
-    return slideInput?.value || null;
+    return slideInput?.value || undefined;
 }
