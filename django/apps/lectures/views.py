@@ -185,11 +185,13 @@ class LectureEditView(
                     "name": content.slide.name,
                 },
                 "annotation": (
-                    {
-                        "id": content.annotation.id,
-                        "name": content.annotation.name,
-                        "author": content.annotation.author.username,
-                    }
+                    (
+                        {
+                            "id": content.annotation.id,
+                            "name": content.annotation.name,
+                            "author": content.annotation.author.username,
+                        }
+                    )
                     if content.annotation
                     else None
                 ),

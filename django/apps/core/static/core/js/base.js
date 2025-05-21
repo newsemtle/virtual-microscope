@@ -497,21 +497,21 @@ async function fetchImageSearchResults(url) {
 
             data.results.forEach(image => {
                 const listItem = document.createElement("li");
-                listItem.className = "list-group-item d-flex justify-content-between align-items-center";
+                listItem.className = "list-group-item d-flex gap-2 justify-content-between align-items-center";
                 listItem.dataset.slideId = image.id;
                 listItem.dataset.slideName = image.name;
 
                 const title = document.createElement("div");
-                title.className = "d-flex align-items-center";
+                title.className = "d-flex align-items-center overflow-hidden";
 
                 const titleImg = document.createElement("img");
-                titleImg.src = image.thumbnail;
+                titleImg.src = API_ROUTES.slides.detail(image.id).thumbnail;
                 titleImg.height = 40;
                 titleImg.className = "me-2";
                 titleImg.alt = "";
 
                 const titleText = document.createElement("a");
-                titleText.className = "d-inline-block text-truncate text-decoration-none text-body";
+                titleText.className = "text-truncate text-decoration-none text-body";
                 titleText.href = `/viewer/${image.id}/`;
                 titleText.textContent = image.name;
                 titleText.target = "_blank";

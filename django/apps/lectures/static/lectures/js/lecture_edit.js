@@ -3,7 +3,7 @@ document.addEventListener("DOMContentLoaded", function () {
     for (const content of contents) {
         const slideId = content.slide.id;
         const slideName = content.slide.name;
-        const annotation = content.annotation;
+        const annotation = content.annotation || null;
         renderContent(slideId, slideName, annotation, content.id);
     }
 

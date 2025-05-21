@@ -410,7 +410,7 @@ document.addEventListener("DOMContentLoaded", function () {
         if (!query) {
             return;
         }
-        const url = API_ROUTES.images.list.search(encodeURIComponent(query));
+        const url = API_ROUTES.slides.list.search(encodeURIComponent(query));
         fetchImageSearchResults(url);
     });
 
