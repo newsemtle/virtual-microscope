@@ -9,9 +9,10 @@
 
 ## 개발
 
-실제 django 프로젝트는 django 폴더에 있습니다.
-기타 폴더는 docker및 내부 학습용 자료입니다.
-보안 상의 이유로 일부 제외된 코드들이 있습니다.  
+실제 django 프로젝트는 django 폴더에 있습니다.  
+기타 폴더는 docker및 내부 학습용 자료입니다.  
+보안 상의 이유로 일부 제외된 코드들이 있습니다.
+
 자세한 사항은 [Wiki](https://github.com/newsemtle/virtual-microscope/wiki)를 참고해주세요.
 
 ## 통합 이전 소스코드
